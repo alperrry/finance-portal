@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: fp-postgres
+    environment:
+      POSTGRES_DB: finance
+      POSTGRES_USER: finance_user
+      POSTGRES_PASSWORD: finance_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - fp_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finance_user -d finance"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+    container_name: fp-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finance
+      SPRING_DATASOURCE_USERNAME: finance_user
+      SPRING_DATASOURCE_PASSWORD: finance_pass
+      # DB modülü ayrı: migration'ları container içinden oku
+      SPRING_FLYWAY_ENABLED: "true"
+      SPRING_FLYWAY_LOCATIONS: filesystem:/db/migration
+      # JPA kullanıyorsan (tavsiye): şemayı Flyway yönetsin
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+    ports:
+      - "8081:8081"
+    volumes:
+      # repo kökündeki db/ klasörünü container'a mount ediyoruz
+      - ./db:/db:ro
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: fp-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    environment:
+      # Frontend'in API'ye gideceği adres (browser'dan erişim)
+      VITE_API_BASE_URL: http://localhost:8081
+
+volumes:
+  fp_pgdata:
