@@ -16,13 +16,22 @@ services:
       timeout: 3s
       retries: 20
 
+
   keycloak:
-    image: quay.io/keycloak/keycloak:26.0
+    build:
+      context: .
+      dockerfile: ./keycloak/Dockerfile
+    image: fp-keycloak:26.0.8-themed
     container_name: fp-keycloak
     command: start-dev
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+
+
     ports:
       - "8080:8080"
     volumes:
