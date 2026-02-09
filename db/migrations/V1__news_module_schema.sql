@@ -1,23 +1,24 @@
 -- V1__news_module_schema.sql
+-- RSS-only schema (API removed)
 
 -- 1) SOURCES
 CREATE TABLE IF NOT EXISTS sources (
                                        id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                                        name        text NOT NULL,
                                        source_url  text NOT NULL,
-                                       source_type text NOT NULL DEFAULT 'rss', -- rss | api
-                                       api_key     text,
+
                                        is_active   boolean NOT NULL DEFAULT true,
+
                                        created_at  timestamptz NOT NULL DEFAULT now(),
-    updated_at  timestamptz NOT NULL DEFAULT now(),
-    CONSTRAINT ck_sources_type CHECK (source_type IN ('rss','api'))
+    updated_at  timestamptz NOT NULL DEFAULT now()
     );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_sources_source_url
     ON sources (source_url);
 
-CREATE INDEX IF NOT EXISTS idx_sources_type_active
-    ON sources (source_type, is_active);
+-- RSS-only: type yok, ama aktif/pasif filtreleri hızlı olsun diye index bırakmak mantıklı
+CREATE INDEX IF NOT EXISTS idx_sources_active
+    ON sources (is_active);
 
 
 -- 2) CATEGORIES (slug yok)
@@ -31,8 +32,10 @@ CREATE TABLE IF NOT EXISTS categories (
 
 CREATE INDEX IF NOT EXISTS idx_categories_active
     ON categories (is_active);
+
 CREATE UNIQUE INDEX IF NOT EXISTS uq_categories_name
     ON categories (name);
+
 
 -- 3) NEWS
 CREATE TABLE IF NOT EXISTS news (
@@ -41,8 +44,8 @@ CREATE TABLE IF NOT EXISTS news (
                                     context       text,
                                     published_at  timestamptz,
 
-                                    canonical_url text NOT NULL,             -- RSS/API link
-                                    external_id   text,                      -- RSS guid / API id (opsiyonel)
+                                    canonical_url text NOT NULL,             -- RSS link
+                                    external_id   text,                      -- RSS guid (opsiyonel)
 
                                     status        text NOT NULL DEFAULT 'published',
                                     source_id     bigint NOT NULL REFERENCES sources(id) ON DELETE RESTRICT,

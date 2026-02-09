@@ -18,20 +18,12 @@ services:
 
 
   keycloak:
-    build:
-      context: .
-      dockerfile: ./keycloak/Dockerfile
-    image: fp-keycloak:26.0.8-themed
+    image: quay.io/keycloak/keycloak:26.0
     container_name: fp-keycloak
     command: start-dev
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-      KC_HOSTNAME: localhost
-      KC_HOSTNAME_STRICT: "false"
-      KC_HTTP_ENABLED: "true"
-
-
     ports:
       - "8080:8080"
     volumes:
@@ -52,7 +44,7 @@ services:
       SPRING_DATASOURCE_USERNAME: finance_user
       SPRING_DATASOURCE_PASSWORD: finance_pass
       SPRING_FLYWAY_ENABLED: "true"
-      SPRING_FLYWAY_LOCATIONS: filesystem:/db/migration
+      SPRING_FLYWAY_LOCATIONS: filesystem:/db/migrations
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
 
       # Keycloak token doğrulama (realm adını sen oluşturunca aynı olmalı)
