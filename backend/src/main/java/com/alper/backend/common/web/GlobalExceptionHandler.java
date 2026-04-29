@@ -2,6 +2,7 @@ package com.alper.backend.common.web;
 
 import com.alper.backend.common.exception.BadRequestException;
 import com.alper.backend.common.exception.ConflictException;
+import com.alper.backend.common.exception.ErrorCode;
 import com.alper.backend.common.exception.ExternalApiException;
 import com.alper.backend.common.exception.NotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,70 +18,101 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import java.time.OffsetDateTime;
-
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(ExternalApiException.class)
-    public ResponseEntity<ApiErrorResponse> handleExternalApi(ExternalApiException ex, HttpServletRequest request) {
-        log.error("Dış API hatası [{}] at {}: {}", ex.getServiceType(), request.getRequestURI(), ex.getMessage());
-        return build(HttpStatus.BAD_GATEWAY, ex.getMessage(), request.getRequestURI());
+    // ===== Domain exception handler'ları (ErrorCode taşır) =====
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiErrorResponse> handleBadRequest(
+            BadRequestException ex, HttpServletRequest request) {
+        return build(ex.getErrorCode(), ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<ApiErrorResponse> handleNotFound(NotFoundException ex, HttpServletRequest request) {
-        return build(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
+    public ResponseEntity<ApiErrorResponse> handleNotFound(
+            NotFoundException ex, HttpServletRequest request) {
+        return build(ex.getErrorCode(), ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<ApiErrorResponse> handleConflict(ConflictException ex, HttpServletRequest request) {
-        return build(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI());
+    public ResponseEntity<ApiErrorResponse> handleConflict(
+            ConflictException ex, HttpServletRequest request) {
+        return build(ex.getErrorCode(), ex.getMessage(), request.getRequestURI());
     }
 
-    @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ApiErrorResponse> handleBadRequest(BadRequestException ex, HttpServletRequest request) {
-        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
+    @ExceptionHandler(ExternalApiException.class)
+    public ResponseEntity<ApiErrorResponse> handleExternalApi(
+            ExternalApiException ex, HttpServletRequest request) {
+        log.error("Dış API hatası [{}] at {}: {}",
+                ex.getServiceType(), request.getRequestURI(), ex.getMessage());
+        return build(ex.getErrorCode(), ex.getMessage(), request.getRequestURI());
     }
+
+    // ===== Spring/Jakarta validation exception'ları → INVALID_PARAMETER =====
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiErrorResponse> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
+    public ResponseEntity<ApiErrorResponse> handleValidation(
+            MethodArgumentNotValidException ex, HttpServletRequest request) {
         FieldError fieldError = ex.getBindingResult().getFieldError();
-        String message = fieldError == null ? "Validation failed" : fieldError.getDefaultMessage();
-        return build(HttpStatus.BAD_REQUEST, message, request.getRequestURI());
+        String message = fieldError == null
+                ? "Geçersiz istek gövdesi."
+                : String.format("Geçersiz parametre değeri. Parametre: %s",
+                        fieldError.getField());
+        return build(ErrorCode.INVALID_PARAMETER, message, request.getRequestURI());
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ApiErrorResponse> handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest request) {
-        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
+    public ResponseEntity<ApiErrorResponse> handleConstraintViolation(
+            ConstraintViolationException ex, HttpServletRequest request) {
+        return build(ErrorCode.INVALID_PARAMETER, ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ApiErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
-        String message = "Invalid value for parameter '" + ex.getName() + "'";
-        return build(HttpStatus.BAD_REQUEST, message, request.getRequestURI());
+    public ResponseEntity<ApiErrorResponse> handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+        String message = String.format("Geçersiz parametre değeri. Parametre: %s", ex.getName());
+        return build(ErrorCode.INVALID_PARAMETER, message, request.getRequestURI());
     }
+
+    // ===== DB constraint violation → CONFLICT (2002) =====
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ApiErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex, HttpServletRequest request) {
-        String causeMessage = ex.getMostSpecificCause() == null ? ex.getMessage() : ex.getMostSpecificCause().getMessage();
-        log.warn("Data integrity violation at {}: {}", request.getRequestURI(), causeMessage);
-        return build(HttpStatus.CONFLICT, "Data integrity violation", request.getRequestURI());
+    public ResponseEntity<ApiErrorResponse> handleDataIntegrity(
+            DataIntegrityViolationException ex, HttpServletRequest request) {
+        String causeMessage = ex.getMostSpecificCause() == null
+                ? ex.getMessage()
+                : ex.getMostSpecificCause().getMessage();
+        log.warn("Veri bütünlüğü hatası at {}: {}", request.getRequestURI(), causeMessage);
+        return build(ErrorCode.CONFLICT, "Kayıt zaten mevcut.", request.getRequestURI());
     }
+
+    // ===== Yakalanmamış istisnalar — ErrorCode yok, generic 500 =====
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiErrorResponse> handleUnhandled(Exception ex, HttpServletRequest request) {
-        log.error("Unhandled exception at {}", request.getRequestURI(), ex);
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", request.getRequestURI());
+    public ResponseEntity<ApiErrorResponse> handleUnhandled(
+            Exception ex, HttpServletRequest request) {
+        log.error("Beklenmedik hata at {}", request.getRequestURI(), ex);
+        // Generic exception için ErrorCode yok; null olarak geçiyoruz, JSON'da
+        // @JsonInclude(NON_NULL) ile zaten görünmeyecek.
+        ApiErrorResponse body = ApiErrorResponse.of(
+                null,
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Sunucu tarafında beklenmedik bir hata oluştu.",
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 
-    private ResponseEntity<ApiErrorResponse> build(HttpStatus status, String message, String path) {
-        ApiErrorResponse body = new ApiErrorResponse(
-                OffsetDateTime.now(),
+    // ===== Helper =====
+
+    private ResponseEntity<ApiErrorResponse> build(ErrorCode errorCode, String message, String path) {
+        HttpStatus status = errorCode.getHttpStatus();
+        ApiErrorResponse body = ApiErrorResponse.of(
+                errorCode.getCode(),
                 status.value(),
-                status.getReasonPhrase(),
                 message,
                 path
         );
