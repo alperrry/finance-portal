@@ -10,6 +10,8 @@ public class NewsFetcherProperties {
     private boolean enabled;
     private long fixedDelay;
     private long initialDelay;
+    private int aiMaxCallsPerRun = 30;
+    private boolean filterNonFinance = true;
 
     public boolean isEnabled() {
         return enabled;
@@ -33,5 +35,21 @@ public class NewsFetcherProperties {
 
     public void setInitialDelay(long initialDelay) {
         this.initialDelay = initialDelay;
+    }
+
+    public int getAiMaxCallsPerRun() {
+        return aiMaxCallsPerRun;
+    }
+
+    public void setAiMaxCallsPerRun(int aiMaxCallsPerRun) {
+        this.aiMaxCallsPerRun = aiMaxCallsPerRun;
+    }
+
+    public boolean isFilterNonFinance() {
+        return filterNonFinance;
+    }
+
+    public void setFilterNonFinance(boolean filterNonFinance) {
+        this.filterNonFinance = filterNonFinance;
     }
 }

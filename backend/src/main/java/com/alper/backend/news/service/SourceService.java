@@ -1,6 +1,9 @@
 package com.alper.backend.news.service;
 
+import com.alper.backend.common.exception.ConflictException;
+import com.alper.backend.common.exception.NotFoundException;
 import com.alper.backend.news.model.Source;
+import com.alper.backend.news.repository.NewsRepository;
 import com.alper.backend.news.repository.SourceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,9 +15,12 @@ import java.util.List;
 public class SourceService {
 
     private final SourceRepository sourceRepository;
+    private final NewsRepository newsRepository;
 
-    public SourceService(SourceRepository sourceRepository) {
+    public SourceService(SourceRepository sourceRepository,
+                         NewsRepository newsRepository) {
         this.sourceRepository = sourceRepository;
+        this.newsRepository = newsRepository;
     }
 
     public List<Source> getAllSources(Boolean activeOnly) {
@@ -26,12 +32,12 @@ public class SourceService {
 
     public Source getSourceById(Long id) {
         return sourceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Source not found with id: " + id));
+                .orElseThrow(() -> new NotFoundException("Source not found with id: " + id));
     }
 
     public Source createSource(String name, String sourceUrl) {
         if (sourceRepository.existsBySourceUrl(sourceUrl)) {
-            throw new RuntimeException("Source already exists with URL: " + sourceUrl);
+            throw new ConflictException("Source already exists with URL: " + sourceUrl);
         }
 
         Source source = new Source();
@@ -50,7 +56,7 @@ public class SourceService {
 
         if (sourceUrl != null && !sourceUrl.equals(source.getSourceUrl())) {
             if (sourceRepository.existsBySourceUrl(sourceUrl)) {
-                throw new RuntimeException("Source already exists with URL: " + sourceUrl);
+                throw new ConflictException("Source already exists with URL: " + sourceUrl);
             }
             source.setSourceUrl(sourceUrl);
         }
@@ -64,6 +70,13 @@ public class SourceService {
 
     public void deleteSource(Long id) {
         Source source = getSourceById(id);
+        long newsCount = newsRepository.countBySourceId(source.getId());
+        if (newsCount > 0) {
+            throw new ConflictException(
+                "Source cannot be deleted because it is linked to " + newsCount
+                    + " news record(s). Remove or reassign those news first."
+            );
+        }
         sourceRepository.delete(source);
     }
 

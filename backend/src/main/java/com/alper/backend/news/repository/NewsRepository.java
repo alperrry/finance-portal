@@ -2,6 +2,7 @@ package com.alper.backend.news.repository;
 
 import com.alper.backend.news.model.News;
 import com.alper.backend.news.model.NewsStatus;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,19 +15,30 @@ import java.util.Optional;
 
 public interface NewsRepository extends JpaRepository<News, Long> {
 
+    // Base pagination query
+    @Override
+    Page<News> findAll(Pageable pageable);
+
     // Find by canonical URL
     Optional<News> findByCanonicalUrl(String canonicalUrl);
     boolean existsByCanonicalUrl(String canonicalUrl);
-
     // Find by source and external ID
     Optional<News> findBySourceIdAndExternalId(Long sourceId, String externalId);
 
+    // Find by id with eager relationships
+    @Override
+    @EntityGraph(attributePaths = {"source", "categories"})
+    Optional<News> findById(Long id);
+
     // Find by status
     List<News> findByStatus(NewsStatus status);
+
     Page<News> findByStatus(NewsStatus status, Pageable pageable);
 
     // Find by source
     List<News> findBySourceId(Long sourceId);
+    long countBySourceId(Long sourceId);
+
     Page<News> findBySourceId(Long sourceId, Pageable pageable);
 
     // Find by source and status

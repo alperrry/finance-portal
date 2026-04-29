@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface SourceRepository extends JpaRepository<Source, Long> {
     List<Source> findByIsActiveTrue();
+    Optional<Source> findByName(String name);
     Optional<Source> findBySourceUrl(String sourceUrl);
     boolean existsBySourceUrl(String sourceUrl);
 }

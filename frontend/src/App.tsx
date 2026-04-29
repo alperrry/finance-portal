@@ -1,27 +1,82 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
-import theme from './theme';
-import HomePage from './pages/HomePage';
-import Portfolio from './pages/Portfolio';
-import { ProtectedRoute } from './auth/ProtectedRoute';
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react";
+import HomePage from "./pages/HomePage";
+import MarketPage from "./pages/MarketPage";
+import InstrumentDetailPage from "./pages/InstrumentDetailPage";
+import AnalysisPage from "./pages/AnalysisPage";
+import NewsList from "./pages/NewsList";
+import NewsDetail from "./pages/NewsDetail";
+import ProfilePage from "./pages/ProfilePage";
+import { ProtectedRoute } from "./auth/ProtectedRoute";
+
+function RouteTracker() {
+    const location = useLocation();
+
+    useEffect(() => {
+        const path = `${location.pathname}${location.search}`;
+        if (path && path !== "/") {
+            sessionStorage.setItem("lastPath", path);
+        }
+    }, [location]);
+
+    return null;
+}
 
 export default function App() {
     return (
-        <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <BrowserRouter>
-                <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route
-                        path="/portfolio"
-                        element={
-                            <ProtectedRoute>
-                                <Portfolio />
-                            </ProtectedRoute>
-                        }
-                    />
-                </Routes>
-            </BrowserRouter>
-        </ThemeProvider>
+        <BrowserRouter>
+            <RouteTracker />
+            <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route
+                    path="/news"
+                    element={
+                        <ProtectedRoute>
+                            <NewsList />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/news/:id"
+                    element={
+                        <ProtectedRoute>
+                            <NewsDetail />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/portfolio"
+                    element={
+                        <ProtectedRoute>
+                            <MarketPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/portfolio/:type/:code"
+                    element={
+                        <ProtectedRoute>
+                            <InstrumentDetailPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/analysis"
+                    element={
+                        <ProtectedRoute>
+                            <AnalysisPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/profile"
+                    element={
+                        <ProtectedRoute>
+                            <ProfilePage />
+                        </ProtectedRoute>
+                    }
+                />
+            </Routes>
+        </BrowserRouter>
     );
 }

@@ -16,7 +16,6 @@ services:
       timeout: 3s
       retries: 20
 
-
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
     container_name: fp-keycloak
@@ -29,15 +28,33 @@ services:
     volumes:
       - fp_keycloak_data:/opt/keycloak/data
 
+  redis:
+    image: redis:7-alpine
+    container_name: fp-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - fp_redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   backend:
     build:
       context: ./backend
     container_name: fp-backend
+    env_file:
+      - ./backend/.env
     depends_on:
       postgres:
         condition: service_healthy
       keycloak:
         condition: service_started
+      redis:
+        condition: service_healthy
     environment:
       SERVER_PORT: 8081
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finance
@@ -46,8 +63,8 @@ services:
       SPRING_FLYWAY_ENABLED: "true"
       SPRING_FLYWAY_LOCATIONS: filesystem:/db/migrations
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
-
-      # Keycloak token doğrulama (realm adını sen oluşturunca aynı olmalı)
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/finance-portal
     ports:
       - "8081:8081"
@@ -76,3 +93,4 @@ services:
 volumes:
   fp_pgdata:
   fp_keycloak_data:
+  fp_redis_data:
