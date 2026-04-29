@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -75,6 +76,13 @@ public class GlobalExceptionHandler {
             MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
         String message = String.format("Geçersiz parametre değeri. Parametre: %s", ex.getName());
         return build(ErrorCode.INVALID_PARAMETER, message, request.getRequestURI());
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiErrorResponse> handleMissingParam(
+            MissingServletRequestParameterException ex, HttpServletRequest request) {
+        String message = String.format("Zorunlu alan boş bırakılamaz. Alan: %s", ex.getParameterName());
+        return build(ErrorCode.REQUIRED_FIELD, message, request.getRequestURI());
     }
 
     // ===== DB constraint violation → CONFLICT (2002) =====
