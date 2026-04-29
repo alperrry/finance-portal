@@ -135,20 +135,26 @@ class TechnicalIndicatorCalculatorTest {
     class WarmUpTests {
 
         @Test
-        @DisplayName("RSI 14: ilk 13 gün null, 14. günden itibaren dolu")
+        @DisplayName("RSI 14: TA4J warm-up gereği ilk 14 gün null, 15. günden itibaren dolu")
         void rsiNullBeforeWarmUpThenFilled() {
+            // TA4J'nin RSI implementasyonu, 14-period için ilk barda fark
+            // hesaplayamaz (önceki bar yok). Bu nedenle RSI ancak 15. bardan
+            // itibaren değer döndürür; bizim minBars hesabımızdan bir gün sonra.
+            // Bu davranışı test'te belgeliyoruz.
             List<StockPriceHistory> history = ascendingPriceHistory(30, 100.0, 1.0);
             Map<LocalDate, IndicatorSnapshot> result = calculator.calculate(history);
 
-            for (int i = 0; i < 13; i++) {
+            // İlk 14 gün null (index 0..13)
+            for (int i = 0; i < 14; i++) {
                 IndicatorSnapshot s = result.get(history.get(i).getTradeDate());
                 assertThat(s.getRsi14())
                         .as("RSI day %d (index %d) should be null", i + 1, i)
                         .isNull();
             }
-            IndicatorSnapshot day14 = result.get(history.get(13).getTradeDate());
-            assertThat(day14.getRsi14())
-                    .as("RSI day 14 should be filled")
+            // 15. günden itibaren dolu (index 14)
+            IndicatorSnapshot day15 = result.get(history.get(14).getTradeDate());
+            assertThat(day15.getRsi14())
+                    .as("RSI day 15 should be filled")
                     .isNotNull();
         }
 
