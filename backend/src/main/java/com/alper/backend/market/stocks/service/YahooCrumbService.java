@@ -6,6 +6,7 @@ import lombok.extern.log4j.Log4j2;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,9 +16,13 @@ import java.util.stream.Collectors;
 @Service
 public class YahooCrumbService {
 
-    private static final String CONSENT_URL = "https://fc.yahoo.com";
-    private static final String CRUMB_URL   = "https://query2.finance.yahoo.com/v1/test/getcrumb";
     private static final String USER_AGENT  = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36";
+
+    @Value("${yahoo.consent-url:https://fc.yahoo.com}")
+    private String consentUrl;
+
+    @Value("${yahoo.crumb-url:https://query2.finance.yahoo.com/v1/test/getcrumb}")
+    private String crumbUrl;
 
     private final OkHttpClient okHttpClient;
 
@@ -62,7 +67,7 @@ public class YahooCrumbService {
 
     private String fetchCookies() throws Exception {
         Request request = new Request.Builder()
-                .url(CONSENT_URL)
+                .url(consentUrl)
                 .header("User-Agent", USER_AGENT)
                 .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
                 .header("Accept-Language", "en-US,en;q=0.5")
@@ -83,7 +88,7 @@ public class YahooCrumbService {
 
     private String fetchCrumb(String cookie) throws Exception {
         Request request = new Request.Builder()
-                .url(CRUMB_URL)
+                .url(crumbUrl)
                 .header("User-Agent", USER_AGENT)
                 .header("Accept", "*/*")
                 .header("Accept-Language", "en-US,en;q=0.5")

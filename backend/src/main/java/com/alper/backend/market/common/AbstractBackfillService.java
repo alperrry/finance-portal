@@ -1,6 +1,7 @@
 package com.alper.backend.market.common;
 
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 
@@ -15,6 +16,9 @@ public abstract class AbstractBackfillService<T> {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
     private static final int BACKFILL_DAYS = 365;
 
+    @Value("${app.startup-tasks.enabled:true}")
+    private boolean startupTasksEnabled = true;
+
     protected abstract List<T> getAllItems();
     protected abstract String getSeriesCode(T item);
     protected abstract Optional<LocalDate> getLatestRateDate(T item);
@@ -23,6 +27,11 @@ public abstract class AbstractBackfillService<T> {
 
     @EventListener(ApplicationReadyEvent.class)
     public void backfillIfEmpty() {
+        if (!startupTasksEnabled) {
+            log.info("Startup backfill kapalı, atlandı: {}", getClass().getSimpleName());
+            return;
+        }
+
         List<T> items = getAllItems();
 
         for (T item : items) {

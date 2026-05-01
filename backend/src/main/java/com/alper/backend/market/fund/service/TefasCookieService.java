@@ -6,6 +6,7 @@ import lombok.extern.log4j.Log4j2;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,8 +16,10 @@ import java.util.stream.Collectors;
 @Service
 public class TefasCookieService {
 
-    private static final String TEFAS_HOME = "https://www.tefas.gov.tr/FonAnaliz.aspx";
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
+    @Value("${fund.home-url:https://www.tefas.gov.tr/FonAnaliz.aspx}")
+    private String tefasHomeUrl;
 
     private final OkHttpClient okHttpClient;
 
@@ -51,7 +54,7 @@ public class TefasCookieService {
 
     private String fetchCookies() throws Exception {
         Request request = new Request.Builder()
-                .url(TEFAS_HOME)
+                .url(tefasHomeUrl)
                 .header("User-Agent", USER_AGENT)
                 .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
                 .header("Accept-Language", "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7")

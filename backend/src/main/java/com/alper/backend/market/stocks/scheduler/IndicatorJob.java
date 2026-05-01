@@ -3,6 +3,7 @@ package com.alper.backend.market.stocks.scheduler;
 import com.alper.backend.market.stocks.service.StockIndicatorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -15,6 +16,9 @@ public class IndicatorJob {
 
     private final StockIndicatorService indicatorService;
 
+    @Value("${app.startup-tasks.enabled:true}")
+    private boolean startupTasksEnabled = true;
+
     /**
      * Uygulama açıldığında bir kez çalışır — bootstrap için tüm indikatörleri hesaplar.
      * Fiyat backfill'i AbstractBackfillService tarafından zaten ApplicationReadyEvent'te tetikleniyor;
@@ -22,6 +26,11 @@ public class IndicatorJob {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void bootstrap() {
+        if (!startupTasksEnabled) {
+            log.info("Startup indicator bootstrap kapalı, atlandı.");
+            return;
+        }
+
         log.info("IndicatorJob bootstrap başladı.");
         try {
             indicatorService.recalculateAll();
@@ -38,6 +47,11 @@ public class IndicatorJob {
      */
     @Scheduled(cron = "${stock.indicator.cron}")
     public void scheduledRecalc() {
+        if (!startupTasksEnabled) {
+            log.info("Startup indicator scheduled job kapalı, atlandı.");
+            return;
+        }
+
         log.info("IndicatorJob scheduled başladı.");
         try {
             indicatorService.recalculateAll();

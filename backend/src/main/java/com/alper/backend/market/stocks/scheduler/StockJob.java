@@ -4,6 +4,7 @@ import com.alper.backend.common.exception.ExternalApiException;
 import com.alper.backend.market.stocks.service.YahooService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,9 +17,17 @@ public class StockJob {
 
     private final YahooService yahooService;
 
+    @Value("${app.startup-tasks.enabled:true}")
+    private boolean startupTasksEnabled = true;
+
     @EventListener(ApplicationReadyEvent.class)
     @Scheduled(cron = "${stock.snapshot.cron}")
     public void fetchSnapshot() {
+        if (!startupTasksEnabled) {
+            log.info("Startup stock snapshot kapalı, atlandı.");
+            return;
+        }
+
         log.info("StockJob snapshot başladı.");
         try {
             yahooService.fetchAndSaveSnapshot();
@@ -32,6 +41,11 @@ public class StockJob {
 
     @Scheduled(cron = "${stock.closing.cron}")
     public void fetchClosingAndClean() {
+        if (!startupTasksEnabled) {
+            log.info("Startup stock closing job kapalı, atlandı.");
+            return;
+        }
+
         log.info("StockJob kapanış başladı.");
         try {
             yahooService.fetchAndSaveHistory();

@@ -28,11 +28,19 @@ public class TcmbBackfillService {
     @Value("${tcmb.archive-url}")
     private String archiveUrl;
 
+    @Value("${app.startup-tasks.enabled:true}")
+    private boolean startupTasksEnabled = true;
+
     private final TcmbService tcmbService;
     private final ExchangeRateRepository exchangeRateRepository;
 
     @EventListener(ApplicationReadyEvent.class)
     public void backfillIfNeeded() {
+        if (!startupTasksEnabled) {
+            log.info("Startup backfill kapalı, TCMB atlandı.");
+            return;
+        }
+
         LocalDate today = LocalDate.now();
         LocalDate lastCompleted = TurkishHolidayUtil.lastCompletedTradingDay(today);
         LocalDate backfillStart = today.minusDays(retentionDays);
