@@ -1,12 +1,9 @@
 package com.alper.backend;
 
+import com.alper.backend.integration.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest
-@ActiveProfiles("test")
-class BackendApplicationTests {
+class BackendApplicationTests extends AbstractIntegrationTest {
 
     @Test
     void contextLoads() {

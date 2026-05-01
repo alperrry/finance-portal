@@ -1,0 +1,21 @@
+{
+  "quoteResponse": {
+    "result": [
+      {
+        "symbol": "AKBNK.IS",
+        "regularMarketPrice": 82.45,
+        "regularMarketChange": 1.23,
+        "regularMarketChangePercent": 1.52,
+        "regularMarketOpen": 81.10,
+        "regularMarketDayHigh": 83.05,
+        "regularMarketDayLow": 80.90,
+        "regularMarketPreviousClose": 81.22,
+        "regularMarketVolume": 15500000,
+        "marketCap": 487000000000,
+        "fiftyTwoWeekHigh": 95.70,
+        "fiftyTwoWeekLow": 52.10
+      }
+    ],
+    "error": null
+  }
+}

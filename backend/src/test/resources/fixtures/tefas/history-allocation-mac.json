@@ -1,0 +1,16 @@
+{
+  "draw": 1,
+  "recordsTotal": 1,
+  "recordsFiltered": 1,
+  "data": [
+    {
+      "TARIH": "1776978000000",
+      "FONKODU": "MAC",
+      "FONUNVAN": "MARMARA CAPITAL PORTFÖY HİSSE SENEDİ (TL) FONU (HİSSE SENEDİ YOĞUN FON)",
+      "HS": 45.5000,
+      "KB": 15.0000,
+      "GAS": 3.5000,
+      "DIGER": 1.0000
+    }
+  ]
+}
