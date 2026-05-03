@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import HomePage from "./pages/HomePage";
 import MarketPage from "./pages/MarketPage";
@@ -6,7 +6,7 @@ import InstrumentDetailPage from "./pages/InstrumentDetailPage";
 import AnalysisPage from "./pages/AnalysisPage";
 import NewsList from "./pages/NewsList";
 import NewsDetail from "./pages/NewsDetail";
-import ProfilePage from "./pages/ProfilePage";
+import SettingsPage from "./pages/SettingsPage";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 
 function RouteTracker() {
@@ -69,10 +69,26 @@ export default function App() {
                     }
                 />
                 <Route
+                    path="/settings"
+                    element={
+                        <ProtectedRoute>
+                            <Navigate to="/settings/profile" replace />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/settings/:section"
+                    element={
+                        <ProtectedRoute>
+                            <SettingsPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
                     path="/profile"
                     element={
                         <ProtectedRoute>
-                            <ProfilePage />
+                            <Navigate to="/settings/profile" replace />
                         </ProtectedRoute>
                     }
                 />

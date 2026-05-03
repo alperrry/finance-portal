@@ -3,6 +3,7 @@ import { keycloak } from "../auth/keycloak";
 export type ApiAuthMode = "required" | "optional" | "none";
 
 export type ApiErrorPayload = {
+    errorCode?: string;
     timestamp?: string;
     status?: number;
     error?: string;

@@ -4,7 +4,7 @@ import { fetchCategories, type NewsCategory } from "../../api/news";
 import { useAuth } from "../../auth/AuthContext";
 import KapitalTicker from "./KapitalTicker";
 
-type ActivePage = "portfolio" | "news" | "analysis" | "tools" | "profile";
+type ActivePage = "portfolio" | "news" | "analysis" | "tools" | "profile" | "settings";
 
 type KapitalShellProps = {
     activePage: ActivePage;
@@ -137,16 +137,16 @@ export default function KapitalShell({
                         <span className="kp-nav-chip">{navDate}</span>
                         <span className="kp-nav-chip">{navTime}</span>
                         <button
-                            className={`kp-nav-user ${activePage === "profile" ? "active" : ""}`.trim()}
+                            className={`kp-nav-user ${activePage === "profile" || activePage === "settings" ? "active" : ""}`.trim()}
                             type="button"
-                            onClick={() => navigate("/profile")}
-                            aria-label="Profilim"
+                            onClick={() => navigate("/settings/profile")}
+                            aria-label="Ayarlar"
                         >
                             <span className="kp-nav-avatar" aria-hidden="true">{userInitials}</span>
                             <span className="kp-nav-user-copy">
                                 <span className="kp-nav-user-name">Merhaba, {userGreetingName}</span>
                                 <span className="kp-nav-user-meta">
-                                    <span>Profilim</span>
+                                    <span>Ayarlar</span>
                                     {currentUser?.role === "ADMIN" ? <span className="kp-role-badge admin">Admin</span> : null}
                                 </span>
                             </span>
