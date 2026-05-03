@@ -2,6 +2,7 @@ package com.alper.backend.market.fx.service;
 
 import com.alper.backend.common.exception.ExternalApiException;
 import com.alper.backend.common.exception.ServiceType;
+import com.alper.backend.market.fx.event.FxRatesUpdatedEvent;
 import com.alper.backend.market.fx.model.ExchangeRate;
 import com.alper.backend.market.fx.dto.TcmbCurrency;
 import com.alper.backend.market.fx.dto.TcmbResponse;
@@ -13,6 +14,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.w3c.dom.Document;
@@ -40,13 +42,17 @@ public class TcmbService {
     private final OkHttpClient okHttpClient;
     private final TcmbMapper tcmbMapper;
     private final ExchangeRateRepository exchangeRateRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void fetchAndSave() {
         log.info("TCMB kur verisi çekiliyor...");
         String xml = fetchXml(tcmbUrl);
         TcmbResponse response = parseXml(xml);
-        saveAll(response);
+        List<ExchangeRate> savedRates = saveAll(response);
+        if (!savedRates.isEmpty()) {
+            eventPublisher.publishEvent(FxRatesUpdatedEvent.of(savedRates));
+        }
         log.info("TCMB kur verisi başarıyla kaydedildi. Tarih: {}", response.getRateDate());
     }
 
@@ -112,8 +118,9 @@ public class TcmbService {
         }
     }
 
-    private void saveAll(TcmbResponse response) {
+    private List<ExchangeRate> saveAll(TcmbResponse response) {
         List<ExchangeRate> entities = tcmbMapper.toEntityList(response);
+        List<ExchangeRate> savedRates = new ArrayList<>();
         int saved = 0, skipped = 0;
 
         for (ExchangeRate entity : entities) {
@@ -121,11 +128,13 @@ public class TcmbService {
                     entity.getCurrencyCode(), entity.getRateDate()).isPresent()) {
                 skipped++;
             } else {
-                exchangeRateRepository.save(entity);
+                ExchangeRate savedRate = exchangeRateRepository.save(entity);
+                savedRates.add(savedRate);
                 saved++;
             }
         }
         log.info("Kaydedildi: {}, Atlandı: {}", saved, skipped);
+        return savedRates;
     }
 
     private String getTagValue(Element element, String tagName) {

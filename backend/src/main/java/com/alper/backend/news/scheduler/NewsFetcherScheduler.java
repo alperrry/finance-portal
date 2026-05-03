@@ -1,6 +1,7 @@
 package com.alper.backend.news.scheduler;
 
 import com.alper.backend.news.config.NewsFetcherProperties;
+import com.alper.backend.news.event.NewsPublishedEvent;
 import com.alper.backend.news.model.Category;
 import com.alper.backend.news.model.News;
 import com.alper.backend.news.model.Source;
@@ -18,8 +19,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.text.Normalizer;
 import java.time.LocalDateTime;
@@ -34,6 +37,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -73,6 +77,7 @@ public class NewsFetcherScheduler {
     private final AiCategorizerService aiCategorizerService;
     private final NewsFetcherProperties fetcherProperties;
     private final CacheManager cacheManager;
+    private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
 
     public NewsFetcherScheduler(SourceRepository sourceRepository,
@@ -82,7 +87,8 @@ public class NewsFetcherScheduler {
                                RssFeedService rssFeedService,
                                AiCategorizerService aiCategorizerService,
                                NewsFetcherProperties fetcherProperties,
-                               CacheManager cacheManager) {
+                               CacheManager cacheManager,
+                               ApplicationEventPublisher eventPublisher) {
         this.sourceRepository = sourceRepository;
         this.categoryRepository = categoryRepository;
         this.newsRepository = newsRepository;
@@ -91,6 +97,7 @@ public class NewsFetcherScheduler {
         this.aiCategorizerService = aiCategorizerService;
         this.fetcherProperties = fetcherProperties;
         this.cacheManager = cacheManager;
+        this.eventPublisher = eventPublisher;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -98,6 +105,7 @@ public class NewsFetcherScheduler {
             initialDelayString = "${news.fetcher.initial-delay}",
             fixedDelayString = "${news.fetcher.fixed-delay}"
     )
+    @Transactional
     public void fetchNews() {
         if (!fetcherProperties.isEnabled()) {
             log.debug("News fetcher is disabled");
@@ -106,11 +114,12 @@ public class NewsFetcherScheduler {
 
         log.info("Starting news fetch job");
         int savedNewsCount = 0;
+        List<News> savedNewsList = new ArrayList<>();
         AiCallBudget aiCallBudget = new AiCallBudget(Math.max(0, fetcherProperties.getAiMaxCallsPerRun()));
 
         // 1. Fetch from configured API provider directly (NewsAPI.org by default)
         try {
-            savedNewsCount += fetchFromApi(aiCallBudget);
+            savedNewsCount += fetchFromApi(aiCallBudget, savedNewsList);
         } catch (Exception e) {
             log.error("Error fetching news from API", e);
         }
@@ -121,7 +130,7 @@ public class NewsFetcherScheduler {
             log.info("Found {} active sources", activeSources.size());
             for (Source source : activeSources) {
                 try {
-                    savedNewsCount += fetchNewsFromSource(source, aiCallBudget);
+                    savedNewsCount += fetchNewsFromSource(source, aiCallBudget, savedNewsList);
                 } catch (Exception e) {
                     log.error("Error fetching news from source: {}", source.getName(), e);
                 }
@@ -130,6 +139,7 @@ public class NewsFetcherScheduler {
 
         if (savedNewsCount > 0) {
             evictNewsListCache();
+            publishNewsPublishedEvent(savedNewsList);
             log.info("News cache evicted after {} new/updated records", savedNewsCount);
         }
 
@@ -139,7 +149,7 @@ public class NewsFetcherScheduler {
     /**
      * Fetch from API provider directly without needing a source.
      */
-    private int fetchFromApi(AiCallBudget aiCallBudget) {
+    private int fetchFromApi(AiCallBudget aiCallBudget, List<News> savedNewsList) {
         log.info("Fetching news directly from API provider");
 
         try {
@@ -200,7 +210,8 @@ public class NewsFetcherScheduler {
 
                     Set<Category> matchedCategories = enrichNews(news, incomingCategoryLabels, aiCallBudget);
 
-                    newsRepository.save(news);
+                    News savedNews = newsRepository.save(news);
+                    savedNewsList.add(savedNews);
                     savedCount++;
                     logSaved("API", news, matchedCategories);
                 } catch (Exception e) {
@@ -216,19 +227,19 @@ public class NewsFetcherScheduler {
         }
     }
 
-    private int fetchNewsFromSource(Source source, AiCallBudget aiCallBudget) {
+    private int fetchNewsFromSource(Source source, AiCallBudget aiCallBudget, List<News> savedNewsList) {
         String sourceUrl = source.getSourceUrl();
 
 
         if (sourceUrl.startsWith("http://") || sourceUrl.startsWith("https://")) {
-            return fetchFromRss(source, aiCallBudget);
+            return fetchFromRss(source, aiCallBudget, savedNewsList);
         } else {
             log.warn("Unknown source type: {}, skipping", sourceUrl);
             return 0;
         }
     }
 
-    private int fetchFromRss(Source source, AiCallBudget aiCallBudget) {
+    private int fetchFromRss(Source source, AiCallBudget aiCallBudget, List<News> savedNewsList) {
         log.info("Fetching RSS from: {}", source.getName());
         List<SyndEntry> entries = rssFeedService.fetchRssFeed(source.getSourceUrl());
         if (entries.isEmpty()) {
@@ -290,7 +301,8 @@ public class NewsFetcherScheduler {
 
                 Set<Category> matchedCategories = enrichNews(news, incomingCategoryLabels, aiCallBudget);
 
-                newsRepository.save(news);
+                News savedNews = newsRepository.save(news);
+                savedNewsList.add(savedNews);
                 logSaved("RSS", news, matchedCategories);
                 savedCount++;
             } catch (Exception e) {
@@ -619,6 +631,24 @@ public class NewsFetcherScheduler {
         clearCache("newsList");
         clearCache("newsListV2");
         clearCache("newsListV3");
+    }
+
+    private void publishNewsPublishedEvent(List<News> savedNewsList) {
+        List<Long> publishedNewsIds = savedNewsList.stream()
+                .map(News::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        List<Long> affectedCategoryIds = savedNewsList.stream()
+                .flatMap(news -> news.getCategories().stream())
+                .map(Category::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (!publishedNewsIds.isEmpty()) {
+            eventPublisher.publishEvent(NewsPublishedEvent.of(publishedNewsIds, affectedCategoryIds));
+        }
     }
 
     private void clearCache(String cacheName) {

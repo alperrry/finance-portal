@@ -2,6 +2,7 @@ package com.alper.backend.market.stocks.service;
 
 import com.alper.backend.common.exception.ExternalApiException;
 import com.alper.backend.common.exception.ServiceType;
+import com.alper.backend.market.stocks.event.StockPricesUpdatedEvent;
 import com.alper.backend.market.stocks.model.Stock;
 import com.alper.backend.market.stocks.model.StockPriceHistory;
 import com.alper.backend.market.stocks.model.StockPriceSnapshot;
@@ -16,6 +17,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,6 +40,7 @@ public class YahooService {
     private final StockRepository stockRepository;
     private final StockPriceSnapshotRepository snapshotRepository;
     private final StockPriceHistoryRepository historyRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void fetchAndSaveSnapshot() {
@@ -45,13 +49,18 @@ public class YahooService {
         String symbols = buildSymbols(stocks);
 
         List<YahooQuoteResult> results = parseQuote(yahooHttpClient.fetchQuote(symbols));
+        List<StockPriceSnapshot> savedSnapshots = new ArrayList<>();
         int saved = 0, skipped = 0;
 
         for (YahooQuoteResult result : results) {
             Stock stock = findStock(stocks, result.getSymbol());
             if (stock == null) { skipped++; continue; }
-            snapshotRepository.save(yahooMapper.toSnapshotEntity(result, stock));
+            StockPriceSnapshot savedSnapshot = snapshotRepository.save(yahooMapper.toSnapshotEntity(result, stock));
+            savedSnapshots.add(savedSnapshot);
             saved++;
+        }
+        if (!savedSnapshots.isEmpty()) {
+            eventPublisher.publishEvent(StockPricesUpdatedEvent.of(savedSnapshots));
         }
         log.info("Snapshot kaydedildi: {}, Atlandı: {}", saved, skipped);
     }
