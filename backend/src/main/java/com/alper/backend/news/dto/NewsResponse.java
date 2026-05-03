@@ -5,12 +5,17 @@ import com.alper.backend.news.model.NewsStatus;
 import com.alper.backend.news.model.Source;
 import com.alper.backend.news.model.Category;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-public class NewsResponse {
+public class NewsResponse implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private Long id;
     private String title;
@@ -135,7 +140,10 @@ public class NewsResponse {
         this.updatedAt = updatedAt;
     }
 
-    public static class SourceSummary {
+    public static class SourceSummary implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 1L;
+
         private Long id;
         private String name;
         private String url;
@@ -174,7 +182,10 @@ public class NewsResponse {
         }
     }
 
-    public static class CategorySummary {
+    public static class CategorySummary implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 1L;
+
         private Long id;
         private String name;
 

@@ -9,6 +9,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -112,5 +113,5 @@ public class CategoryService {
         categoryRepository.save(category);
     }
 
-    public record CategorySnapshot(Long id, String name) {}
+    public record CategorySnapshot(Long id, String name) implements Serializable {}
 }

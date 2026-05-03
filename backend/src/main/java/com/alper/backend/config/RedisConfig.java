@@ -3,6 +3,7 @@ package com.alper.backend.config;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
@@ -21,6 +22,9 @@ import java.util.Map;
 @EnableCaching
 @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis", matchIfMissing = true)
 public class RedisConfig {
+
+    @Value("${portfolio.valuation-cache.ttl-seconds:60}")
+    private long portfolioValuationCacheTtlSeconds;
 
     @Bean
     @ConditionalOnBean(RedisConnectionFactory.class)
@@ -53,6 +57,9 @@ public class RedisConfig {
 
         // Market — her 5 dakikada güncelleniyor
         cacheConfigs.put("funds",  baseConfig.entryTtl(Duration.ofMinutes(5)));
+
+        // Portfolio
+        cacheConfigs.put("portfolioValuation", baseConfig.entryTtl(Duration.ofSeconds(portfolioValuationCacheTtlSeconds)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(baseConfig.entryTtl(Duration.ofMinutes(10)))
