@@ -19,7 +19,11 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
     container_name: fp-keycloak
-    command: start-dev
+    command:
+      - start-dev
+      - --spi-theme-static-max-age=-1
+      - --spi-theme-cache-themes=false
+      - --spi-theme-cache-templates=false
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
@@ -27,7 +31,7 @@ services:
       - "8080:8080"
     volumes:
       - fp_keycloak_data:/opt/keycloak/data
-
+      - ./keycloak-theme/src/main/resources/theme/finance-portal:/opt/keycloak/themes/finance-portal:ro
   redis:
     image: redis:7-alpine
     container_name: fp-redis
@@ -89,6 +93,14 @@ services:
       - ./frontend:/app
       - /app/node_modules
     command: npm run dev -- --host 0.0.0.0 --port 3000
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: fp-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    restart: unless-stopped
 
 volumes:
   fp_pgdata:

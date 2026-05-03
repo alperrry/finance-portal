@@ -1,0 +1,71 @@
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+:root {
+  --fp-primary: #c1622f;
+  --fp-primary-hover: #cf6f3a;
+  --fp-primary-soft: rgba(193, 98, 47, 0.12);
+  --fp-secondary: #111111;
+
+  --fp-bg: #edeae4;
+  --fp-surface: #f7f5f1;
+  --fp-surface-soft: #ffffff;
+  --fp-surface-dark: #0e0e0e;
+  --fp-border: rgba(17, 17, 17, 0.09);
+  --fp-border-strong: rgba(17, 17, 17, 0.17);
+
+  --fp-text-primary: #111111;
+  --fp-text-secondary: rgba(17, 17, 17, 0.62);
+  --fp-text-muted: rgba(17, 17, 17, 0.46);
+  --fp-text-inverse: rgba(255, 255, 255, 0.84);
+  --fp-text-inverse-muted: rgba(255, 255, 255, 0.56);
+
+  --fp-success: #5bb870;
+  --fp-error: #e05858;
+  --fp-warning: #c1622f;
+
+  --fp-font-family: "Sora", system-ui, sans-serif;
+  --fp-font-family-display: "Playfair Display", Georgia, serif;
+  --fp-font-family-mono: "JetBrains Mono", ui-monospace, monospace;
+  --fp-font-size-base: 14px;
+  --fp-font-size-sm: 12px;
+  --fp-font-size-lg: 16px;
+
+  --fp-radius-sm: 10px;
+  --fp-radius-md: 16px;
+  --fp-radius-lg: 20px;
+  --fp-radius-xl: 28px;
+  --fp-radius-pill: 999px;
+
+  --fp-space-xs: 4px;
+  --fp-space-sm: 8px;
+  --fp-space-md: 16px;
+  --fp-space-lg: 24px;
+  --fp-space-xl: 32px;
+  --fp-space-2xl: 48px;
+
+  --fp-shadow-sm: 0 8px 28px rgba(17, 17, 17, 0.06);
+  --fp-shadow-md: 0 16px 48px rgba(17, 17, 17, 0.12);
+  --fp-shadow-lg: 0 28px 64px rgba(17, 17, 17, 0.16);
+
+  --fp-transition: 0.18s ease;
+  --fp-ring: 0 0 0 4px rgba(193, 98, 47, 0.08);
+  --fp-hero-gradient: linear-gradient(165deg, #090909 0%, #0c0c0c 36%, #14110d 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fp-bg: #14110d;
+    --fp-surface: #1a1713;
+    --fp-surface-soft: #211d19;
+    --fp-surface-dark: #0b0b0b;
+    --fp-border: rgba(255, 255, 255, 0.08);
+    --fp-border-strong: rgba(255, 255, 255, 0.14);
+    --fp-text-primary: rgba(255, 255, 255, 0.92);
+    --fp-text-secondary: rgba(255, 255, 255, 0.72);
+    --fp-text-muted: rgba(255, 255, 255, 0.5);
+    --fp-shadow-sm: 0 10px 30px rgba(0, 0, 0, 0.34);
+    --fp-shadow-md: 0 20px 54px rgba(0, 0, 0, 0.4);
+    --fp-shadow-lg: 0 28px 72px rgba(0, 0, 0, 0.48);
+    --fp-ring: 0 0 0 4px rgba(193, 98, 47, 0.14);
+  }
+}
