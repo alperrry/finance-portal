@@ -26,4 +26,6 @@ public interface BondRateHistoryRepository extends JpaRepository<BondRateHistory
             "AND b.bond.isActive = true " +
             "ORDER BY b.bond.name ASC")
     List<BondRateHistory> findLatestRates();
+
+    Optional<BondRateHistory> findFirstByBondIdOrderByRateDateDesc(Long bondId);
 }

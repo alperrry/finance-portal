@@ -24,4 +24,6 @@ public interface FundPriceRepository extends JpaRepository<FundPrice, Long> {
             "(SELECT MAX(fp2.priceDate) FROM FundPrice fp2 WHERE fp2.fund.id = fp.fund.id) " +
             "ORDER BY fp.fund.code ASC")
     List<FundPrice> findLatestPrices();
+
+    Optional<FundPrice> findFirstByFundIdOrderByPriceDateDesc(Long fundId);
 }

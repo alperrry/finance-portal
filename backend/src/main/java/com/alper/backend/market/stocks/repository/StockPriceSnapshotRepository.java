@@ -26,4 +26,6 @@ public interface StockPriceSnapshotRepository extends JpaRepository<StockPriceSn
     List<StockPriceSnapshot> findTodaySnapshots();
 
     Optional<StockPriceSnapshot> findTopByStockIdAndTradeDateOrderByFetchedAtDesc(Long stockId, LocalDate tradeDate);
+
+    Optional<StockPriceSnapshot> findFirstByStockIdOrderByFetchedAtDesc(Long stockId);
 }

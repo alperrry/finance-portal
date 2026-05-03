@@ -19,4 +19,6 @@ public interface StockPriceHistoryRepository extends JpaRepository<StockPriceHis
 
     // Bootstrap için — en son çekilen tarihi bul
     Optional<StockPriceHistory> findTopByStockIdOrderByTradeDateDesc(Long stockId);
+
+    Optional<StockPriceHistory> findFirstByStockIdOrderByTradeDateDesc(Long stockId);
 }

@@ -31,4 +31,8 @@ public interface ExchangeRateRepository extends JpaRepository<ExchangeRate, Long
 
     // 1 yıldan eski verileri temizlemek için
     void deleteByRateDateBefore(LocalDate date);
+
+    Optional<ExchangeRate> findFirstByIdOrderByRateDateDesc(Long id);
+
+    Optional<ExchangeRate> findFirstByCurrencyCodeOrderByRateDateDesc(String currencyCode);
 }
