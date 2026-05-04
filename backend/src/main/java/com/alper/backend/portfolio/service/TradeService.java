@@ -17,6 +17,7 @@ import com.alper.backend.portfolio.dto.TradeRequest;
 import com.alper.backend.portfolio.dto.TradeResponse;
 import com.alper.backend.portfolio.event.TradeCancelledEvent;
 import com.alper.backend.portfolio.mapper.TradeMapper;
+import com.alper.backend.portfolio.model.OrderType;
 import com.alper.backend.portfolio.model.Portfolio;
 import com.alper.backend.portfolio.model.PortfolioItem;
 import com.alper.backend.portfolio.model.TradeTransaction;
@@ -72,6 +73,7 @@ public class TradeService {
     private final TradeProcessService tradeProcessService;
     private final TradeCurrencyService tradeCurrencyService;
     private final UserBalanceService userBalanceService;
+    private final MockMarketPriceService mockMarketPriceService;
     private final ApplicationEventPublisher eventPublisher;
 
     private final StockRepository stockRepository;
@@ -103,14 +105,29 @@ public class TradeService {
             verifySellable(portfolio.getId(), request);
         }
 
-        BigDecimal nativeTargetPrice = tradeCurrencyService.convertTargetPriceToNative(
-                request.targetPrice(),
-                portfolio.getDisplayCurrency(),
-                request.instrumentType(),
-                request.instrumentId()
-        );
+        OrderType orderType = request.orderType() == null ? OrderType.LIMIT : request.orderType();
+        if (orderType == OrderType.LIMIT && request.targetPrice() == null) {
+            throw new BadRequestException("LIMIT emir için hedef fiyat zorunludur");
+        }
+
         TradeTransaction transaction = tradeMapper.toEntity(request, portfolio.getId());
-        transaction.setTargetPrice(nativeTargetPrice);
+        transaction.setOrderType(orderType);
+
+        if (orderType == OrderType.LIMIT) {
+            BigDecimal nativeTargetPrice = tradeCurrencyService.convertTargetPriceToNative(
+                    request.targetPrice(),
+                    portfolio.getDisplayCurrency(),
+                    request.instrumentType(),
+                    request.instrumentId()
+            );
+            transaction.setTargetPrice(nativeTargetPrice);
+        } else {
+            transaction.setTargetPrice(null);
+        }
+
+        if (orderType == OrderType.MARKET) {
+            return submitMarketOrder(transaction);
+        }
 
         if (request.instrumentType() == InstrumentType.BOND) {
             return submitBondMarketOrder(transaction);
@@ -124,6 +141,21 @@ public class TradeService {
         log.info("Trade PENDING olarak kaydedildi. tradeId={}, portfolioId={}, type={}, target={}, reservedAmount={}",
                 saved.getId(), portfolioId, request.transactionType(), request.targetPrice(), saved.getReservedAmount());
         return toEnrichedResponses(List.of(saved)).get(0);
+    }
+
+    private TradeResponse submitMarketOrder(TradeTransaction transaction) {
+        BigDecimal executionPrice = mockMarketPriceService
+                .getQuote(transaction.getInstrumentType(), transaction.getInstrumentId())
+                .map(MockMarketPriceService.MarketPriceQuote::currentPrice)
+                .orElseThrow(() -> new BadRequestException("Market order için güncel fiyat verisi bulunamadı"));
+
+        TradeTransaction saved = tradeTransactionRepository.save(transaction);
+        tradeProcessService.execute(saved, executionPrice);
+
+        TradeTransaction refreshed = tradeTransactionRepository.findById(saved.getId()).orElse(saved);
+        log.info("Market order tamamlandı. tradeId={}, status={}, executionPrice={}",
+                refreshed.getId(), refreshed.getStatus(), executionPrice);
+        return toEnrichedResponses(List.of(refreshed)).get(0);
     }
 
     private void reserveBuyBalanceIfNeeded(TradeTransaction transaction, Portfolio portfolio) {

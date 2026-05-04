@@ -7,6 +7,7 @@ export type ApiResponse<T> = {
 
 export type PortfolioInstrumentType = "STOCK" | "FUND" | "CURRENCY" | "BOND";
 export type TransactionType = "BUY" | "SELL";
+export type OrderType = "MARKET" | "LIMIT";
 export type TransactionStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
 export type DisplayCurrency = "TRY" | "USD" | "EUR";
 
@@ -20,8 +21,13 @@ export type PortfolioItemResponse = {
     avgCost: number;
     currentPrice: number | null;
     currentValue: number | null;
+    marketValue?: number | null;
     profitLoss: number | null;
     profitLossPct: number | null;
+    profitLossPercentage?: number | null;
+    dailyChange: number | null;
+    dailyChangePercentage: number | null;
+    priceTrend: number[];
     nativeCurrency: string | null;
 };
 
@@ -42,8 +48,9 @@ export type TradeRequest = {
     instrumentType: PortfolioInstrumentType;
     instrumentId: number;
     transactionType: TransactionType;
+    orderType: OrderType;
     quantity: number;
-    targetPrice: number;
+    targetPrice: number | null;
 };
 
 export type TradeResponse = {
@@ -54,8 +61,9 @@ export type TradeResponse = {
     instrumentSymbol: string;
     instrumentName: string | null;
     transactionType: TransactionType;
+    orderType: OrderType;
     quantity: number;
-    targetPrice: number;
+    targetPrice: number | null;
     executedPrice: number | null;
     totalAmount: number | null;
     realizedProfitLoss: number | null;
@@ -63,6 +71,13 @@ export type TradeResponse = {
     rejectionReason: string | null;
     processedAt: string | null;
     createdAt: string | null;
+};
+
+export type PortfolioPerformancePoint = {
+    date: string;
+    value: number;
+    benchmarkValue: number;
+    profitLoss: number;
 };
 
 export type CreatePortfolioRequest = {
@@ -133,6 +148,15 @@ export async function fetchPortfolio(id: number): Promise<PortfolioResponse> {
         errorMessage: "Portföy detayı yüklenemedi.",
     });
     return parseApiResponse<PortfolioResponse>(response, "Portföy detayı yüklenemedi.");
+}
+
+export async function fetchPortfolioPerformance(id: number, range: string): Promise<PortfolioPerformancePoint[]> {
+    const params = new URLSearchParams();
+    params.set("range", range);
+    const response = await apiFetch(`/api/v1/portfolios/${id}/performance?${params.toString()}`, {
+        errorMessage: "Portföy performansı yüklenemedi.",
+    });
+    return parseApiResponse<PortfolioPerformancePoint[]>(response, "Portföy performansı yüklenemedi.");
 }
 
 export async function createPortfolio(payload: CreatePortfolioRequest): Promise<PortfolioResponse> {

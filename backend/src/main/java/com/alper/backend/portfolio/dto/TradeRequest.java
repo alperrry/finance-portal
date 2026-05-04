@@ -1,6 +1,7 @@
 package com.alper.backend.portfolio.dto;
 
 import com.alper.backend.common.model.InstrumentType;
+import com.alper.backend.portfolio.model.OrderType;
 import com.alper.backend.portfolio.model.TransactionType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
@@ -23,13 +24,15 @@ public record TradeRequest(
         @NotNull(message = "İşlem tipi zorunludur")
         TransactionType transactionType,
 
+        @Schema(description = "Emir tipi (MARKET/LIMIT). Boş gönderilirse LIMIT kabul edilir.", example = "LIMIT")
+        OrderType orderType,
+
         @Schema(description = "İşlem miktarı (lot/adet)", example = "100", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull(message = "Miktar zorunludur")
         @DecimalMin(value = "0.000001", message = "Miktar 0'dan büyük olmalıdır")
         BigDecimal quantity,
 
-        @Schema(description = "Hedef fiyat (limit). Enstrüman bu fiyat şartını sağladığında işlem tetiklenir.", example = "50.00", requiredMode = Schema.RequiredMode.REQUIRED)
-        @NotNull(message = "Hedef fiyat zorunludur")
+        @Schema(description = "Hedef fiyat (LIMIT için zorunlu, MARKET için null).", example = "50.00")
         @DecimalMin(value = "0.000001", message = "Hedef fiyat 0'dan büyük olmalıdır")
         BigDecimal targetPrice
 ) {

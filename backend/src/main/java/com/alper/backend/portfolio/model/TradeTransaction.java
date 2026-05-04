@@ -36,10 +36,14 @@ public class TradeTransaction {
     @Column(name = "transaction_type", nullable = false, length = 10)
     private TransactionType transactionType;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "order_type", nullable = false, length = 10)
+    private OrderType orderType;
+
     @Column(nullable = false, precision = 18, scale = 6)
     private BigDecimal quantity;
 
-    @Column(name = "target_price", nullable = false, precision = 18, scale = 6)
+    @Column(name = "target_price", precision = 18, scale = 6)
     private BigDecimal targetPrice;
 
     @Column(name = "executed_price", precision = 18, scale = 6)

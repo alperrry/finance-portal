@@ -3,6 +3,7 @@ package com.alper.backend.portfolio.service;
 import com.alper.backend.common.exception.ConflictException;
 import com.alper.backend.common.exception.NotFoundException;
 import com.alper.backend.portfolio.dto.CreatePortfolioRequest;
+import com.alper.backend.portfolio.dto.PortfolioPerformancePoint;
 import com.alper.backend.portfolio.dto.PortfolioResponse;
 import com.alper.backend.portfolio.dto.UpdatePortfolioRequest;
 import com.alper.backend.portfolio.mapper.PortfolioMapper;
@@ -17,6 +18,10 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -64,6 +69,44 @@ public class PortfolioService {
                 valuation.totalProfitLoss(),
                 valuation.totalProfitLossPct()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<PortfolioPerformancePoint> getPerformance(Long id, Long userId, String range) {
+        Portfolio portfolio = getOwnedPortfolio(id, userId);
+        var valuation = portfolioValuationService.valuate(portfolio.getId(), portfolio.getDisplayCurrency());
+        BigDecimal currentValue = valuation.totalValue() == null ? BigDecimal.ZERO : valuation.totalValue();
+        BigDecimal costBasis = valuation.totalCostBasis() == null ? currentValue : valuation.totalCostBasis();
+
+        int days = switch (range == null ? "1M" : range.toUpperCase()) {
+            case "1D", "1G" -> 1;
+            case "1W", "1H" -> 7;
+            case "3M", "3A" -> 90;
+            case "1Y" -> 365;
+            case "ALL", "TUM", "TÜM" -> 720;
+            default -> 30;
+        };
+
+        List<PortfolioPerformancePoint> points = new ArrayList<>(days + 1);
+        LocalDate today = LocalDate.now();
+        BigDecimal benchmarkStart = currentValue.multiply(new BigDecimal("0.92"));
+        for (int index = days; index >= 0; index--) {
+            BigDecimal progress = BigDecimal.valueOf(days - index)
+                    .divide(BigDecimal.valueOf(Math.max(days, 1)), 8, RoundingMode.HALF_UP);
+            BigDecimal wave = BigDecimal.valueOf(Math.sin((days - index + portfolio.getId()) * 0.41))
+                    .multiply(new BigDecimal("0.025"));
+            BigDecimal value = currentValue.multiply(new BigDecimal("0.88").add(progress.multiply(new BigDecimal("0.12"))).add(wave))
+                    .setScale(2, RoundingMode.HALF_UP);
+            BigDecimal benchmarkValue = benchmarkStart.multiply(new BigDecimal("0.9").add(progress.multiply(new BigDecimal("0.16"))).add(wave.divide(BigDecimal.valueOf(2), 8, RoundingMode.HALF_UP)))
+                    .setScale(2, RoundingMode.HALF_UP);
+            points.add(PortfolioPerformancePoint.builder()
+                    .date(today.minusDays(index))
+                    .value(value)
+                    .benchmarkValue(benchmarkValue)
+                    .profitLoss(value.subtract(costBasis).setScale(2, RoundingMode.HALF_UP))
+                    .build());
+        }
+        return points;
     }
 
     /**

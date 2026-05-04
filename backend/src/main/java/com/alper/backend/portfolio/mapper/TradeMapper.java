@@ -2,6 +2,7 @@ package com.alper.backend.portfolio.mapper;
 
 import com.alper.backend.portfolio.dto.TradeRequest;
 import com.alper.backend.portfolio.dto.TradeResponse;
+import com.alper.backend.portfolio.model.OrderType;
 import com.alper.backend.portfolio.model.TradeTransaction;
 import com.alper.backend.portfolio.model.TransactionStatus;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,7 @@ public class TradeMapper {
                 .instrumentType(request.instrumentType())
                 .instrumentId(request.instrumentId())
                 .transactionType(request.transactionType())
+                .orderType(request.orderType() == null ? OrderType.LIMIT : request.orderType())
                 .quantity(request.quantity())
                 .targetPrice(request.targetPrice())
                 .status(TransactionStatus.PENDING)
@@ -32,6 +34,7 @@ public class TradeMapper {
                 .instrumentType(transaction.getInstrumentType())
                 .instrumentId(transaction.getInstrumentId())
                 .transactionType(transaction.getTransactionType())
+                .orderType(transaction.getOrderType())
                 .quantity(transaction.getQuantity())
                 .targetPrice(transaction.getTargetPrice())
                 .executedPrice(transaction.getExecutedPrice())
@@ -53,6 +56,7 @@ public class TradeMapper {
                 .instrumentSymbol(instrumentSymbol)
                 .instrumentName(instrumentName)
                 .transactionType(transaction.getTransactionType())
+                .orderType(transaction.getOrderType())
                 .quantity(transaction.getQuantity())
                 .targetPrice(transaction.getTargetPrice())
                 .executedPrice(transaction.getExecutedPrice())

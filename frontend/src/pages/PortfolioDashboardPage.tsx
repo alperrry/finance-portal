@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ApiError } from "../api/client";
 import {
     fetchBonds,
@@ -17,13 +17,16 @@ import {
     createPortfolio,
     deletePortfolio,
     fetchPortfolio,
+    fetchPortfolioPerformance,
     fetchPortfolios,
     fetchPortfolioTrades,
     submitTrade,
     updatePortfolio,
     type CreatePortfolioRequest,
     type DisplayCurrency,
+    type OrderType,
     type PageResponse,
+    type PortfolioPerformancePoint,
     type PortfolioInstrumentType,
     type PortfolioItemResponse,
     type PortfolioResponse,
@@ -55,6 +58,20 @@ type TradeHistoryState = {
     page: PageResponse<TradeResponse> | null;
 };
 
+type PerformanceState = {
+    loading: boolean;
+    error: string | null;
+    data: PortfolioPerformancePoint[];
+};
+
+type TradeFilters = {
+    from: string;
+    to: string;
+    instrument: string;
+    type: TransactionType | "";
+    query: string;
+};
+
 type InstrumentOption = {
     id: number;
     type: PortfolioInstrumentType;
@@ -70,12 +87,7 @@ type PortfolioFormState = {
 };
 
 const TRADE_PAGE_SIZE = 8;
-const CHART_COLORS: Record<PortfolioInstrumentType, string> = {
-    STOCK: "#2f7fc1",
-    FUND: "#6c9f42",
-    CURRENCY: "#c1622f",
-    BOND: "#8b6bc8",
-};
+const CHART_PALETTE = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"];
 
 const STATUS_LABELS: Record<TransactionStatus, string> = {
     PENDING: "Bekleyen",
@@ -95,6 +107,20 @@ const TRANSACTION_LABELS: Record<TransactionType, string> = {
     BUY: "AL",
     SELL: "SAT",
 };
+
+const ORDER_LABELS: Record<OrderType, string> = {
+    MARKET: "Piyasa",
+    LIMIT: "Limit",
+};
+
+const PERFORMANCE_RANGES = [
+    { value: "1D", label: "1G" },
+    { value: "1W", label: "1H" },
+    { value: "1M", label: "1A" },
+    { value: "3M", label: "3A" },
+    { value: "1Y", label: "1Y" },
+    { value: "ALL", label: "TÜM" },
+];
 
 const CURRENCIES: DisplayCurrency[] = ["TRY", "USD", "EUR"];
 const collator = new Intl.Collator("tr-TR", { sensitivity: "base" });
@@ -154,12 +180,41 @@ function formatSignedMoney(value: number | null | undefined, currency = "TRY") {
     return `${sign}${formatMoney(normalized, currency)}`;
 }
 
-function formatProfitLossSummary(value: number | null | undefined, pct: number | null | undefined, currency = "TRY") {
-    const hasValue = toNumber(value) !== null;
-    const hasPct = toNumber(pct) !== null;
-    if (!hasValue && !hasPct) return "-";
-    if (!hasPct) return formatSignedMoney(value, currency);
-    return `${formatSignedMoney(value, currency)} (${formatPercent(pct)})`;
+function useAnimatedNumber(value: number | null | undefined, duration = 700) {
+    const target = toNumber(value) ?? 0;
+    const [displayValue, setDisplayValue] = useState(target);
+
+    useEffect(() => {
+        const startValue = displayValue;
+        const startedAt = performance.now();
+        let frame = 0;
+
+        const tick = (now: number) => {
+            const progress = Math.min((now - startedAt) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setDisplayValue(startValue + (target - startValue) * eased);
+            if (progress < 1) frame = requestAnimationFrame(tick);
+        };
+
+        frame = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(frame);
+    }, [target, duration]);
+
+    return displayValue;
+}
+
+function AnimatedMoney({ value, currency, digits = 2 }: { value: number | null | undefined; currency: string; digits?: number }) {
+    return <>{formatMoney(useAnimatedNumber(value), currency, digits)}</>;
+}
+
+function usePortfolioDarkMode() {
+    const [darkMode, setDarkMode] = useState(() => localStorage.getItem("portfolio-dark-mode") === "true");
+
+    useEffect(() => {
+        localStorage.setItem("portfolio-dark-mode", String(darkMode));
+    }, [darkMode]);
+
+    return [darkMode, setDarkMode] as const;
 }
 
 function currencyBadgeClass(currency: string) {
@@ -231,28 +286,15 @@ function statusTone(status: TransactionStatus) {
     return "muted";
 }
 
-function instrumentRoute(item: PortfolioItemResponse) {
-    const symbol = item.instrumentSymbol;
-    if (!symbol) return null;
-
-    const type = item.instrumentType === "CURRENCY"
-        ? "fx"
-        : item.instrumentType === "STOCK"
-          ? "stocks"
-          : item.instrumentType === "FUND"
-            ? "funds"
-            : "bonds";
-
-    return `/portfolio/${type}/${encodeURIComponent(symbol)}`;
-}
-
 function buildAllocationData(items: PortfolioItemResponse[]) {
     return items
-        .map((item) => ({
+        .map((item, index) => ({
             id: item.id,
             name: item.instrumentSymbol || `${INSTRUMENT_LABELS[item.instrumentType]} #${item.instrumentId}`,
+            quantity: item.quantity,
             type: item.instrumentType,
             value: toNumber(item.currentValue) ?? 0,
+            fill: CHART_PALETTE[index % CHART_PALETTE.length],
         }))
         .filter((item) => item.value > 0)
         .sort((left, right) => right.value - left.value);
@@ -434,7 +476,7 @@ function DeletePortfolioConfirm({
 
 type AllocationTooltipProps = {
     active?: boolean;
-    payload?: Array<{ name?: string; value?: number | string }>;
+    payload?: Array<{ name?: string; value?: number | string; payload?: { quantity?: number } }>;
     total: number;
     currency: string;
 };
@@ -448,6 +490,7 @@ function AllocationTooltip({ active, payload, total, currency }: AllocationToolt
     return (
         <div className="portfolio-chart-tooltip">
             <strong>{item.name}</strong>
+            <span>Miktar: {formatQuantity(item.payload?.quantity)}</span>
             <span>{formatMoney(value, currency)}</span>
             <small>{formatPercent(pct)}</small>
         </div>
@@ -457,6 +500,7 @@ function AllocationTooltip({ active, payload, total, currency }: AllocationToolt
 function PortfolioAllocationChart({ portfolio, onNewTrade }: { portfolio: PortfolioResponse; onNewTrade: () => void }) {
     const data = useMemo(() => buildAllocationData(portfolio.items ?? []), [portfolio.items]);
     const total = data.reduce((sum, item) => sum + item.value, 0);
+    const [activeSegment, setActiveSegment] = useState<number | null>(null);
 
     if (data.length === 0) {
         return (
@@ -471,15 +515,29 @@ function PortfolioAllocationChart({ portfolio, onNewTrade }: { portfolio: Portfo
 
     return (
         <div className="portfolio-chart-wrap">
+            <div className="portfolio-donut-center" aria-hidden="true">
+                <strong>{formatMoney(total, portfolio.displayCurrency)}</strong>
+                <span>Toplam</span>
+            </div>
             <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
-                    <Pie data={data} dataKey="value" nameKey="name" innerRadius={64} outerRadius={104} paddingAngle={3}>
-                        {data.map((item) => (
-                            <Cell key={item.id} fill={CHART_COLORS[item.type]} />
+                    <Pie data={data} dataKey="value" nameKey="name" innerRadius={72} outerRadius={108} paddingAngle={3} animationBegin={0} animationDuration={800}>
+                        {data.map((item, index) => (
+                            <Cell
+                                key={item.id}
+                                fill={item.fill}
+                                opacity={activeSegment === null || activeSegment === index ? 1 : 0.3}
+                            />
                         ))}
                     </Pie>
                     <Tooltip content={<AllocationTooltip total={total} currency={portfolio.displayCurrency} />} />
-                    <Legend formatter={(value) => <span className="portfolio-chart-legend">{value}</span>} />
+                    <Legend
+                        formatter={(value, _entry, index) => (
+                            <button type="button" className="portfolio-chart-legend" onClick={() => setActiveSegment(activeSegment === index ? null : index)}>
+                                {value}
+                            </button>
+                        )}
+                    />
                 </PieChart>
             </ResponsiveContainer>
         </div>
@@ -488,13 +546,19 @@ function PortfolioAllocationChart({ portfolio, onNewTrade }: { portfolio: Portfo
 
 function PortfolioMetrics({ portfolio, currentBalance }: { portfolio: PortfolioResponse; currentBalance: number | null }) {
     const balanceLabel = portfolio.displayCurrency === "TRY" ? "Mevcut Bakiye" : "Mevcut Bakiye (TRY)";
+    const dailyChange = (portfolio.items ?? []).reduce((sum, item) => {
+        const change = toNumber(item.dailyChange);
+        return sum + (change === null ? 0 : change * item.quantity);
+    }, 0);
     const metrics = [
-        { label: balanceLabel, value: formatMoney(currentBalance, "TRY"), caption: "Harcanabilir" },
-        { label: "Pozisyon Değeri", value: formatMoney(portfolio.totalValue, portfolio.displayCurrency), caption: "Bu portföy" },
+        { label: balanceLabel, rawValue: currentBalance, currency: "TRY", caption: "Harcanabilir" },
+        { label: "Pozisyon Değeri", rawValue: portfolio.totalValue, currency: portfolio.displayCurrency, caption: "Bu portföy" },
         {
             label: "Kâr/Zarar",
-            value: formatProfitLossSummary(portfolio.totalProfitLoss, portfolio.totalProfitLossPct, portfolio.displayCurrency),
+            rawValue: portfolio.totalProfitLoss,
+            currency: portfolio.displayCurrency,
             caption: "Tüm zamanlar",
+            extra: `${formatSignedMoney(dailyChange, portfolio.displayCurrency)} bugün`,
             tone: getProfitTone(portfolio.totalProfitLoss),
         },
     ];
@@ -504,15 +568,61 @@ function PortfolioMetrics({ portfolio, currentBalance }: { portfolio: PortfolioR
             {metrics.map((metric) => (
                 <article key={metric.label} className="portfolio-metric-card">
                     <span>{metric.label}</span>
-                    <strong className={metric.tone ?? ""}>{metric.value}</strong>
+                    <strong className={metric.tone ?? ""}>
+                        <AnimatedMoney value={metric.rawValue} currency={metric.currency} />
+                        {metric.label === "Kâr/Zarar" ? <small className="portfolio-metric-percent"> {formatPercent(portfolio.totalProfitLossPct)}</small> : null}
+                    </strong>
                     <small>{metric.caption}</small>
+                    {metric.extra ? <em className={`portfolio-daily-change ${getProfitTone(dailyChange)}`}>{metric.extra}</em> : null}
                 </article>
             ))}
         </section>
     );
 }
 
+function PositionSparkline({ item }: { item: PortfolioItemResponse }) {
+    const data = (item.priceTrend?.length ? item.priceTrend : [item.avgCost, item.currentPrice ?? item.avgCost]).map((value, index) => ({ index, value }));
+    const stroke = getProfitTone(item.profitLoss) === "down" ? "#dc2626" : "#059669";
+    return (
+        <ResponsiveContainer width={110} height={38}>
+            <LineChart data={data}>
+                <Line type="monotone" dataKey="value" stroke={stroke} strokeWidth={2} dot={false} isAnimationActive={false} />
+            </LineChart>
+        </ResponsiveContainer>
+    );
+}
+
+function PositionDetailModal({ item, displayCurrency, onClose }: { item: PortfolioItemResponse; displayCurrency: string; onClose: () => void }) {
+    return (
+        <div className="portfolio-modal-backdrop" role="presentation" onMouseDown={onClose}>
+            <section className="portfolio-modal compact" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
+                <div className="portfolio-modal-head">
+                    <div>
+                        <span className="portfolio-kicker">Pozisyon Detayı</span>
+                        <h2>{item.instrumentSymbol ?? "Enstrüman"}</h2>
+                    </div>
+                    <button type="button" className="portfolio-icon-btn" onClick={onClose} aria-label="Kapat">×</button>
+                </div>
+                <div className="portfolio-position-detail">
+                    <span>{item.instrumentName ?? INSTRUMENT_LABELS[item.instrumentType]}</span>
+                    <strong>{formatMoney(item.currentValue, displayCurrency)}</strong>
+                    <div>
+                        <p>Miktar <b>{formatQuantity(item.quantity)}</b></p>
+                        <p>Güncel <b>{formatMoney(item.currentPrice, item.nativeCurrency ?? "TRY", 4)}</b></p>
+                        <p>K/Z <b className={getProfitTone(item.profitLoss)}>{formatSignedMoney(item.profitLoss, displayCurrency)} ({formatPercent(item.profitLossPct)})</b></p>
+                        <p>Bugün <b className={getProfitTone(item.dailyChange)}>{formatSignedMoney(item.dailyChange, item.nativeCurrency ?? "TRY")}</b></p>
+                    </div>
+                    <div className="portfolio-position-modal-chart">
+                        <PositionSparkline item={item} />
+                    </div>
+                </div>
+            </section>
+        </div>
+    );
+}
+
 function PositionsTable({ items, displayCurrency }: { items: PortfolioItemResponse[]; displayCurrency: string }) {
+    const [selectedPosition, setSelectedPosition] = useState<PortfolioItemResponse | null>(null);
     const sortedItems = useMemo(
         () => [...items].sort((left, right) => (toNumber(right.currentValue) ?? 0) - (toNumber(left.currentValue) ?? 0)),
         [items],
@@ -523,66 +633,119 @@ function PositionsTable({ items, displayCurrency }: { items: PortfolioItemRespon
     }
 
     return (
-        <div className="portfolio-table-wrap">
-            <table className="portfolio-table">
-                <thead>
-                    <tr>
-                        <th>Enstrüman</th>
-                        <th>Tip</th>
-                        <th>Miktar</th>
-                        <th>Ort. Maliyet</th>
-                        <th>Güncel Fiyat</th>
-                        <th>Güncel Değer</th>
-                        <th>K/Z</th>
-                        <th>K/Z %</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {sortedItems.map((item) => {
-                        const route = instrumentRoute(item);
-                        const profitTone = getProfitTone(item.profitLoss);
-                        return (
-                            <tr key={item.id} className={route ? "portfolio-clickable-row" : ""} onClick={() => route && window.location.assign(route)}>
-                                <td>
-                                    <div className="portfolio-primary-cell">
-                                        <strong>{item.instrumentSymbol ?? "-"}</strong>
-                                        <span>{item.instrumentName ?? "Enstrüman"}</span>
-                                    </div>
-                                </td>
-                                <td><span className={`portfolio-pill type-${item.instrumentType.toLowerCase()}`}>{INSTRUMENT_LABELS[item.instrumentType]}</span></td>
-                                <td>{formatQuantity(item.quantity)}</td>
-                                <td>{formatMoney(item.avgCost, item.nativeCurrency ?? "TRY", 4)}</td>
-                                <td>{formatMoney(item.currentPrice, item.nativeCurrency ?? "TRY", 4)}</td>
-                                <td>{formatMoney(item.currentValue, displayCurrency)}</td>
-                                <td className={`portfolio-money-cell ${profitTone}`}>{formatSignedMoney(item.profitLoss, displayCurrency)}</td>
-                                <td className={`portfolio-money-cell ${getProfitTone(item.profitLossPct)}`}>{formatPercent(item.profitLossPct)}</td>
-                            </tr>
-                        );
-                    })}
-                </tbody>
-            </table>
-        </div>
+        <>
+            <div className="portfolio-table-wrap">
+                <table className="portfolio-table">
+                    <thead>
+                        <tr>
+                            <th>Enstrüman</th>
+                            <th>Tip</th>
+                            <th>Trend</th>
+                            <th>Miktar</th>
+                            <th>Ort. Maliyet</th>
+                            <th>Güncel Fiyat</th>
+                            <th>Güncel Değer</th>
+                            <th>K/Z</th>
+                            <th>K/Z %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {sortedItems.map((item) => {
+                            const profitTone = getProfitTone(item.profitLoss);
+                            const trendIcon = profitTone === "up" ? "▲" : profitTone === "down" ? "▼" : "•";
+                            return (
+                                <tr key={item.id} className="portfolio-clickable-row" onClick={() => setSelectedPosition(item)}>
+                                    <td>
+                                        <div className="portfolio-primary-cell">
+                                            <strong>{item.instrumentSymbol ?? "-"}</strong>
+                                            <span>{item.instrumentName ?? "Enstrüman"}</span>
+                                        </div>
+                                    </td>
+                                    <td><span className={`portfolio-pill type-${item.instrumentType.toLowerCase()}`}>{INSTRUMENT_LABELS[item.instrumentType]}</span></td>
+                                    <td><PositionSparkline item={item} /></td>
+                                    <td className="portfolio-num">{formatQuantity(item.quantity)}</td>
+                                    <td className="portfolio-num">{formatMoney(item.avgCost, item.nativeCurrency ?? "TRY", 4)}</td>
+                                    <td className={`portfolio-num portfolio-price-flash ${getProfitTone(item.dailyChange)}`}>{formatMoney(item.currentPrice, item.nativeCurrency ?? "TRY", 4)}</td>
+                                    <td className="portfolio-num">{formatMoney(item.currentValue, displayCurrency)}</td>
+                                    <td className={`portfolio-money-cell portfolio-num ${profitTone}`}>
+                                        <span className="portfolio-trend-icon">{trendIcon}</span> {formatSignedMoney(item.profitLoss, displayCurrency)}
+                                    </td>
+                                    <td className={`portfolio-money-cell portfolio-num ${getProfitTone(item.profitLossPct)}`}>{formatPercent(item.profitLossPct)}</td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+            {selectedPosition ? <PositionDetailModal item={selectedPosition} displayCurrency={displayCurrency} onClose={() => setSelectedPosition(null)} /> : null}
+        </>
     );
 }
 
 function TradeHistoryTable({
     state,
     status,
+    filters,
     displayCurrency,
     onStatusChange,
+    onFiltersChange,
     onPageChange,
     onCancel,
     cancelingTradeId,
 }: {
     state: TradeHistoryState;
     status: TransactionStatus | "";
+    filters: TradeFilters;
     displayCurrency: string;
     onStatusChange: (status: TransactionStatus | "") => void;
+    onFiltersChange: (filters: TradeFilters) => void;
     onPageChange: (page: number) => void;
     onCancel: (trade: TradeResponse) => void;
     cancelingTradeId: number | null;
 }) {
     const page = state.page;
+    const trades = useMemo(() => {
+        const rows = page?.content ?? [];
+        return rows.filter((trade) => {
+            const created = trade.createdAt ? new Date(trade.createdAt) : null;
+            const fromOk = !filters.from || (created && created >= new Date(`${filters.from}T00:00:00`));
+            const toOk = !filters.to || (created && created <= new Date(`${filters.to}T23:59:59`));
+            const instrumentOk = !filters.instrument || `${trade.instrumentType}:${trade.instrumentId}` === filters.instrument;
+            const typeOk = !filters.type || trade.transactionType === filters.type;
+            const query = filters.query.trim().toLocaleLowerCase("tr-TR");
+            const queryOk = !query || (trade.instrumentSymbol || "").toLocaleLowerCase("tr-TR").includes(query);
+            return fromOk && toOk && instrumentOk && typeOk && queryOk;
+        });
+    }, [filters, page?.content]);
+    const instrumentOptions = useMemo(() => {
+        const unique = new Map<string, string>();
+        (page?.content ?? []).forEach((trade) => {
+            unique.set(`${trade.instrumentType}:${trade.instrumentId}`, trade.instrumentSymbol || `${INSTRUMENT_LABELS[trade.instrumentType]} #${trade.instrumentId}`);
+        });
+        return [...unique.entries()].sort((left, right) => collator.compare(left[1], right[1]));
+    }, [page?.content]);
+
+    const exportCsv = () => {
+        const header = ["Tarih", "Enstrüman", "Emir", "Tip", "Miktar", "Hedef", "Gerçekleşme", "Tutar", "Durum"];
+        const rows = trades.map((trade) => [
+            trade.createdAt ?? "",
+            trade.instrumentSymbol || "",
+            ORDER_LABELS[trade.orderType ?? "LIMIT"],
+            TRANSACTION_LABELS[trade.transactionType],
+            String(trade.quantity),
+            String(trade.targetPrice ?? ""),
+            String(trade.executedPrice ?? ""),
+            String(trade.totalAmount ?? ""),
+            STATUS_LABELS[trade.status],
+        ]);
+        const csv = [header, ...rows].map((row) => row.map((cell) => `"${cell.replaceAll("\"", "\"\"")}"`).join(",")).join("\n");
+        const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "islem-gecmisi.csv";
+        link.click();
+        URL.revokeObjectURL(url);
+    };
 
     return (
         <section className="portfolio-section">
@@ -591,24 +754,36 @@ function TradeHistoryTable({
                     <span className="portfolio-kicker">Lifecycle</span>
                     <h3>İşlem Geçmişi</h3>
                 </div>
-                <label className="portfolio-status-filter">
-                    <span>Durum</span>
-                    <select value={status} onChange={(event) => onStatusChange(event.target.value as TransactionStatus | "")}>
-                        <option value="">Tümü</option>
-                        {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                            <option key={value} value={value}>{label}</option>
-                        ))}
-                    </select>
-                </label>
+                <button type="button" className="portfolio-secondary-btn" onClick={exportCsv} disabled={trades.length === 0}>CSV Export</button>
+            </div>
+            <div className="portfolio-filter-bar">
+                <input type="date" value={filters.from} onChange={(event) => onFiltersChange({ ...filters, from: event.target.value })} />
+                <input type="date" value={filters.to} onChange={(event) => onFiltersChange({ ...filters, to: event.target.value })} />
+                <select value={filters.instrument} onChange={(event) => onFiltersChange({ ...filters, instrument: event.target.value })}>
+                    <option value="">Tüm enstrümanlar</option>
+                    {instrumentOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+                <select value={filters.type} onChange={(event) => onFiltersChange({ ...filters, type: event.target.value as TransactionType | "" })}>
+                    <option value="">Tümü</option>
+                    <option value="BUY">AL</option>
+                    <option value="SELL">SAT</option>
+                </select>
+                <input value={filters.query} onChange={(event) => onFiltersChange({ ...filters, query: event.target.value })} placeholder="Hisse kodu ara" />
+                <select value={status} onChange={(event) => onStatusChange(event.target.value as TransactionStatus | "")}>
+                    <option value="">Tüm durumlar</option>
+                    {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                    ))}
+                </select>
             </div>
 
             {state.loading ? <div className="portfolio-empty-inline">İşlem geçmişi yükleniyor...</div> : null}
             {!state.loading && state.error ? <div className="portfolio-inline-error">{state.error}</div> : null}
-            {!state.loading && !state.error && page && page.content.length === 0 ? (
+            {!state.loading && !state.error && page && trades.length === 0 ? (
                 <div className="portfolio-empty-inline">Bu filtrede işlem yok.</div>
             ) : null}
 
-            {!state.loading && !state.error && page && page.content.length > 0 ? (
+            {!state.loading && !state.error && page && trades.length > 0 ? (
                 <>
                     <div className="portfolio-table-wrap">
                         <table className="portfolio-table compact">
@@ -617,6 +792,7 @@ function TradeHistoryTable({
                                     <th>Tarih</th>
                                     <th>Enstrüman</th>
                                     <th>Tip</th>
+                                    <th>Emir</th>
                                     <th>Miktar</th>
                                     <th>Hedef</th>
                                     <th>Gerçekleşme</th>
@@ -626,7 +802,7 @@ function TradeHistoryTable({
                                 </tr>
                             </thead>
                             <tbody>
-                                {page.content.map((trade) => (
+                                {trades.map((trade) => (
                                     <tr key={trade.id}>
                                         <td>{formatDateTime(trade.createdAt)}</td>
                                         <td>
@@ -635,7 +811,8 @@ function TradeHistoryTable({
                                                 <span>{trade.instrumentName || INSTRUMENT_LABELS[trade.instrumentType]}</span>
                                             </div>
                                         </td>
-                                        <td><span className={`portfolio-trade-pill ${trade.transactionType.toLowerCase()}`}>{TRANSACTION_LABELS[trade.transactionType]}</span></td>
+                                        <td><span className={`portfolio-trade-pill ${trade.transactionType.toLowerCase()}`}>{trade.transactionType === "BUY" ? "↘ " : "↗ "}{TRANSACTION_LABELS[trade.transactionType]}</span></td>
+                                        <td>{ORDER_LABELS[trade.orderType ?? "LIMIT"]}</td>
                                         <td>{formatQuantity(trade.quantity)}</td>
                                         <td>{formatNumber(trade.targetPrice, 4)}</td>
                                         <td>{formatNumber(trade.executedPrice, 4)}</td>
@@ -673,10 +850,83 @@ function TradeHistoryTable({
     );
 }
 
+function PerformanceTooltip({ active, payload, label, currency }: { active?: boolean; payload?: Array<{ dataKey?: string; value?: number }>; label?: string; currency: string }) {
+    if (!active || !payload?.length) return null;
+    const portfolioValue = payload.find((item) => item.dataKey === "value")?.value ?? null;
+    const benchmarkValue = payload.find((item) => item.dataKey === "benchmarkValue")?.value ?? null;
+    const profitLoss = payload.find((item) => item.dataKey === "profitLoss")?.value ?? null;
+    return (
+        <div className="portfolio-chart-tooltip">
+            <strong>{label}</strong>
+            <span>Portföy: {formatMoney(portfolioValue, currency)}</span>
+            {benchmarkValue !== null ? <span>BIST 100: {formatMoney(benchmarkValue, currency)}</span> : null}
+            <small>K/Z: {formatSignedMoney(profitLoss, currency)}</small>
+        </div>
+    );
+}
+
+function PortfolioPerformanceChart({
+    state,
+    range,
+    showBenchmark,
+    currency,
+    onRangeChange,
+    onBenchmarkChange,
+}: {
+    state: PerformanceState;
+    range: string;
+    showBenchmark: boolean;
+    currency: string;
+    onRangeChange: (range: string) => void;
+    onBenchmarkChange: (value: boolean) => void;
+}) {
+    return (
+        <section className="portfolio-section">
+            <div className="portfolio-section-head">
+                <div>
+                    <span className="portfolio-kicker">Performans</span>
+                    <h3>Portföy Performansı</h3>
+                </div>
+                <label className="portfolio-benchmark-toggle">
+                    <input type="checkbox" checked={showBenchmark} onChange={(event) => onBenchmarkChange(event.target.checked)} />
+                    BIST 100
+                </label>
+            </div>
+            <div className="portfolio-range-tabs">
+                {PERFORMANCE_RANGES.map((item) => (
+                    <button key={item.value} type="button" className={range === item.value ? "active" : ""} onClick={() => onRangeChange(item.value)}>
+                        {item.label}
+                    </button>
+                ))}
+            </div>
+            {state.loading ? <div className="portfolio-chart-skeleton" /> : null}
+            {!state.loading && state.error ? <div className="portfolio-inline-error">{state.error}</div> : null}
+            {!state.loading && !state.error ? (
+                <div className="portfolio-performance-chart">
+                    <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={state.data}>
+                            <XAxis dataKey="date" tick={{ fontSize: 11 }} minTickGap={24} />
+                            <YAxis tick={{ fontSize: 11 }} tickFormatter={(value) => formatNumber(Number(value), 0)} width={72} />
+                            <Tooltip content={<PerformanceTooltip currency={currency} />} />
+                            <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} dot={false} name="Portföy" />
+                            {showBenchmark ? <Line type="monotone" dataKey="benchmarkValue" stroke="#f59e0b" strokeWidth={2} dot={false} name="BIST 100" /> : null}
+                            <Line type="monotone" dataKey="profitLoss" stroke="transparent" dot={false} activeDot={false} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+            ) : null}
+        </section>
+    );
+}
+
 function PortfolioDetailPageContent({
     state,
     trades,
+    performance,
     tradeStatus,
+    tradeFilters,
+    performanceRange,
+    showBenchmark,
     cancelingTradeId,
     currentBalance,
     onBack,
@@ -684,12 +934,19 @@ function PortfolioDetailPageContent({
     onDelete,
     onNewTrade,
     onStatusChange,
+    onTradeFiltersChange,
     onTradePageChange,
+    onPerformanceRangeChange,
+    onBenchmarkChange,
     onCancelTrade,
 }: {
     state: DetailState;
     trades: TradeHistoryState;
+    performance: PerformanceState;
     tradeStatus: TransactionStatus | "";
+    tradeFilters: TradeFilters;
+    performanceRange: string;
+    showBenchmark: boolean;
     cancelingTradeId: number | null;
     currentBalance: number | null;
     onBack: () => void;
@@ -697,7 +954,10 @@ function PortfolioDetailPageContent({
     onDelete: (portfolio: PortfolioResponse) => void;
     onNewTrade: () => void;
     onStatusChange: (status: TransactionStatus | "") => void;
+    onTradeFiltersChange: (filters: TradeFilters) => void;
     onTradePageChange: (page: number) => void;
+    onPerformanceRangeChange: (range: string) => void;
+    onBenchmarkChange: (value: boolean) => void;
     onCancelTrade: (trade: TradeResponse) => void;
 }) {
     const portfolio = state.data;
@@ -740,6 +1000,15 @@ function PortfolioDetailPageContent({
                         <PortfolioAllocationChart portfolio={portfolio} onNewTrade={onNewTrade} />
                     </section>
 
+                    <PortfolioPerformanceChart
+                        state={performance}
+                        range={performanceRange}
+                        showBenchmark={showBenchmark}
+                        currency={portfolio.displayCurrency}
+                        onRangeChange={onPerformanceRangeChange}
+                        onBenchmarkChange={onBenchmarkChange}
+                    />
+
                     <section className="portfolio-section">
                         <div className="portfolio-section-head">
                             <div>
@@ -753,8 +1022,10 @@ function PortfolioDetailPageContent({
                     <TradeHistoryTable
                         state={trades}
                         status={tradeStatus}
+                        filters={tradeFilters}
                         displayCurrency={portfolio.displayCurrency}
                         onStatusChange={onStatusChange}
+                        onFiltersChange={onTradeFiltersChange}
                         onPageChange={onTradePageChange}
                         onCancel={onCancelTrade}
                         cancelingTradeId={cancelingTradeId}
@@ -839,6 +1110,7 @@ function NewTradeModal({
     onSubmit: (payload: TradeRequest) => Promise<void>;
 }) {
     const [transactionType, setTransactionType] = useState<TransactionType>("BUY");
+    const [orderType, setOrderType] = useState<OrderType>("LIMIT");
     const [instrumentType, setInstrumentType] = useState<PortfolioInstrumentType>("STOCK");
     const [instrumentId, setInstrumentId] = useState("");
     const [quantity, setQuantity] = useState("");
@@ -917,8 +1189,12 @@ function NewTradeModal({
         }
     }, [instrumentType, selectedDisplayPrice, selectedOption, targetPrice]);
 
+    useEffect(() => {
+        if (instrumentType === "BOND") setOrderType("MARKET");
+    }, [instrumentType]);
+
     const quantityNumber = Number(quantity);
-    const priceNumber = instrumentType === "BOND" && selectedDisplayPrice ? selectedDisplayPrice : Number(targetPrice);
+    const priceNumber = orderType === "MARKET" && selectedDisplayPrice ? selectedDisplayPrice : instrumentType === "BOND" && selectedDisplayPrice ? selectedDisplayPrice : Number(targetPrice);
     const totalAmount = Number.isFinite(quantityNumber) && Number.isFinite(priceNumber) ? quantityNumber * priceNumber : null;
     const requiredBalance = convertMoneyValue(totalAmount, portfolio.displayCurrency, "TRY", fxRates);
     const insufficientBalance = transactionType === "BUY"
@@ -933,7 +1209,8 @@ function NewTradeModal({
     const validate = () => {
         if (!instrumentId) return "Enstrüman seçmelisin.";
         if (!Number.isFinite(quantityNumber) || quantityNumber <= 0) return "Miktar 0'dan büyük olmalı.";
-        if (!Number.isFinite(priceNumber) || priceNumber <= 0) return "Hedef fiyat 0'dan büyük olmalı.";
+        if (orderType === "LIMIT" && (!Number.isFinite(priceNumber) || priceNumber <= 0)) return "Hedef fiyat 0'dan büyük olmalı.";
+        if (orderType === "MARKET" && (!Number.isFinite(priceNumber) || priceNumber <= 0)) return "Market order için güncel fiyat bulunamadı.";
         if (missingConversion) return "Bu işlem için güncel döviz dönüşüm kuru bulunamadı.";
         if (insufficientBalance) return "Bu işlem için bakiyeniz yetersiz.";
         return null;
@@ -952,8 +1229,9 @@ function NewTradeModal({
             instrumentType,
             instrumentId: Number(instrumentId),
             transactionType,
+            orderType,
             quantity: quantityNumber,
-            targetPrice: priceNumber,
+            targetPrice: orderType === "LIMIT" ? priceNumber : null,
         });
     };
 
@@ -983,6 +1261,19 @@ function NewTradeModal({
                                 onClick={() => setTransactionType(type)}
                             >
                                 {TRANSACTION_LABELS[type]}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="portfolio-segmented" role="group" aria-label="Emir tipi">
+                        {(["MARKET", "LIMIT"] as OrderType[]).map((type) => (
+                            <button
+                                key={type}
+                                type="button"
+                                className={orderType === type ? "active" : ""}
+                                onClick={() => setOrderType(type)}
+                            >
+                                {ORDER_LABELS[type]}
                             </button>
                         ))}
                     </div>
@@ -1028,7 +1319,7 @@ function NewTradeModal({
                                 type="number"
                                 min="0.000001"
                                 step="0.000001"
-                                disabled={instrumentType === "BOND"}
+                                disabled={instrumentType === "BOND" || orderType === "MARKET"}
                                 value={targetPrice}
                                 onChange={(event) => setTargetPrice(event.target.value)}
                             />
@@ -1057,6 +1348,8 @@ function NewTradeModal({
                     <p className="portfolio-form-note">
                         {instrumentType === "BOND"
                             ? "İşlem anlık olarak gerçekleştirilecek."
+                            : orderType === "MARKET"
+                            ? "İşlem anlık olarak gerçekleştirilecek."
                             : "Hedef fiyata ulaşıldığında işlem otomatik gerçekleştirilir."}
                     </p>
                     {insufficientBalance ? <p className="portfolio-form-note warning">Bu işlem için bakiyeniz yetersiz.</p> : null}
@@ -1081,14 +1374,19 @@ export function PortfolioDetailPage() {
     const navigate = useNavigate();
     const { token, currentUser, refreshCurrentUser } = useAuth();
     const { showToast } = useToast();
+    const [darkMode, setDarkMode] = usePortfolioDarkMode();
     const portfolioId = Number(id);
     const validPortfolioId = Number.isFinite(portfolioId) && portfolioId > 0 ? portfolioId : null;
 
     const [detailReloadToken, setDetailReloadToken] = useState(0);
     const [detailState, setDetailState] = useState<DetailState>({ loading: false, error: null, data: null });
     const [tradeHistoryState, setTradeHistoryState] = useState<TradeHistoryState>({ loading: false, error: null, page: null });
+    const [performanceState, setPerformanceState] = useState<PerformanceState>({ loading: false, error: null, data: [] });
     const [tradeStatus, setTradeStatus] = useState<TransactionStatus | "">("");
+    const [tradeFilters, setTradeFilters] = useState<TradeFilters>({ from: "", to: "", instrument: "", type: "", query: "" });
     const [tradePage, setTradePage] = useState(0);
+    const [performanceRange, setPerformanceRange] = useState("1M");
+    const [showBenchmark, setShowBenchmark] = useState(true);
     const [tradeReloadToken, setTradeReloadToken] = useState(0);
     const [formState, setFormState] = useState<PortfolioFormState | null>(null);
     const [formBusy, setFormBusy] = useState(false);
@@ -1156,6 +1454,29 @@ export function PortfolioDetailPage() {
             active = false;
         };
     }, [tradePage, tradeReloadToken, tradeStatus, validPortfolioId]);
+
+    useEffect(() => {
+        if (!validPortfolioId) {
+            setPerformanceState({ loading: false, error: null, data: [] });
+            return undefined;
+        }
+
+        let active = true;
+        setPerformanceState((current) => ({ ...current, loading: true, error: null }));
+        fetchPortfolioPerformance(validPortfolioId, performanceRange)
+            .then((data) => {
+                if (!active) return;
+                setPerformanceState({ loading: false, error: null, data });
+            })
+            .catch((caughtError) => {
+                if (!active) return;
+                setPerformanceState({ loading: false, error: resolveApiError(caughtError, "Portföy performansı yüklenemedi."), data: [] });
+            });
+
+        return () => {
+            active = false;
+        };
+    }, [detailReloadToken, performanceRange, validPortfolioId]);
 
     const refreshPortfolio = useCallback((changedPortfolioId?: number) => {
         if (!validPortfolioId || (changedPortfolioId && changedPortfolioId !== validPortfolioId)) return;
@@ -1259,12 +1580,19 @@ export function PortfolioDetailPage() {
 
     return (
         <KapitalShell activePage="portfolios" showCategories={false}>
-            <div className="portfolio-page">
+            <div className={`portfolio-page ${darkMode ? "dark" : ""}`.trim()}>
                 <div className="portfolio-layout">
+                    <button type="button" className="portfolio-dark-toggle" onClick={() => setDarkMode((value) => !value)}>
+                        {darkMode ? "Aydınlık" : "Koyu"} Mod
+                    </button>
                     <PortfolioDetailPageContent
                         state={detailState}
                         trades={tradeHistoryState}
+                        performance={performanceState}
                         tradeStatus={tradeStatus}
+                        tradeFilters={tradeFilters}
+                        performanceRange={performanceRange}
+                        showBenchmark={showBenchmark}
                         cancelingTradeId={cancelingTradeId}
                         currentBalance={currentUser?.balance ?? null}
                         onBack={() => navigate("/portfolios")}
@@ -1284,7 +1612,10 @@ export function PortfolioDetailPage() {
                             setTradeStatus(status);
                             setTradePage(0);
                         }}
+                        onTradeFiltersChange={setTradeFilters}
                         onTradePageChange={setTradePage}
+                        onPerformanceRangeChange={setPerformanceRange}
+                        onBenchmarkChange={setShowBenchmark}
                         onCancelTrade={handleCancelTrade}
                     />
                 </div>
@@ -1329,6 +1660,7 @@ export default function PortfolioDashboardPage() {
     const navigate = useNavigate();
     const { token, refreshCurrentUser } = useAuth();
     const { showToast } = useToast();
+    const [darkMode, setDarkMode] = usePortfolioDarkMode();
     const [portfolios, setPortfolios] = useState<PortfolioResponse[]>([]);
     const [listState, setListState] = useState<PortfolioLoadState>({ loading: true, error: null });
     const [reloadToken, setReloadToken] = useState(0);
@@ -1430,7 +1762,7 @@ export default function PortfolioDashboardPage() {
 
     return (
         <KapitalShell activePage="portfolios" showCategories={false}>
-            <div className="portfolio-page">
+            <div className={`portfolio-page ${darkMode ? "dark" : ""}`.trim()}>
                 <div className="portfolio-layout">
                     <section className="portfolio-hero">
                         <div>
@@ -1440,6 +1772,9 @@ export default function PortfolioDashboardPage() {
                         </div>
                         <button type="button" className="portfolio-primary-btn hero" onClick={() => { setFormError(null); setFormState({ mode: "create" }); }}>
                             <span aria-hidden="true">+</span> Yeni Portföy
+                        </button>
+                        <button type="button" className="portfolio-dark-toggle inline" onClick={() => setDarkMode((value) => !value)}>
+                            {darkMode ? "Aydınlık" : "Koyu"} Mod
                         </button>
                     </section>
 

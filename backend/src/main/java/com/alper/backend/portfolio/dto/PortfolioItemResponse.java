@@ -6,6 +6,7 @@ import lombok.Builder;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Builder
 @Schema(description = "Portföydeki tek bir enstrüman pozisyonu (güncel değer ve P/L dahil)")
@@ -38,11 +39,26 @@ public record PortfolioItemResponse(
         @Schema(description = "Güncel pozisyon değeri (display currency)", example = "5230.00")
         BigDecimal currentValue,
 
+        @Schema(description = "Güncel pozisyon değeri alias'ı (display currency)", example = "5230.00")
+        BigDecimal marketValue,
+
         @Schema(description = "Kâr/Zarar (display currency)", example = "380.00")
         BigDecimal profitLoss,
 
         @Schema(description = "Kâr/Zarar yüzdesi", example = "7.84")
         BigDecimal profitLossPct,
+
+        @Schema(description = "Kâr/Zarar yüzdesi alias'ı", example = "7.84")
+        BigDecimal profitLossPercentage,
+
+        @Schema(description = "Günlük fiyat değişimi (native currency)", example = "1.200000")
+        BigDecimal dailyChange,
+
+        @Schema(description = "Günlük fiyat değişimi yüzdesi", example = "1.68")
+        BigDecimal dailyChangePercentage,
+
+        @Schema(description = "7 günlük mini trend fiyatları (native currency)")
+        List<BigDecimal> priceTrend,
 
         @Schema(description = "Enstrümanın doğal para birimi", example = "TRY")
         String nativeCurrency

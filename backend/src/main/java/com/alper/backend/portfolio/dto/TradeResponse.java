@@ -1,6 +1,7 @@
 package com.alper.backend.portfolio.dto;
 
 import com.alper.backend.common.model.InstrumentType;
+import com.alper.backend.portfolio.model.OrderType;
 import com.alper.backend.portfolio.model.TransactionStatus;
 import com.alper.backend.portfolio.model.TransactionType;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -33,6 +34,9 @@ public record TradeResponse(
 
         @Schema(description = "İşlem tipi", example = "BUY")
         TransactionType transactionType,
+
+        @Schema(description = "Emir tipi", example = "LIMIT")
+        OrderType orderType,
 
         @Schema(description = "İşlem miktarı", example = "100.000000")
         BigDecimal quantity,

@@ -8,6 +8,11 @@
   color: var(--kp-ink);
 }
 
+.portfolio-page.dark {
+  --kp-ink: #f8fafc;
+  color: #f8fafc;
+}
+
 .portfolio-layout {
   width: min(1280px, calc(100% - 40px));
   margin: 0 auto;
@@ -97,11 +102,25 @@
 
 .portfolio-primary-btn {
   border-radius: 999px;
-  background: #111;
+  background: linear-gradient(90deg, #f97316, #f59e0b);
   color: #fff;
   font-size: 12px;
   font-weight: 800;
   padding: 12px 18px;
+  box-shadow: 0 12px 28px rgba(249, 115, 22, 0.25);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.portfolio-primary-btn:hover:not(:disabled) {
+  background: linear-gradient(90deg, #ea580c, #d97706);
+  box-shadow: 0 16px 34px rgba(249, 115, 22, 0.42);
+}
+
+.portfolio-primary-btn:active:not(:disabled),
+.portfolio-secondary-btn:active:not(:disabled),
+.portfolio-table-action:active:not(:disabled),
+.portfolio-small-btn:active:not(:disabled) {
+  transform: scale(0.95);
 }
 
 .portfolio-primary-btn.hero {
@@ -568,6 +587,14 @@
 .portfolio-metric-card {
   border-radius: 22px;
   padding: 18px;
+  background: linear-gradient(145deg, #fff, #f8fafc);
+  box-shadow: 0 10px 28px rgba(17, 17, 17, 0.06);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.portfolio-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(17, 17, 17, 0.1);
 }
 
 .portfolio-metric-card span {
@@ -581,6 +608,7 @@
   display: block;
   font-size: 22px;
   letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
 }
 
 .portfolio-metric-card small {
@@ -589,6 +617,29 @@
   color: rgba(17, 17, 17, 0.46);
   font-size: 11px;
   font-weight: 700;
+}
+
+.portfolio-metric-percent {
+  display: inline;
+  margin-top: 0;
+}
+
+.portfolio-daily-change {
+  display: block;
+  margin-top: 8px;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.portfolio-daily-change.up,
+.portfolio-position-detail b.up {
+  color: #059669;
+}
+
+.portfolio-daily-change.down,
+.portfolio-position-detail b.down {
+  color: #dc2626;
 }
 
 .portfolio-section {
@@ -607,7 +658,28 @@
 }
 
 .portfolio-chart-wrap {
+  position: relative;
   min-height: 300px;
+}
+
+.portfolio-donut-center {
+  position: absolute;
+  inset: 98px 0 auto;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  line-height: 1.2;
+}
+
+.portfolio-donut-center strong {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.portfolio-donut-center span {
+  color: rgba(17, 17, 17, 0.52);
+  font-size: 11px;
 }
 
 .portfolio-chart-empty,
@@ -672,6 +744,13 @@
   color: rgba(17, 17, 17, 0.6);
 }
 
+.portfolio-chart-legend {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
 .portfolio-table-wrap {
   overflow: auto;
   border: 1px solid rgba(17, 17, 17, 0.06);
@@ -722,11 +801,39 @@
 }
 
 .portfolio-table tbody tr:hover {
-  background: rgba(193, 98, 47, 0.04);
+  background: #f9fafb;
 }
 
 .portfolio-clickable-row {
   cursor: pointer;
+}
+
+.portfolio-num,
+.portfolio-money-cell {
+  font-variant-numeric: tabular-nums;
+}
+
+.portfolio-trend-icon {
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.portfolio-price-flash.up {
+  animation: portfolioFlashUp 0.5s ease;
+}
+
+.portfolio-price-flash.down {
+  animation: portfolioFlashDown 0.5s ease;
+}
+
+@keyframes portfolioFlashUp {
+  0% { background: rgba(16, 185, 129, 0.22); }
+  100% { background: transparent; }
+}
+
+@keyframes portfolioFlashDown {
+  0% { background: rgba(220, 38, 38, 0.18); }
+  100% { background: transparent; }
 }
 
 .portfolio-primary-cell {
@@ -803,20 +910,20 @@
 }
 
 .portfolio-status.warning {
-  background: rgba(240, 168, 60, 0.18);
-  color: #9c6519;
+  background: #fef3c7;
+  color: #b45309;
 }
 
 .portfolio-status.success,
 .portfolio-trade-pill.buy {
-  background: rgba(91, 184, 112, 0.16);
-  color: #347c45;
+  background: #dcfce7;
+  color: #047857;
 }
 
 .portfolio-status.error,
 .portfolio-trade-pill.sell {
-  background: rgba(224, 88, 88, 0.15);
-  color: #b53b3b;
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
 .portfolio-status.muted {
@@ -842,6 +949,8 @@
 }
 
 .portfolio-status-filter select,
+.portfolio-filter-bar input,
+.portfolio-filter-bar select,
 .portfolio-form input,
 .portfolio-form select {
   border: 1px solid rgba(17, 17, 17, 0.09);
@@ -855,10 +964,160 @@
 }
 
 .portfolio-status-filter select:focus,
+.portfolio-filter-bar input:focus,
+.portfolio-filter-bar select:focus,
 .portfolio-form input:focus,
 .portfolio-form select:focus {
   border-color: rgba(193, 98, 47, 0.35);
   box-shadow: 0 0 0 4px rgba(193, 98, 47, 0.08);
+}
+
+.portfolio-filter-bar,
+.portfolio-range-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.portfolio-filter-bar input,
+.portfolio-filter-bar select {
+  min-height: 38px;
+  font-size: 12px;
+}
+
+.portfolio-range-tabs button {
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  background: rgba(17, 17, 17, 0.06);
+  color: rgba(17, 17, 17, 0.72);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.portfolio-range-tabs button.active {
+  background: #111;
+  color: #fff;
+}
+
+.portfolio-benchmark-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.portfolio-performance-chart,
+.portfolio-chart-skeleton {
+  min-height: 300px;
+}
+
+.portfolio-chart-skeleton {
+  border-radius: 20px;
+  background: linear-gradient(90deg, rgba(17,17,17,0.06), rgba(255,255,255,0.8), rgba(17,17,17,0.06));
+  background-size: 220% 100%;
+  animation: portfolioSkeleton 1.2s linear infinite;
+}
+
+.portfolio-position-detail {
+  margin-top: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.portfolio-position-detail strong {
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+}
+
+.portfolio-position-detail p {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0;
+  color: rgba(17, 17, 17, 0.64);
+}
+
+.portfolio-position-modal-chart {
+  height: 54px;
+}
+
+.portfolio-dark-toggle {
+  align-self: flex-end;
+  border: 1px solid rgba(17, 17, 17, 0.1);
+  background: rgba(255, 255, 255, 0.8);
+  color: rgba(17, 17, 17, 0.72);
+  border-radius: 999px;
+  padding: 9px 13px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.portfolio-dark-toggle.inline {
+  margin-left: -10px;
+}
+
+.portfolio-page.dark .portfolio-hero,
+.portfolio-page.dark .portfolio-card,
+.portfolio-page.dark .portfolio-empty-state,
+.portfolio-page.dark .portfolio-status-card,
+.portfolio-page.dark .portfolio-detail-page,
+.portfolio-page.dark .portfolio-modal,
+.portfolio-page.dark .portfolio-section,
+.portfolio-page.dark .portfolio-metric-card {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(145deg, #111827, #1f2937);
+  color: #f8fafc;
+}
+
+.portfolio-page.dark .portfolio-table {
+  background: #111827;
+}
+
+.portfolio-page.dark .portfolio-table thead th {
+  background: #1f2937;
+  color: rgba(248, 250, 252, 0.68);
+}
+
+.portfolio-page.dark .portfolio-table tbody td,
+.portfolio-page.dark .portfolio-primary-cell strong,
+.portfolio-page.dark .portfolio-section h3,
+.portfolio-page.dark .portfolio-chart-empty strong {
+  color: #f8fafc;
+}
+
+.portfolio-page.dark .portfolio-table tbody tr:hover {
+  background: rgba(31, 41, 55, 0.72);
+}
+
+.portfolio-page.dark .portfolio-primary-cell span,
+.portfolio-page.dark .portfolio-muted,
+.portfolio-page.dark .portfolio-kicker,
+.portfolio-page.dark .portfolio-metric-card span,
+.portfolio-page.dark .portfolio-metric-card small,
+.portfolio-page.dark .portfolio-position-detail p {
+  color: rgba(248, 250, 252, 0.62);
+}
+
+.portfolio-page.dark .portfolio-filter-bar input,
+.portfolio-page.dark .portfolio-filter-bar select,
+.portfolio-page.dark .portfolio-form input,
+.portfolio-page.dark .portfolio-form select,
+.portfolio-page.dark .portfolio-status-filter select {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.portfolio-page.dark .portfolio-empty-inline,
+.portfolio-page.dark .portfolio-chart-empty,
+.portfolio-page.dark .portfolio-detail-status {
+  background: rgba(15, 23, 42, 0.74);
+  color: rgba(248, 250, 252, 0.72);
 }
 
 .portfolio-pagination {

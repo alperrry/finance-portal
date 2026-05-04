@@ -3,6 +3,7 @@ package com.alper.backend.portfolio.matcher;
 import com.alper.backend.common.model.InstrumentType;
 import com.alper.backend.market.fund.model.FundPrice;
 import com.alper.backend.market.fund.repository.FundPriceRepository;
+import com.alper.backend.portfolio.model.OrderType;
 import com.alper.backend.portfolio.model.TradeTransaction;
 import com.alper.backend.portfolio.model.TransactionType;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +45,15 @@ public class FundPriceMatcher implements PriceMatcher {
         }
 
         BigDecimal currentPrice = priceOpt.get().getPrice();
+        if (transaction.getOrderType() == OrderType.MARKET) {
+            return Optional.of(currentPrice);
+        }
+
         BigDecimal targetPrice = transaction.getTargetPrice();
+        if (targetPrice == null) {
+            log.warn("LIMIT fon trade targetPrice null, eşleştirme atlandı. tradeId={}", transaction.getId());
+            return Optional.empty();
+        }
         TransactionType type = transaction.getTransactionType();
 
         boolean matched = (type == TransactionType.BUY && currentPrice.compareTo(targetPrice) <= 0)
@@ -53,7 +62,7 @@ public class FundPriceMatcher implements PriceMatcher {
         if (matched) {
             log.debug("Fon eşleşmesi tetiklendi. tradeId={}, type={}, currentPrice={}, targetPrice={}",
                     transaction.getId(), type, currentPrice, targetPrice);
-            return Optional.of(currentPrice);
+            return Optional.of(targetPrice);
         }
 
         return Optional.empty();

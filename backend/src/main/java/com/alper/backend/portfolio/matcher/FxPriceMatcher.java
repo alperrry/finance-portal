@@ -3,6 +3,7 @@ package com.alper.backend.portfolio.matcher;
 import com.alper.backend.common.model.InstrumentType;
 import com.alper.backend.market.fx.model.ExchangeRate;
 import com.alper.backend.market.fx.repository.ExchangeRateRepository;
+import com.alper.backend.portfolio.model.OrderType;
 import com.alper.backend.portfolio.model.TradeTransaction;
 import com.alper.backend.portfolio.model.TransactionType;
 import lombok.RequiredArgsConstructor;
@@ -55,7 +56,15 @@ public class FxPriceMatcher implements PriceMatcher {
             return Optional.empty();
         }
 
+        if (transaction.getOrderType() == OrderType.MARKET) {
+            return Optional.of(currentPrice);
+        }
+
         BigDecimal targetPrice = transaction.getTargetPrice();
+        if (targetPrice == null) {
+            log.warn("LIMIT FX trade targetPrice null, eşleştirme atlandı. tradeId={}", transaction.getId());
+            return Optional.empty();
+        }
         TransactionType type = transaction.getTransactionType();
 
         boolean matched = (type == TransactionType.BUY && currentPrice.compareTo(targetPrice) <= 0)
@@ -64,7 +73,7 @@ public class FxPriceMatcher implements PriceMatcher {
         if (matched) {
             log.debug("FX eşleşmesi tetiklendi. tradeId={}, type={}, currentPrice={}, targetPrice={}",
                     transaction.getId(), type, currentPrice, targetPrice);
-            return Optional.of(currentPrice);
+            return Optional.of(targetPrice);
         }
 
         return Optional.empty();

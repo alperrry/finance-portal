@@ -74,6 +74,7 @@ public class PortfolioValuationService {
 
     private final BondRepository bondRepository;
     private final BondRateHistoryRepository bondRateHistoryRepository;
+    private final MockMarketPriceService mockMarketPriceService;
 
     /**
      * Portföyün tüm pozisyonlarını ve toplam değerlemesini hesaplar.
@@ -117,7 +118,10 @@ public class PortfolioValuationService {
         InstrumentType type = item.getInstrumentType();
         InstrumentInfo info = resolveInstrumentInfo(type, item.getInstrumentId());
 
-        BigDecimal currentPriceNative = info.currentPrice();
+        MockMarketPriceService.MarketPriceQuote quote = mockMarketPriceService
+                .getQuote(type, item.getInstrumentId())
+                .orElse(null);
+        BigDecimal currentPriceNative = quote != null ? quote.currentPrice() : info.currentPrice();
         BigDecimal currentValueDisplay = null;
         BigDecimal costBasisDisplay = null;
         BigDecimal profitLossDisplay = null;
@@ -154,8 +158,13 @@ public class PortfolioValuationService {
                 .avgCost(item.getAvgCost())
                 .currentPrice(currentPriceNative)
                 .currentValue(currentValueDisplay)
+                .marketValue(currentValueDisplay)
                 .profitLoss(profitLossDisplay)
                 .profitLossPct(profitLossPct)
+                .profitLossPercentage(profitLossPct)
+                .dailyChange(quote != null ? quote.dailyChange() : null)
+                .dailyChangePercentage(quote != null ? quote.dailyChangePercentage() : null)
+                .priceTrend(quote != null ? quote.priceTrend() : List.of())
                 .nativeCurrency(info.nativeCurrency())
                 .build();
 
