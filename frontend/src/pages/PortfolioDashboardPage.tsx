@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { ApiError } from "../api/client";
 import {
     fetchBonds,
@@ -17,7 +17,6 @@ import {
     createPortfolio,
     deletePortfolio,
     fetchPortfolio,
-    fetchPortfolioPerformance,
     fetchPortfolios,
     fetchPortfolioTrades,
     submitTrade,
@@ -26,7 +25,6 @@ import {
     type DisplayCurrency,
     type OrderType,
     type PageResponse,
-    type PortfolioPerformancePoint,
     type PortfolioInstrumentType,
     type PortfolioItemResponse,
     type PortfolioResponse,
@@ -39,6 +37,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useToast } from "../components/ToastContext";
 import { KapitalShell } from "../components/layout";
 import { useTradeNotifications } from "../hooks/useTradeNotifications";
+import { websocketClient } from "../services/websocketClient";
 import "./PortfolioDashboardPage.css";
 
 type PortfolioLoadState = {
@@ -56,12 +55,6 @@ type TradeHistoryState = {
     loading: boolean;
     error: string | null;
     page: PageResponse<TradeResponse> | null;
-};
-
-type PerformanceState = {
-    loading: boolean;
-    error: string | null;
-    data: PortfolioPerformancePoint[];
 };
 
 type TradeFilters = {
@@ -112,15 +105,6 @@ const ORDER_LABELS: Record<OrderType, string> = {
     MARKET: "Piyasa",
     LIMIT: "Limit",
 };
-
-const PERFORMANCE_RANGES = [
-    { value: "1D", label: "1G" },
-    { value: "1W", label: "1H" },
-    { value: "1M", label: "1A" },
-    { value: "3M", label: "3A" },
-    { value: "1Y", label: "1Y" },
-    { value: "ALL", label: "TÜM" },
-];
 
 const CURRENCIES: DisplayCurrency[] = ["TRY", "USD", "EUR"];
 const collator = new Intl.Collator("tr-TR", { sensitivity: "base" });
@@ -850,83 +834,11 @@ function TradeHistoryTable({
     );
 }
 
-function PerformanceTooltip({ active, payload, label, currency }: { active?: boolean; payload?: Array<{ dataKey?: string; value?: number }>; label?: string; currency: string }) {
-    if (!active || !payload?.length) return null;
-    const portfolioValue = payload.find((item) => item.dataKey === "value")?.value ?? null;
-    const benchmarkValue = payload.find((item) => item.dataKey === "benchmarkValue")?.value ?? null;
-    const profitLoss = payload.find((item) => item.dataKey === "profitLoss")?.value ?? null;
-    return (
-        <div className="portfolio-chart-tooltip">
-            <strong>{label}</strong>
-            <span>Portföy: {formatMoney(portfolioValue, currency)}</span>
-            {benchmarkValue !== null ? <span>BIST 100: {formatMoney(benchmarkValue, currency)}</span> : null}
-            <small>K/Z: {formatSignedMoney(profitLoss, currency)}</small>
-        </div>
-    );
-}
-
-function PortfolioPerformanceChart({
-    state,
-    range,
-    showBenchmark,
-    currency,
-    onRangeChange,
-    onBenchmarkChange,
-}: {
-    state: PerformanceState;
-    range: string;
-    showBenchmark: boolean;
-    currency: string;
-    onRangeChange: (range: string) => void;
-    onBenchmarkChange: (value: boolean) => void;
-}) {
-    return (
-        <section className="portfolio-section">
-            <div className="portfolio-section-head">
-                <div>
-                    <span className="portfolio-kicker">Performans</span>
-                    <h3>Portföy Performansı</h3>
-                </div>
-                <label className="portfolio-benchmark-toggle">
-                    <input type="checkbox" checked={showBenchmark} onChange={(event) => onBenchmarkChange(event.target.checked)} />
-                    BIST 100
-                </label>
-            </div>
-            <div className="portfolio-range-tabs">
-                {PERFORMANCE_RANGES.map((item) => (
-                    <button key={item.value} type="button" className={range === item.value ? "active" : ""} onClick={() => onRangeChange(item.value)}>
-                        {item.label}
-                    </button>
-                ))}
-            </div>
-            {state.loading ? <div className="portfolio-chart-skeleton" /> : null}
-            {!state.loading && state.error ? <div className="portfolio-inline-error">{state.error}</div> : null}
-            {!state.loading && !state.error ? (
-                <div className="portfolio-performance-chart">
-                    <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={state.data}>
-                            <XAxis dataKey="date" tick={{ fontSize: 11 }} minTickGap={24} />
-                            <YAxis tick={{ fontSize: 11 }} tickFormatter={(value) => formatNumber(Number(value), 0)} width={72} />
-                            <Tooltip content={<PerformanceTooltip currency={currency} />} />
-                            <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} dot={false} name="Portföy" />
-                            {showBenchmark ? <Line type="monotone" dataKey="benchmarkValue" stroke="#f59e0b" strokeWidth={2} dot={false} name="BIST 100" /> : null}
-                            <Line type="monotone" dataKey="profitLoss" stroke="transparent" dot={false} activeDot={false} />
-                        </LineChart>
-                    </ResponsiveContainer>
-                </div>
-            ) : null}
-        </section>
-    );
-}
-
 function PortfolioDetailPageContent({
     state,
     trades,
-    performance,
     tradeStatus,
     tradeFilters,
-    performanceRange,
-    showBenchmark,
     cancelingTradeId,
     currentBalance,
     onBack,
@@ -936,17 +848,12 @@ function PortfolioDetailPageContent({
     onStatusChange,
     onTradeFiltersChange,
     onTradePageChange,
-    onPerformanceRangeChange,
-    onBenchmarkChange,
     onCancelTrade,
 }: {
     state: DetailState;
     trades: TradeHistoryState;
-    performance: PerformanceState;
     tradeStatus: TransactionStatus | "";
     tradeFilters: TradeFilters;
-    performanceRange: string;
-    showBenchmark: boolean;
     cancelingTradeId: number | null;
     currentBalance: number | null;
     onBack: () => void;
@@ -956,8 +863,6 @@ function PortfolioDetailPageContent({
     onStatusChange: (status: TransactionStatus | "") => void;
     onTradeFiltersChange: (filters: TradeFilters) => void;
     onTradePageChange: (page: number) => void;
-    onPerformanceRangeChange: (range: string) => void;
-    onBenchmarkChange: (value: boolean) => void;
     onCancelTrade: (trade: TradeResponse) => void;
 }) {
     const portfolio = state.data;
@@ -999,15 +904,6 @@ function PortfolioDetailPageContent({
                         </div>
                         <PortfolioAllocationChart portfolio={portfolio} onNewTrade={onNewTrade} />
                     </section>
-
-                    <PortfolioPerformanceChart
-                        state={performance}
-                        range={performanceRange}
-                        showBenchmark={showBenchmark}
-                        currency={portfolio.displayCurrency}
-                        onRangeChange={onPerformanceRangeChange}
-                        onBenchmarkChange={onBenchmarkChange}
-                    />
 
                     <section className="portfolio-section">
                         <div className="portfolio-section-head">
@@ -1326,11 +1222,13 @@ function NewTradeModal({
                         </label>
                     </div>
 
-                    {instrumentType === "BOND" ? <p className="portfolio-form-note">Tahvil işlemi market order olarak anlık gerçekleştirilecek.</p> : null}
-                    {transactionType === "SELL" && ownedQuantity !== undefined ? (
-                        <p className="portfolio-form-note">Sahip olduğun miktar: {formatQuantity(ownedQuantity)}. Backend bekleyen satışları da kontrol eder.</p>
-                    ) : transactionType === "SELL" ? (
-                        <p className="portfolio-form-note warning">Bu enstrümanda pozisyon görünmüyor. Satış backend tarafından reddedilebilir.</p>
+                    {instrumentType === "BOND" ? <p className="portfolio-form-note">Tahvil işlemi anlık olarak gerçekleştirilecek.</p> : null}
+                    {transactionType === "SELL" && instrumentId ? (
+                        ownedQuantity !== undefined ? (
+                            <p className="portfolio-form-note">Mevcut pozisyon: {formatQuantity(ownedQuantity)} adet</p>
+                        ) : (
+                            <p className="portfolio-form-note warning">Bu enstrümanda pozisyon bulunmuyor.</p>
+                        )
                     ) : null}
 
                     <div className={`portfolio-total-box ${insufficientBalance ? "danger" : ""}`.trim()}>
@@ -1338,22 +1236,13 @@ function NewTradeModal({
                         <strong>{formatMoney(totalAmount, portfolio.displayCurrency)}</strong>
                     </div>
 
-                    {transactionType === "BUY" && totalAmount !== null ? (
-                        <div className="portfolio-balance-check">
-                            <span>Bloke Edilecek Tutar</span>
-                            <strong>{formatMoney(requiredBalance, "TRY")}</strong>
-                        </div>
-                    ) : null}
-
                     <p className="portfolio-form-note">
-                        {instrumentType === "BOND"
-                            ? "İşlem anlık olarak gerçekleştirilecek."
-                            : orderType === "MARKET"
+                        {instrumentType === "BOND" || orderType === "MARKET"
                             ? "İşlem anlık olarak gerçekleştirilecek."
                             : "Hedef fiyata ulaşıldığında işlem otomatik gerçekleştirilir."}
                     </p>
-                    {insufficientBalance ? <p className="portfolio-form-note warning">Bu işlem için bakiyeniz yetersiz.</p> : null}
-                    {missingConversion ? <p className="portfolio-form-note warning">Bu işlem için güncel döviz dönüşüm kuru bulunamadı.</p> : null}
+                    {insufficientBalance ? <p className="portfolio-form-note warning">Bakiyeniz bu işlem için yetersiz.</p> : null}
+                    {missingConversion ? <p className="portfolio-form-note warning">Güncel döviz kuru bulunamadı, işlem gerçekleştirilemez.</p> : null}
 
                     {localError || serverError ? <div className="portfolio-inline-error">{localError ?? serverError}</div> : null}
 
@@ -1381,12 +1270,9 @@ export function PortfolioDetailPage() {
     const [detailReloadToken, setDetailReloadToken] = useState(0);
     const [detailState, setDetailState] = useState<DetailState>({ loading: false, error: null, data: null });
     const [tradeHistoryState, setTradeHistoryState] = useState<TradeHistoryState>({ loading: false, error: null, page: null });
-    const [performanceState, setPerformanceState] = useState<PerformanceState>({ loading: false, error: null, data: [] });
     const [tradeStatus, setTradeStatus] = useState<TransactionStatus | "">("");
     const [tradeFilters, setTradeFilters] = useState<TradeFilters>({ from: "", to: "", instrument: "", type: "", query: "" });
     const [tradePage, setTradePage] = useState(0);
-    const [performanceRange, setPerformanceRange] = useState("1M");
-    const [showBenchmark, setShowBenchmark] = useState(true);
     const [tradeReloadToken, setTradeReloadToken] = useState(0);
     const [formState, setFormState] = useState<PortfolioFormState | null>(null);
     const [formBusy, setFormBusy] = useState(false);
@@ -1455,29 +1341,6 @@ export function PortfolioDetailPage() {
         };
     }, [tradePage, tradeReloadToken, tradeStatus, validPortfolioId]);
 
-    useEffect(() => {
-        if (!validPortfolioId) {
-            setPerformanceState({ loading: false, error: null, data: [] });
-            return undefined;
-        }
-
-        let active = true;
-        setPerformanceState((current) => ({ ...current, loading: true, error: null }));
-        fetchPortfolioPerformance(validPortfolioId, performanceRange)
-            .then((data) => {
-                if (!active) return;
-                setPerformanceState({ loading: false, error: null, data });
-            })
-            .catch((caughtError) => {
-                if (!active) return;
-                setPerformanceState({ loading: false, error: resolveApiError(caughtError, "Portföy performansı yüklenemedi."), data: [] });
-            });
-
-        return () => {
-            active = false;
-        };
-    }, [detailReloadToken, performanceRange, validPortfolioId]);
-
     const refreshPortfolio = useCallback((changedPortfolioId?: number) => {
         if (!validPortfolioId || (changedPortfolioId && changedPortfolioId !== validPortfolioId)) return;
         setDetailReloadToken((value) => value + 1);
@@ -1498,6 +1361,16 @@ export function PortfolioDetailPage() {
         onBalanceSignal: refreshCurrentUser,
         resolveTradeLabel,
     });
+
+    useEffect(() => {
+        if (!validPortfolioId || !token) return undefined;
+        const intervalId = setInterval(() => {
+            if (!websocketClient.isConnected()) {
+                refreshPortfolio(validPortfolioId);
+            }
+        }, 10000);
+        return () => clearInterval(intervalId);
+    }, [validPortfolioId, token, refreshPortfolio]);
 
     const submitPortfolioForm = async (payload: CreatePortfolioRequest) => {
         if (!formState?.portfolio) return;
@@ -1548,7 +1421,7 @@ export function PortfolioDetailPage() {
             showToast(
                 response.status === "APPROVED"
                     ? "İşlem onaylandı."
-                    : "İşlem talebi alındı, bakiye bloke edildi.",
+                    : "İşlem talebi alındı. Hedef fiyata ulaşıldığında gerçekleşecek.",
                 "success",
             );
             void refreshCurrentUser();
@@ -1588,11 +1461,8 @@ export function PortfolioDetailPage() {
                     <PortfolioDetailPageContent
                         state={detailState}
                         trades={tradeHistoryState}
-                        performance={performanceState}
                         tradeStatus={tradeStatus}
                         tradeFilters={tradeFilters}
-                        performanceRange={performanceRange}
-                        showBenchmark={showBenchmark}
                         cancelingTradeId={cancelingTradeId}
                         currentBalance={currentUser?.balance ?? null}
                         onBack={() => navigate("/portfolios")}
@@ -1614,8 +1484,6 @@ export function PortfolioDetailPage() {
                         }}
                         onTradeFiltersChange={setTradeFilters}
                         onTradePageChange={setTradePage}
-                        onPerformanceRangeChange={setPerformanceRange}
-                        onBenchmarkChange={setShowBenchmark}
                         onCancelTrade={handleCancelTrade}
                     />
                 </div>

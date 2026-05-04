@@ -119,6 +119,10 @@ class PortfolioWebSocketClient {
         }
     }
 
+    isConnected(): boolean {
+        return this.client?.connected === true;
+    }
+
     subscribe<T>(destination: string, handler: EnvelopeHandler<T>) {
         const pending: PendingSubscription = {
             destination,

@@ -3,7 +3,6 @@ package com.alper.backend.portfolio.controller;
 import com.alper.backend.common.web.ApiErrorResponse;
 import com.alper.backend.common.web.ApiResponse;
 import com.alper.backend.portfolio.dto.CreatePortfolioRequest;
-import com.alper.backend.portfolio.dto.PortfolioPerformancePoint;
 import com.alper.backend.portfolio.dto.PortfolioResponse;
 import com.alper.backend.portfolio.dto.UpdatePortfolioRequest;
 import com.alper.backend.portfolio.service.PortfolioService;
@@ -57,16 +56,6 @@ public class PortfolioController {
     public ApiResponse<PortfolioResponse> findById(@PathVariable Long id, @CurrentUser User user) {
         log.debug("Portföy detay isteği. portfolioId={}, userId={}", id, user.getId());
         return ApiResponse.success(portfolioService.findById(id, user.getId()));
-    }
-
-    @GetMapping("/{id}/performance")
-    @Operation(summary = "Portföy performans grafiği için mock zaman serisi")
-    public ApiResponse<List<PortfolioPerformancePoint>> performance(
-            @PathVariable Long id,
-            @RequestParam(defaultValue = "1M") String range,
-            @CurrentUser User user
-    ) {
-        return ApiResponse.success(portfolioService.getPerformance(id, user.getId(), range));
     }
 
     @PostMapping

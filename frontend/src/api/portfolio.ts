@@ -73,13 +73,6 @@ export type TradeResponse = {
     createdAt: string | null;
 };
 
-export type PortfolioPerformancePoint = {
-    date: string;
-    value: number;
-    benchmarkValue: number;
-    profitLoss: number;
-};
-
 export type CreatePortfolioRequest = {
     name: string;
     displayCurrency: DisplayCurrency;
@@ -148,15 +141,6 @@ export async function fetchPortfolio(id: number): Promise<PortfolioResponse> {
         errorMessage: "Portföy detayı yüklenemedi.",
     });
     return parseApiResponse<PortfolioResponse>(response, "Portföy detayı yüklenemedi.");
-}
-
-export async function fetchPortfolioPerformance(id: number, range: string): Promise<PortfolioPerformancePoint[]> {
-    const params = new URLSearchParams();
-    params.set("range", range);
-    const response = await apiFetch(`/api/v1/portfolios/${id}/performance?${params.toString()}`, {
-        errorMessage: "Portföy performansı yüklenemedi.",
-    });
-    return parseApiResponse<PortfolioPerformancePoint[]>(response, "Portföy performansı yüklenemedi.");
 }
 
 export async function createPortfolio(payload: CreatePortfolioRequest): Promise<PortfolioResponse> {
