@@ -1,5 +1,7 @@
 package com.alper.backend.user.security;
 
+import com.alper.backend.common.exception.BadRequestException;
+import com.alper.backend.common.exception.ErrorCode;
 import com.alper.backend.user.model.User;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.MethodParameter;
@@ -25,8 +27,12 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
                                   WebDataBinderFactory binderFactory) {
         HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
         if (request == null) {
-            return null;
+            throw new BadRequestException(ErrorCode.UNAUTHORIZED, "Kullanıcı bilgileri doğrulanamadı.");
         }
-        return request.getAttribute(UserProvisioningFilter.CURRENT_USER_ATTRIBUTE);
+        Object currentUser = request.getAttribute(UserProvisioningFilter.CURRENT_USER_ATTRIBUTE);
+        if (currentUser == null) {
+            throw new BadRequestException(ErrorCode.UNAUTHORIZED, "Kullanıcı bilgileri doğrulanamadı.");
+        }
+        return currentUser;
     }
 }

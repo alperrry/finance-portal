@@ -43,4 +43,25 @@ public class TradeMapper {
                 .createdAt(transaction.getCreatedAt())
                 .build();
     }
+
+    public TradeResponse toResponse(TradeTransaction transaction, String instrumentSymbol, String instrumentName) {
+        return TradeResponse.builder()
+                .id(transaction.getId())
+                .portfolioId(transaction.getPortfolioId())
+                .instrumentType(transaction.getInstrumentType())
+                .instrumentId(transaction.getInstrumentId())
+                .instrumentSymbol(instrumentSymbol)
+                .instrumentName(instrumentName)
+                .transactionType(transaction.getTransactionType())
+                .quantity(transaction.getQuantity())
+                .targetPrice(transaction.getTargetPrice())
+                .executedPrice(transaction.getExecutedPrice())
+                .totalAmount(transaction.getTotalAmount())
+                .realizedProfitLoss(transaction.getRealizedProfitLoss())
+                .status(transaction.getStatus())
+                .rejectionReason(transaction.getRejectionReason())
+                .processedAt(transaction.getProcessedAt())
+                .createdAt(transaction.getCreatedAt())
+                .build();
+    }
 }

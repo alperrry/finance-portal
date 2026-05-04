@@ -17,13 +17,10 @@ public record PortfolioResponse(
         @Schema(description = "Portföy adı", example = "Uzun Vadeli Yatırım")
         String name,
 
-        @Schema(description = "Sanal bakiye (display currency)", example = "1000000000.00")
-        BigDecimal balance,
-
         @Schema(description = "Görüntüleme para birimi", example = "TRY")
         String displayCurrency,
 
-        @Schema(description = "Toplam portföy değeri (items + balance, display currency)", example = "1005230.00")
+        @Schema(description = "Toplam portföy değeri (sadece pozisyonlar, display currency)", example = "5230.00")
         BigDecimal totalValue,
 
         @Schema(description = "Toplam maliyet (sadece items)", example = "4850.00")

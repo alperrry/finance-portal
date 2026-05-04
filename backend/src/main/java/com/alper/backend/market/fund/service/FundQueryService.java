@@ -28,6 +28,7 @@ public class FundQueryService {
 
     private FundResponse toResponse(FundPrice entity) {
         return FundResponse.builder()
+                .id(entity.getFund().getId())
                 .code(entity.getFund().getCode())
                 .name(entity.getFund().getName())
                 .fundType(entity.getFund().getFundType())

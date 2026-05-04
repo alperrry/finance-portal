@@ -1,11 +1,10 @@
 import {
-    createContext,
-    useContext,
     useEffect,
     useMemo,
     useState,
     type ReactNode,
 } from "react";
+import { UiPreferencesContext } from "./UiPreferencesContextValue";
 
 export type ThemePreference = "light" | "dark" | "system";
 export type LocalePreference = "tr" | "en";
@@ -21,7 +20,7 @@ export type DisplayPreferences = {
     reduceMotion: boolean;
 };
 
-type UiPreferencesContextType = {
+export type UiPreferencesContextType = {
     theme: ThemePreference;
     locale: LocalePreference;
     notifications: NotificationPreferences;
@@ -89,8 +88,6 @@ function resolveTheme(theme: ThemePreference, prefersDark: boolean) {
     return theme;
 }
 
-const UiPreferencesContext = createContext<UiPreferencesContextType | null>(null);
-
 export function UiPreferencesProvider({ children }: { children: ReactNode }) {
     const [theme, setTheme] = useState<ThemePreference>(() => readStoredTheme());
     const [locale, setLocale] = useState<LocalePreference>(() => readStoredLocale());
@@ -111,7 +108,6 @@ export function UiPreferencesProvider({ children }: { children: ReactNode }) {
         const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
         const onChange = (event: MediaQueryListEvent) => setPrefersDark(event.matches);
 
-        setPrefersDark(mediaQuery.matches);
         mediaQuery.addEventListener("change", onChange);
         return () => mediaQuery.removeEventListener("change", onChange);
     }, []);
@@ -179,13 +175,4 @@ export function UiPreferencesProvider({ children }: { children: ReactNode }) {
     );
 
     return <UiPreferencesContext.Provider value={value}>{children}</UiPreferencesContext.Provider>;
-}
-
-export function useUiPreferences() {
-    const context = useContext(UiPreferencesContext);
-    if (!context) {
-        throw new Error("useUiPreferences must be used within UiPreferencesProvider");
-    }
-
-    return context;
 }

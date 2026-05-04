@@ -28,6 +28,7 @@ public class BondQueryService {
 
     private BondResponse toResponse(BondRateHistory entity) {
         return BondResponse.builder()
+                .id(entity.getBond().getId())
                 .evdsSeriesCode(entity.getBond().getEvdsSeriesCode())
                 .name(entity.getBond().getName())
                 .bondType(entity.getBond().getBondType())

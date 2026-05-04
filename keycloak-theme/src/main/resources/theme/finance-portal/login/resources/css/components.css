@@ -26,6 +26,7 @@ body.fp-body.pf-v5-theme-dark {
 .fp-auth-card select,
 .fp-auth-card textarea {
   width: 100%;
+  box-sizing: border-box;
   border-radius: var(--fp-radius-md);
   border: 1px solid var(--fp-border);
   background: var(--fp-surface-soft);
@@ -88,6 +89,7 @@ body.fp-body.pf-v5-theme-dark {
   border-radius: var(--fp-radius-pill);
   font-weight: 700;
   min-height: 46px;
+  justify-content: center;
   transition:
     background var(--fp-transition),
     border-color var(--fp-transition),
@@ -289,6 +291,17 @@ body.fp-body.pf-v5-theme-dark {
   margin-top: 4px;
 }
 
+.fp-auth-card #kc-form-buttons,
+.fp-auth-card .pf-v5-c-form__group.pf-m-action {
+  margin-top: 4px;
+}
+
+.fp-auth-card #kc-login,
+.fp-auth-card input[type="submit"],
+.fp-auth-card button[type="submit"] {
+  width: 100%;
+}
+
 .pf-v5-theme-dark .fp-auth-card,
 body.fp-body.pf-v5-theme-dark .fp-auth-card {
   background: rgba(26, 23, 19, 0.92);
@@ -307,4 +320,14 @@ body.fp-body.pf-v5-theme-dark .fp-auth-card input[type="password"],
 body.fp-body.pf-v5-theme-dark .fp-auth-card input[type="email"],
 body.fp-body.pf-v5-theme-dark .fp-auth-card select {
   background: rgba(255, 255, 255, 0.04);
+}
+
+@media (max-width: 640px) {
+  .fp-auth-card .pf-v5-c-input-group {
+    min-width: 0;
+  }
+
+  .fp-auth-card .pf-v5-c-button {
+    min-height: 44px;
+  }
 }

@@ -4,7 +4,7 @@ import { fetchCategories, type NewsCategory } from "../../api/news";
 import { useAuth } from "../../auth/AuthContext";
 import KapitalTicker from "./KapitalTicker";
 
-type ActivePage = "portfolio" | "news" | "analysis" | "tools" | "profile" | "settings";
+type ActivePage = "portfolio" | "portfolios" | "news" | "analysis" | "tools" | "profile" | "settings";
 
 type KapitalShellProps = {
     activePage: ActivePage;
@@ -26,8 +26,20 @@ const formatTime = (value: Date) =>
         minute: "2-digit",
     }).format(value);
 
+const formatMoney = (value: number | null | undefined, currency = "TRY") => {
+    if (typeof value !== "number" || !Number.isFinite(value)) return "-";
+
+    return new Intl.NumberFormat("tr-TR", {
+        style: "currency",
+        currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(value);
+};
+
 const navItems: Array<{ id: ActivePage; label: string; to: string }> = [
     { id: "portfolio", label: "Piyasalar", to: "/portfolio" },
+    { id: "portfolios", label: "Portföyüm", to: "/portfolios" },
     { id: "news", label: "Haberler", to: "/news" },
     { id: "analysis", label: "Analiz", to: "/analysis" },
     { id: "tools", label: "Araclar", to: "/portfolio" },
@@ -136,6 +148,10 @@ export default function KapitalShell({
                     <div className="kp-nav-right">
                         <span className="kp-nav-chip">{navDate}</span>
                         <span className="kp-nav-chip">{navTime}</span>
+                        <span className="kp-nav-balance" aria-label="Kullanıcı bakiyesi">
+                            <span aria-hidden="true">₺</span>
+                            {formatMoney(currentUser?.balance, "TRY")}
+                        </span>
                         <button
                             className={`kp-nav-user ${activePage === "profile" || activePage === "settings" ? "active" : ""}`.trim()}
                             type="button"

@@ -223,6 +223,33 @@ body {
   white-space: nowrap;
 }
 
+.kp-nav-balance {
+  border: 1px solid rgba(91, 184, 112, 0.26);
+  background: rgba(91, 184, 112, 0.12);
+  color: #245f34;
+  border-radius: 999px;
+  padding: 7px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.kp-nav-balance > span {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(91, 184, 112, 0.18);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Sora', sans-serif;
+  font-size: 11px;
+}
+
 .kp-nav-action {
   border: none;
   background: #111;
@@ -794,6 +821,10 @@ body {
     display: none;
   }
 
+  .kp-nav-balance {
+    padding-inline: 10px;
+  }
+
   .kp-nav-user {
     max-width: 210px;
   }
@@ -833,6 +864,12 @@ body {
 
   .kp-nav-user {
     max-width: calc(100vw - 132px);
+  }
+
+  .kp-nav-balance {
+    max-width: calc(100vw - 180px);
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .kp-role-badge.admin {

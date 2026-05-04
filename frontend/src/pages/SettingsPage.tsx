@@ -15,12 +15,12 @@ import { useAuth } from "../auth/AuthContext";
 import { useToast } from "../components/ToastContext";
 import { KapitalShell } from "../components/layout";
 import {
-    useUiPreferences,
     type DisplayPreferences,
     type LocalePreference,
     type NotificationPreferences,
     type ThemePreference,
 } from "../preferences/UiPreferencesContext";
+import { useUiPreferences } from "../preferences/UiPreferencesContextValue";
 import "./SettingsPage.css";
 
 type SettingsSection = "profile" | "security" | "preferences";

@@ -7,7 +7,6 @@ import com.alper.backend.portfolio.model.TransactionStatus;
 import com.alper.backend.portfolio.repository.TradeTransactionRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.EnumMap;
@@ -44,7 +43,6 @@ public class TradeMatchingService {
      * Her trade için ayrı transaction çalıştırılır (TradeProcessService.execute @Transactional);
      * birinin başarısız olması diğerlerini etkilemez.
      */
-    @Transactional(readOnly = true)
     public void matchPendingTrades() {
         long startMillis = System.currentTimeMillis();
         log.info("TradeMatchingJob başladı");

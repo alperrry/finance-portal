@@ -27,6 +27,10 @@ public interface TradeTransactionRepository extends JpaRepository<TradeTransacti
 
     List<TradeTransaction> findAllByStatus(TransactionStatus status);
 
+    boolean existsByPortfolioIdAndStatus(Long portfolioId, TransactionStatus status);
+
+    long deleteByPortfolioId(Long portfolioId);
+
     List<TradeTransaction> findAllByPortfolioIdAndUpdatedAtAfter(Long portfolioId, Instant since);
 
     /**

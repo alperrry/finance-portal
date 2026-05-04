@@ -4,6 +4,7 @@ import com.alper.backend.common.model.InstrumentType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Builder
@@ -45,5 +46,6 @@ public record PortfolioItemResponse(
 
         @Schema(description = "Enstrümanın doğal para birimi", example = "TRY")
         String nativeCurrency
-) {
+) implements Serializable {
+        private static final long serialVersionUID = 1L;
 }

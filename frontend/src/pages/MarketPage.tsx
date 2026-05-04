@@ -10,7 +10,9 @@ import {
     type FxResponse,
     type StockResponse,
 } from "../api/market";
+import { useAuth } from "../auth/AuthContext";
 import { KapitalShell } from "../components/layout";
+import { websocketClient } from "../services/websocketClient";
 import "./MarketPage.css";
 
 type MarketTab = "fx" | "bonds" | "funds" | "stocks";
@@ -20,6 +22,22 @@ type MarketData = {
     bonds: BondResponse[];
     funds: FundResponse[];
     stocks: StockResponse[];
+};
+
+type StockPriceSnapshotPayload = {
+    stockId?: number | null;
+    price?: number | null;
+    change?: number | null;
+    changePercent?: number | null;
+    dayHigh?: number | null;
+    dayLow?: number | null;
+    volume?: number | null;
+    fetchedAt?: string | null;
+};
+
+type StockPricesUpdatedPayload = {
+    snapshots?: StockPriceSnapshotPayload[];
+    fetchedAt?: string | null;
 };
 
 type SummaryCard = {
@@ -656,6 +674,7 @@ function dedupeStocksByLatestSnapshot(rows: StockResponse[]) {
 
 export default function MarketPage() {
     const navigate = useNavigate();
+    const { token } = useAuth();
     const [activeTab, setActiveTab] = useState<MarketTab>("fx");
     const [query, setQuery] = useState("");
     const [sortState, setSortState] = useState<MarketSortState>(DEFAULT_SORT_STATE);
@@ -705,6 +724,75 @@ export default function MarketPage() {
             active = false;
         };
     }, [reloadToken]);
+
+    useEffect(() => {
+        if (!token) return undefined;
+
+        websocketClient.connect(token);
+        const unsubscribeStocks = websocketClient.subscribe<StockPricesUpdatedPayload>("/topic/market/stocks/prices", (envelope) => {
+            if (envelope.type !== "STOCK_PRICES_UPDATED") return;
+
+            const snapshots = envelope.data?.snapshots;
+            if (!snapshots || snapshots.length === 0) return;
+
+            let needsSnapshotReload = false;
+            setData((currentData) => {
+                if (!currentData) {
+                    needsSnapshotReload = true;
+                    return currentData;
+                }
+
+                const updatesByStockId = new Map<number, StockPriceSnapshotPayload>();
+                snapshots.forEach((snapshot) => {
+                    if (typeof snapshot.stockId === "number") {
+                        updatesByStockId.set(snapshot.stockId, snapshot);
+                    }
+                });
+
+                if (updatesByStockId.size === 0) return currentData;
+
+                let changed = false;
+                const knownStockIds = new Set(currentData.stocks.map((stock) => stock.id).filter((id): id is number => typeof id === "number"));
+                needsSnapshotReload = [...updatesByStockId.keys()].some((stockId) => !knownStockIds.has(stockId));
+
+                const stocks = currentData.stocks.map((stock) => {
+                    if (typeof stock.id !== "number") return stock;
+
+                    const update = updatesByStockId.get(stock.id);
+                    if (!update) return stock;
+
+                    changed = true;
+                    return {
+                        ...stock,
+                        price: update.price ?? stock.price,
+                        change: update.change ?? stock.change,
+                        changePercent: update.changePercent ?? stock.changePercent,
+                        dayHigh: update.dayHigh ?? stock.dayHigh,
+                        dayLow: update.dayLow ?? stock.dayLow,
+                        volume: update.volume ?? stock.volume,
+                        fetchedAt: update.fetchedAt ?? envelope.data?.fetchedAt ?? stock.fetchedAt,
+                    };
+                });
+
+                return changed ? { ...currentData, stocks } : currentData;
+            });
+            setLastSyncedAt(new Date());
+
+            if (needsSnapshotReload) {
+                fetchStocks()
+                    .then((stocks) => {
+                        setData((currentData) => (currentData ? { ...currentData, stocks } : currentData));
+                        setLastSyncedAt(new Date());
+                    })
+                    .catch(() => undefined);
+            }
+        });
+
+        return () => {
+            unsubscribeStocks();
+            websocketClient.disconnectIfIdle();
+        };
+    }, [token]);
 
     const activeMeta = MARKET_TABS.find((tab) => tab.key === activeTab) ?? MARKET_TABS[0];
 

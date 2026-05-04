@@ -23,6 +23,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -248,7 +249,8 @@ public class PortfolioValuationService {
             BigDecimal totalCostBasis,
             BigDecimal totalProfitLoss,
             BigDecimal totalProfitLossPct
-    ) {
+    ) implements Serializable {
+        private static final long serialVersionUID = 1L;
     }
 
     private record ItemValuation(

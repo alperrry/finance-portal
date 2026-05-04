@@ -96,7 +96,7 @@ public class PortfolioController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Portföyü siler. İçinde pozisyon varsa 409 Conflict döner.")
+    @Operation(summary = "Portföyü siler. İçinde pozisyon veya bekleyen emir varsa 409 Conflict döner.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "204", description = "Silindi"),
@@ -104,7 +104,7 @@ public class PortfolioController {
                     responseCode = "404", description = "Portföy bulunamadı",
                     content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "409", description = "Portföyde pozisyon mevcut",
+                    responseCode = "409", description = "Portföyde pozisyon veya bekleyen emir mevcut",
                     content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
     public void delete(@PathVariable Long id, @CurrentUser User user) {

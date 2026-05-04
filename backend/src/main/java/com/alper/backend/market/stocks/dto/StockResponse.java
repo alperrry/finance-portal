@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 public class StockResponse {
 
+    private Long id;
     private String symbol;
     private String shortName;
     private String longName;

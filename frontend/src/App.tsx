@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-route
 import { useEffect } from "react";
 import HomePage from "./pages/HomePage";
 import MarketPage from "./pages/MarketPage";
+import PortfolioDashboardPage, { PortfolioDetailPage } from "./pages/PortfolioDashboardPage";
 import InstrumentDetailPage from "./pages/InstrumentDetailPage";
 import AnalysisPage from "./pages/AnalysisPage";
 import NewsList from "./pages/NewsList";
@@ -41,6 +42,22 @@ export default function App() {
                     element={
                         <ProtectedRoute>
                             <NewsDetail />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/portfolios"
+                    element={
+                        <ProtectedRoute>
+                            <PortfolioDashboardPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/portfolios/:id"
+                    element={
+                        <ProtectedRoute>
+                            <PortfolioDetailPage />
                         </ProtectedRoute>
                     }
                 />

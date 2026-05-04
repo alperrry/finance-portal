@@ -6,14 +6,17 @@ import com.alper.backend.user.repository.UserRepository;
 import com.alper.backend.user.dto.KeycloakUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @Log4j2
@@ -22,12 +25,13 @@ public class UserProvisioningService {
 
     private final UserRepository userRepository;
 
+    @Value("${user.initial-balance:1000000}")
+    private BigDecimal initialBalance;
+
     @Transactional
     public User provisionFromJwt(Jwt jwt) {
-        String keycloakId = jwt.getSubject();
-        if (keycloakId == null || keycloakId.isBlank()) {
-            throw new IllegalArgumentException("JWT 'sub' claim'i bulunamadı");
-        }
+        String keycloakId = resolveKeycloakId(jwt)
+                .orElseThrow(() -> new IllegalArgumentException("JWT 'sub' claim'i bulunamadı"));
 
         String username = jwt.getClaimAsString("preferred_username");
         String email = jwt.getClaimAsString("email");
@@ -38,6 +42,19 @@ public class UserProvisioningService {
         return userRepository.findByKeycloakId(keycloakId)
                 .map(existing -> updateIfChanged(existing, username, email, firstName, lastName, role))
                 .orElseGet(() -> createNew(keycloakId, username, email, firstName, lastName, role));
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<User> findExistingFromJwt(Jwt jwt) {
+        return resolveKeycloakId(jwt).flatMap(userRepository::findByKeycloakId);
+    }
+
+    private Optional<String> resolveKeycloakId(Jwt jwt) {
+        String keycloakId = jwt.getSubject();
+        if (keycloakId == null || keycloakId.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.of(keycloakId);
     }
 
     private User createNew(String keycloakId, String username, String email,
@@ -51,6 +68,7 @@ public class UserProvisioningService {
                 .role(role)
                 .isActive(true)
                 .lastLoginAt(LocalDateTime.now())
+                .balance(initialBalance)
                 .build();
 
         User saved = userRepository.save(user);
@@ -101,14 +119,14 @@ public class UserProvisioningService {
                     user.getKeycloakId(), role);
         }
 
-        user.setLastLoginAt(LocalDateTime.now());
-
         if (changed) {
+            user.setLastLoginAt(LocalDateTime.now());
             log.debug("Kullanıcı bilgileri Keycloak ile senkronize edildi | keycloakId={}",
                     user.getKeycloakId());
+            return userRepository.save(user);
         }
 
-        return userRepository.save(user);
+        return user;
     }
 
     @SuppressWarnings("unchecked")

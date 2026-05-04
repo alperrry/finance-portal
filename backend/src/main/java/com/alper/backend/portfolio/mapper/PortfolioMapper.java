@@ -18,7 +18,6 @@ public class PortfolioMapper {
 
     /**
      * CreatePortfolioRequest → yeni Portfolio entity (henüz persist edilmemiş).
-     * Balance ve version PortfolioService tarafından konfigürasyondan set edilir.
      */
     public Portfolio toEntity(CreatePortfolioRequest request, Long userId) {
         String currency = (request.displayCurrency() == null || request.displayCurrency().isBlank())
@@ -39,7 +38,6 @@ public class PortfolioMapper {
         return PortfolioResponse.builder()
                 .id(portfolio.getId())
                 .name(portfolio.getName())
-                .balance(portfolio.getBalance())
                 .displayCurrency(portfolio.getDisplayCurrency())
                 .totalValue(null)
                 .totalCostBasis(null)
@@ -66,7 +64,6 @@ public class PortfolioMapper {
         return PortfolioResponse.builder()
                 .id(portfolio.getId())
                 .name(portfolio.getName())
-                .balance(portfolio.getBalance())
                 .displayCurrency(portfolio.getDisplayCurrency())
                 .totalValue(totalValue)
                 .totalCostBasis(totalCostBasis)

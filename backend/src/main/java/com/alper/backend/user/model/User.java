@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -52,6 +53,14 @@ public class User {
     @Setter
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
+
+    @Setter
+    @Column(nullable = false, precision = 18, scale = 2)
+    private BigDecimal balance;
+
+    @Version
+    @Column(nullable = false)
+    private Long version;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

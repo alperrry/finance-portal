@@ -26,6 +26,7 @@ public class StockQueryService {
 
     private StockResponse toResponse(StockPriceSnapshot entity) {
         return StockResponse.builder()
+                .id(entity.getStock().getId())
                 .symbol(entity.getStock().getSymbol())
                 .shortName(entity.getStock().getShortName())
                 .longName(entity.getStock().getLongName())

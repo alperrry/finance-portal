@@ -6,6 +6,7 @@ export type ApiResponse<T> = {
 };
 
 export type FxResponse = {
+    id?: number;
     currencyCode: string;
     currencyName: string;
     unit: number;
@@ -15,6 +16,7 @@ export type FxResponse = {
 };
 
 export type BondResponse = {
+    id?: number;
     evdsSeriesCode: string;
     name: string;
     bondType: string;
@@ -26,6 +28,7 @@ export type BondResponse = {
 };
 
 export type FundResponse = {
+    id?: number;
     code: string;
     name: string;
     fundType: string | null;
@@ -37,6 +40,7 @@ export type FundResponse = {
 };
 
 export type StockResponse = {
+    id?: number;
     symbol: string;
     shortName: string | null;
     longName: string | null;

@@ -26,6 +26,7 @@ public class FxQueryService {
 
     private FxResponse toResponse(ExchangeRate entity) {
         return FxResponse.builder()
+                .id(entity.getId())
                 .currencyCode(entity.getCurrencyCode())
                 .currencyName(entity.getCurrencyName())
                 .unit(entity.getUnit())

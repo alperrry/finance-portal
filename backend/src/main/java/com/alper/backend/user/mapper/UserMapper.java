@@ -17,6 +17,7 @@ public class UserMapper {
                 .role(user.getRole())
                 .isActive(user.getIsActive())
                 .lastLoginAt(user.getLastLoginAt())
+                .balance(user.getBalance())
                 .createdAt(user.getCreatedAt())
                 .build();
     }

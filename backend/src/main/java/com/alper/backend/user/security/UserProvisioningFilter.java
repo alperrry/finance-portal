@@ -35,15 +35,15 @@ public class UserProvisioningFilter extends OncePerRequestFilter {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication instanceof JwtAuthenticationToken jwtAuth) {
+            Jwt jwt = jwtAuth.getToken();
             try {
-                Jwt jwt = jwtAuth.getToken();
                 User user = userProvisioningService.provisionFromJwt(jwt);
                 request.setAttribute(CURRENT_USER_ATTRIBUTE, user);
             } catch (Exception ex) {
                 log.error("Kullanıcı provisioning başarısız | uri={}",
                         request.getRequestURI(), ex);
-                // Provisioning başarısız olsa bile request devam etsin,
-                // endpoint auth gerektirmiyorsa zaten sorun olmaz.
+                userProvisioningService.findExistingFromJwt(jwt)
+                        .ifPresent(user -> request.setAttribute(CURRENT_USER_ATTRIBUTE, user));
             }
         }
 

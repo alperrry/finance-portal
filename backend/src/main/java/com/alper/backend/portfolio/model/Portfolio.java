@@ -5,7 +5,6 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
@@ -26,9 +25,6 @@ public class Portfolio {
 
     @Column(nullable = false)
     private String name;
-
-    @Column(nullable = false, precision = 18, scale = 2)
-    private BigDecimal balance;
 
     @Column(name = "display_currency", nullable = false, length = 3)
     private String displayCurrency;

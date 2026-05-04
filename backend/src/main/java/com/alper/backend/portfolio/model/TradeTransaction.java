@@ -51,6 +51,9 @@ public class TradeTransaction {
     @Column(name = "realized_profit_loss", precision = 18, scale = 2)
     private BigDecimal realizedProfitLoss;
 
+    @Column(name = "reserved_amount", precision = 18, scale = 2)
+    private BigDecimal reservedAmount;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private TransactionStatus status;

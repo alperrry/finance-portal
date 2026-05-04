@@ -3,11 +3,15 @@ package com.alper.backend.portfolio.service;
 import com.alper.backend.common.exception.BadRequestException;
 import com.alper.backend.common.exception.NotFoundException;
 import com.alper.backend.common.model.InstrumentType;
+import com.alper.backend.market.bond.model.Bond;
 import com.alper.backend.market.bond.model.BondRateHistory;
 import com.alper.backend.market.bond.repository.BondRateHistoryRepository;
 import com.alper.backend.market.bond.repository.BondRepository;
+import com.alper.backend.market.fund.model.Fund;
 import com.alper.backend.market.fund.repository.FundRepository;
+import com.alper.backend.market.fx.model.ExchangeRate;
 import com.alper.backend.market.fx.repository.ExchangeRateRepository;
+import com.alper.backend.market.stocks.model.Stock;
 import com.alper.backend.market.stocks.repository.StockRepository;
 import com.alper.backend.portfolio.dto.TradeRequest;
 import com.alper.backend.portfolio.dto.TradeResponse;
@@ -20,6 +24,8 @@ import com.alper.backend.portfolio.model.TransactionStatus;
 import com.alper.backend.portfolio.model.TransactionType;
 import com.alper.backend.portfolio.repository.PortfolioItemRepository;
 import com.alper.backend.portfolio.repository.TradeTransactionRepository;
+import com.alper.backend.user.event.UserBalanceUpdatedEvent;
+import com.alper.backend.user.service.UserBalanceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.ApplicationEventPublisher;
@@ -29,9 +35,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Trade lifecycle controller-facing service.
@@ -52,11 +63,15 @@ import java.util.Optional;
 @Log4j2
 public class TradeService {
 
+    private static final String UNKNOWN_INSTRUMENT_SYMBOL = "Bilinmiyor";
+
     private final TradeTransactionRepository tradeTransactionRepository;
     private final PortfolioItemRepository portfolioItemRepository;
     private final TradeMapper tradeMapper;
     private final PortfolioService portfolioService;
     private final TradeProcessService tradeProcessService;
+    private final TradeCurrencyService tradeCurrencyService;
+    private final UserBalanceService userBalanceService;
     private final ApplicationEventPublisher eventPublisher;
 
     private final StockRepository stockRepository;
@@ -88,16 +103,48 @@ public class TradeService {
             verifySellable(portfolio.getId(), request);
         }
 
+        BigDecimal nativeTargetPrice = tradeCurrencyService.convertTargetPriceToNative(
+                request.targetPrice(),
+                portfolio.getDisplayCurrency(),
+                request.instrumentType(),
+                request.instrumentId()
+        );
         TradeTransaction transaction = tradeMapper.toEntity(request, portfolio.getId());
+        transaction.setTargetPrice(nativeTargetPrice);
 
         if (request.instrumentType() == InstrumentType.BOND) {
             return submitBondMarketOrder(transaction);
         }
 
+        reserveBuyBalanceIfNeeded(transaction, portfolio);
         TradeTransaction saved = tradeTransactionRepository.save(transaction);
-        log.info("Trade PENDING olarak kaydedildi. tradeId={}, portfolioId={}, type={}, target={}",
-                saved.getId(), portfolioId, request.transactionType(), request.targetPrice());
-        return tradeMapper.toResponse(saved);
+        if (saved.getReservedAmount() != null) {
+            eventPublisher.publishEvent(UserBalanceUpdatedEvent.of(portfolio.getUserId()));
+        }
+        log.info("Trade PENDING olarak kaydedildi. tradeId={}, portfolioId={}, type={}, target={}, reservedAmount={}",
+                saved.getId(), portfolioId, request.transactionType(), request.targetPrice(), saved.getReservedAmount());
+        return toEnrichedResponses(List.of(saved)).get(0);
+    }
+
+    private void reserveBuyBalanceIfNeeded(TradeTransaction transaction, Portfolio portfolio) {
+        if (transaction.getTransactionType() != TransactionType.BUY) {
+            return;
+        }
+
+        BigDecimal reservedAmount = calculateBalanceAmount(transaction, portfolio, transaction.getTargetPrice());
+        userBalanceService.reserveBalance(portfolio.getUserId(), reservedAmount);
+        transaction.setReservedAmount(reservedAmount);
+    }
+
+    private BigDecimal calculateBalanceAmount(TradeTransaction transaction, Portfolio portfolio, BigDecimal nativePrice) {
+        BigDecimal totalNative = transaction.getQuantity().multiply(nativePrice);
+        String nativeCurrency = tradeCurrencyService.resolveNativeCurrency(
+                transaction.getInstrumentType(),
+                transaction.getInstrumentId()
+        );
+        return tradeCurrencyService
+                .convertOrThrow(totalNative, nativeCurrency, TradeCurrencyService.BALANCE_CURRENCY)
+                .setScale(2, RoundingMode.HALF_UP);
     }
 
     /**
@@ -125,7 +172,7 @@ public class TradeService {
         // saved entity güncel halini almak için yeniden fetch.
         TradeTransaction refreshed = tradeTransactionRepository.findById(saved.getId()).orElse(saved);
         log.info("Bond market order tamamlandı. tradeId={}, status={}", refreshed.getId(), refreshed.getStatus());
-        return tradeMapper.toResponse(refreshed);
+        return toEnrichedResponses(List.of(refreshed)).get(0);
     }
 
     /**
@@ -186,7 +233,8 @@ public class TradeService {
                 ? tradeTransactionRepository.findAllByPortfolioId(portfolioId, pageable)
                 : tradeTransactionRepository.findAllByPortfolioIdAndStatus(portfolioId, statusFilter, pageable);
 
-        return page.map(tradeMapper::toResponse);
+        Map<InstrumentType, Map<Long, InstrumentInfo>> instrumentInfoByType = loadInstrumentInfo(page.getContent());
+        return page.map(tx -> toEnrichedResponse(tx, instrumentInfoByType));
     }
 
     @Transactional(readOnly = true)
@@ -194,7 +242,7 @@ public class TradeService {
         portfolioService.verifyPortfolioBelongsToUser(portfolioId, userId);
         TradeTransaction tx = tradeTransactionRepository.findByIdAndPortfolioId(tradeId, portfolioId)
                 .orElseThrow(() -> new NotFoundException("trade"));
-        return tradeMapper.toResponse(tx);
+        return toEnrichedResponses(List.of(tx)).get(0);
     }
 
     /**
@@ -204,9 +252,91 @@ public class TradeService {
     @Transactional(readOnly = true)
     public List<TradeResponse> getTradesSince(Long portfolioId, Long userId, Instant since) {
         portfolioService.verifyPortfolioBelongsToUser(portfolioId, userId);
-        return tradeTransactionRepository.findAllByPortfolioIdAndUpdatedAtAfter(portfolioId, since).stream()
-                .map(tradeMapper::toResponse)
+        List<TradeTransaction> trades = tradeTransactionRepository.findAllByPortfolioIdAndUpdatedAtAfter(portfolioId, since);
+        return toEnrichedResponses(trades);
+    }
+
+    private List<TradeResponse> toEnrichedResponses(List<TradeTransaction> trades) {
+        Map<InstrumentType, Map<Long, InstrumentInfo>> instrumentInfoByType = loadInstrumentInfo(trades);
+        return trades.stream()
+                .map(tx -> toEnrichedResponse(tx, instrumentInfoByType))
                 .toList();
+    }
+
+    private TradeResponse toEnrichedResponse(
+            TradeTransaction tx,
+            Map<InstrumentType, Map<Long, InstrumentInfo>> instrumentInfoByType
+    ) {
+        InstrumentInfo info = instrumentInfoByType
+                .getOrDefault(tx.getInstrumentType(), Map.of())
+                .getOrDefault(tx.getInstrumentId(), InstrumentInfo.unknown());
+        return tradeMapper.toResponse(tx, info.symbol(), info.name());
+    }
+
+    private Map<InstrumentType, Map<Long, InstrumentInfo>> loadInstrumentInfo(List<TradeTransaction> trades) {
+        Map<InstrumentType, Set<Long>> idsByType = trades.stream()
+                .filter(tx -> tx.getInstrumentType() != null && tx.getInstrumentId() != null)
+                .collect(Collectors.groupingBy(
+                        TradeTransaction::getInstrumentType,
+                        () -> new EnumMap<>(InstrumentType.class),
+                        Collectors.mapping(TradeTransaction::getInstrumentId, Collectors.toSet())
+                ));
+
+        Map<InstrumentType, Map<Long, InstrumentInfo>> result = new EnumMap<>(InstrumentType.class);
+
+        Set<Long> stockIds = idsByType.getOrDefault(InstrumentType.STOCK, Set.of());
+        if (!stockIds.isEmpty()) {
+            result.put(InstrumentType.STOCK, stockRepository.findAllById(stockIds).stream()
+                    .collect(Collectors.toMap(
+                            Stock::getId,
+                            stock -> new InstrumentInfo(stock.getSymbol(), firstNonBlank(stock.getShortName(), stock.getLongName()))
+                    )));
+        }
+
+        Set<Long> fundIds = idsByType.getOrDefault(InstrumentType.FUND, Set.of());
+        if (!fundIds.isEmpty()) {
+            result.put(InstrumentType.FUND, fundRepository.findAllById(fundIds).stream()
+                    .collect(Collectors.toMap(
+                            Fund::getId,
+                            fund -> new InstrumentInfo(fund.getCode(), fund.getName())
+                    )));
+        }
+
+        Set<Long> currencyIds = idsByType.getOrDefault(InstrumentType.CURRENCY, Set.of());
+        if (!currencyIds.isEmpty()) {
+            result.put(InstrumentType.CURRENCY, exchangeRateRepository.findAllById(currencyIds).stream()
+                    .collect(Collectors.toMap(
+                            ExchangeRate::getId,
+                            rate -> new InstrumentInfo(rate.getCurrencyCode(), rate.getCurrencyName())
+                    )));
+        }
+
+        Set<Long> bondIds = idsByType.getOrDefault(InstrumentType.BOND, Set.of());
+        if (!bondIds.isEmpty()) {
+            result.put(InstrumentType.BOND, bondRepository.findAllById(bondIds).stream()
+                    .collect(Collectors.toMap(
+                            Bond::getId,
+                            bond -> new InstrumentInfo(bond.getEvdsSeriesCode(), bond.getName())
+                    )));
+        }
+
+        return result;
+    }
+
+    private String firstNonBlank(String primary, String fallback) {
+        return primary == null || primary.isBlank() ? fallback : primary;
+    }
+
+    private record InstrumentInfo(String symbol, String name) {
+
+        private InstrumentInfo {
+            symbol = symbol == null || symbol.isBlank() ? UNKNOWN_INSTRUMENT_SYMBOL : symbol;
+            name = name == null || name.isBlank() ? null : name;
+        }
+
+        private static InstrumentInfo unknown() {
+            return new InstrumentInfo(UNKNOWN_INSTRUMENT_SYMBOL, null);
+        }
     }
 
     /**
@@ -226,9 +356,20 @@ public class TradeService {
 
         tx.setStatus(TransactionStatus.CANCELLED);
         tx.setProcessedAt(Instant.now());
+        refundReservedBuyBalanceIfNeeded(tx, portfolio);
         TradeTransaction saved = tradeTransactionRepository.save(tx);
         log.info("Trade CANCELLED. tradeId={}, userId={}", saved.getId(), userId);
 
         eventPublisher.publishEvent(TradeCancelledEvent.of(saved, portfolio.getUserId()));
+    }
+
+    private void refundReservedBuyBalanceIfNeeded(TradeTransaction tx, Portfolio portfolio) {
+        if (tx.getTransactionType() != TransactionType.BUY || tx.getReservedAmount() == null) {
+            return;
+        }
+
+        userBalanceService.adjustBalance(portfolio.getUserId(), tx.getReservedAmount());
+        log.debug("PENDING BUY blokesi iade edildi. tradeId={}, userId={}, amount={}",
+                tx.getId(), portfolio.getUserId(), tx.getReservedAmount());
     }
 }

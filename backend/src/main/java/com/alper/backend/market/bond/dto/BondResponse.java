@@ -16,6 +16,7 @@ public class BondResponse implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
+    private Long id;
     private String evdsSeriesCode;
     private String name;
     private BondType bondType;

@@ -10,6 +10,7 @@ import java.time.LocalDate;
 @Builder
 public class FxResponse {
 
+    private Long id;
     private String currencyCode;
     private String currencyName;
     private Integer unit;

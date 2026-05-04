@@ -10,9 +10,9 @@ import com.alper.backend.portfolio.model.TransactionType;
 import com.alper.backend.portfolio.repository.PortfolioItemRepository;
 import com.alper.backend.portfolio.repository.PortfolioRepository;
 import com.alper.backend.portfolio.repository.TradeTransactionRepository;
+import com.alper.backend.user.service.UserBalanceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +27,7 @@ import java.util.Optional;
  *
  * <p>Yürütülen 4 adım (FR-22):
  * <ol>
- *     <li>Bakiye kontrolü (config'e göre disabled olabilir)</li>
+ *     <li>Bakiye kontrolü</li>
  *     <li>Enstrüman uygunluğu (mevcut tasarımda submit-time'da yapıldığı için placeholder)</li>
  *     <li>İşlem saati kontrolü (placeholder, ileride TurkishHolidayUtil ile aktive edilebilir)</li>
  *     <li>Limit kontrolleri (placeholder)</li>
@@ -49,9 +49,8 @@ public class TradeProcessService {
     private final PortfolioRepository portfolioRepository;
     private final PortfolioItemRepository portfolioItemRepository;
     private final ApplicationEventPublisher eventPublisher;
-
-    @Value("${portfolio.balance-check.enabled:false}")
-    private boolean balanceCheckEnabled;
+    private final UserBalanceService userBalanceService;
+    private final TradeCurrencyService tradeCurrencyService;
 
     /**
      * Trade'i verilen gerçekleşme fiyatıyla işle.
@@ -76,20 +75,20 @@ public class TradeProcessService {
     }
 
     private void checkBalance(TradeTransaction transaction, BigDecimal executionPrice) {
-        if (!balanceCheckEnabled) {
-            log.debug("Bakiye kontrolü devre dışı. tradeId={}", transaction.getId());
-            return;
-        }
         if (transaction.getTransactionType() != TransactionType.BUY) {
             return;
         }
-        Portfolio portfolio = portfolioRepository.findById(transaction.getPortfolioId())
-                .orElseThrow(() -> new TradeRejectionException("Portföy bulunamadı"));
+        Portfolio portfolio = getPortfolio(transaction.getPortfolioId());
+        SettlementAmounts settlement = calculateSettlementAmounts(transaction, portfolio, executionPrice);
+        BigDecimal additionalRequired = settlement.totalInBalanceCurrency().subtract(reservedAmount(transaction));
+        if (additionalRequired.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
 
-        BigDecimal totalCost = executionPrice.multiply(transaction.getQuantity());
-        if (portfolio.getBalance().compareTo(totalCost) < 0) {
-            throw new TradeRejectionException(
-                    "Yetersiz bakiye. Mevcut: " + portfolio.getBalance() + ", gereken: " + totalCost);
+        try {
+            userBalanceService.verifySufficientBalance(portfolio.getUserId(), additionalRequired);
+        } catch (RuntimeException e) {
+            throw new TradeRejectionException(e.getMessage());
         }
     }
 
@@ -110,9 +109,10 @@ public class TradeProcessService {
     }
 
     /**
-     * Portfolio item ve bakiye güncellemesini Average Cost yöntemiyle yapar.
+     * Portfolio item ve kullanıcı bakiyesini Average Cost yöntemiyle günceller.
      */
     private void applyToPortfolio(TradeTransaction transaction, BigDecimal executionPrice) {
+        Portfolio portfolio = getPortfolio(transaction.getPortfolioId());
         Optional<PortfolioItem> existingItemOpt = portfolioItemRepository
                 .findByPortfolioIdAndInstrumentTypeAndInstrumentId(
                         transaction.getPortfolioId(),
@@ -120,19 +120,18 @@ public class TradeProcessService {
                         transaction.getInstrumentId()
                 );
 
-        BigDecimal qty = transaction.getQuantity();
-        BigDecimal totalAmount = qty.multiply(executionPrice).setScale(AMOUNT_SCALE, RoundingMode.HALF_UP);
-        transaction.setTotalAmount(totalAmount);
+        SettlementAmounts settlement = calculateSettlementAmounts(transaction, portfolio, executionPrice);
+        transaction.setTotalAmount(settlement.totalInPortfolioCurrency());
 
         if (transaction.getTransactionType() == TransactionType.BUY) {
-            applyBuy(transaction, executionPrice, existingItemOpt, totalAmount);
+            applyBuy(transaction, portfolio, executionPrice, existingItemOpt, settlement);
         } else {
-            applySell(transaction, executionPrice, existingItemOpt, totalAmount);
+            applySell(transaction, portfolio, executionPrice, existingItemOpt, settlement);
         }
     }
 
-    private void applyBuy(TradeTransaction transaction, BigDecimal executionPrice,
-                          Optional<PortfolioItem> existingItemOpt, BigDecimal totalAmount) {
+    private void applyBuy(TradeTransaction transaction, Portfolio portfolio, BigDecimal executionPrice,
+                          Optional<PortfolioItem> existingItemOpt, SettlementAmounts settlement) {
         BigDecimal qty = transaction.getQuantity();
 
         PortfolioItem item = existingItemOpt.map(existing -> {
@@ -153,14 +152,24 @@ public class TradeProcessService {
                 .avgCost(executionPrice)
                 .build());
 
+        settleReservedBuyBalance(transaction, portfolio.getUserId(), settlement);
         portfolioItemRepository.save(item);
-
-        // Sanal bakiye disabled olsa bile DB'de tutarlı kalsın diye düşürüyoruz.
-        adjustPortfolioBalance(transaction.getPortfolioId(), totalAmount.negate());
     }
 
-    private void applySell(TradeTransaction transaction, BigDecimal executionPrice,
-                           Optional<PortfolioItem> existingItemOpt, BigDecimal totalAmount) {
+    private void settleReservedBuyBalance(TradeTransaction transaction, Long userId, SettlementAmounts settlement) {
+        BigDecimal reservedAmount = reservedAmount(transaction);
+        BigDecimal actualAmount = settlement.totalInBalanceCurrency();
+        BigDecimal balanceDelta = reservedAmount.compareTo(BigDecimal.ZERO) > 0
+                ? reservedAmount.subtract(actualAmount)
+                : actualAmount.negate();
+
+        if (balanceDelta.compareTo(BigDecimal.ZERO) != 0) {
+            adjustUserBalance(userId, balanceDelta);
+        }
+    }
+
+    private void applySell(TradeTransaction transaction, Portfolio portfolio, BigDecimal executionPrice,
+                           Optional<PortfolioItem> existingItemOpt, SettlementAmounts settlement) {
         PortfolioItem item = existingItemOpt
                 .orElseThrow(() -> new TradeRejectionException("Pozisyon bulunamadı, satış yapılamaz"));
 
@@ -173,10 +182,15 @@ public class TradeProcessService {
                     "Yetersiz pozisyon. Mevcut: " + oldQty + ", talep: " + qty);
         }
 
-        BigDecimal realizedPnL = executionPrice.subtract(item.getAvgCost())
-                .multiply(qty)
-                .setScale(AMOUNT_SCALE, RoundingMode.HALF_UP);
-        transaction.setRealizedProfitLoss(realizedPnL);
+        BigDecimal realizedPnLNative = executionPrice.subtract(item.getAvgCost()).multiply(qty);
+        BigDecimal realizedPnLDisplay = convertAmount(
+                realizedPnLNative,
+                settlement.nativeCurrency(),
+                portfolio.getDisplayCurrency()
+        ).setScale(AMOUNT_SCALE, RoundingMode.HALF_UP);
+        transaction.setRealizedProfitLoss(realizedPnLDisplay);
+
+        adjustUserBalance(portfolio.getUserId(), settlement.totalInBalanceCurrency());
 
         BigDecimal newQty = oldQty.subtract(qty);
         if (newQty.compareTo(BigDecimal.ZERO) == 0) {
@@ -185,15 +199,50 @@ public class TradeProcessService {
             item.setQuantity(newQty);
             portfolioItemRepository.save(item);
         }
-
-        adjustPortfolioBalance(transaction.getPortfolioId(), totalAmount);
     }
 
-    private void adjustPortfolioBalance(Long portfolioId, BigDecimal delta) {
-        Portfolio portfolio = portfolioRepository.findById(portfolioId)
+    private Portfolio getPortfolio(Long portfolioId) {
+        return portfolioRepository.findById(portfolioId)
                 .orElseThrow(() -> new TradeRejectionException("Portföy bulunamadı"));
-        portfolio.setBalance(portfolio.getBalance().add(delta));
-        portfolioRepository.save(portfolio);
+    }
+
+    private SettlementAmounts calculateSettlementAmounts(TradeTransaction transaction,
+                                                         Portfolio portfolio,
+                                                         BigDecimal executionPrice) {
+        BigDecimal totalNative = transaction.getQuantity().multiply(executionPrice);
+        String nativeCurrency = tradeCurrencyService.resolveNativeCurrency(
+                transaction.getInstrumentType(),
+                transaction.getInstrumentId()
+        );
+
+        BigDecimal totalInPortfolioCurrency = convertAmount(
+                totalNative,
+                nativeCurrency,
+                portfolio.getDisplayCurrency()
+        ).setScale(AMOUNT_SCALE, RoundingMode.HALF_UP);
+        BigDecimal totalInBalanceCurrency = convertAmount(
+                totalNative,
+                nativeCurrency,
+                TradeCurrencyService.BALANCE_CURRENCY
+        ).setScale(AMOUNT_SCALE, RoundingMode.HALF_UP);
+
+        return new SettlementAmounts(nativeCurrency, totalInPortfolioCurrency, totalInBalanceCurrency);
+    }
+
+    private BigDecimal convertAmount(BigDecimal amount, String from, String to) {
+        try {
+            return tradeCurrencyService.convertOrThrow(amount, from, to);
+        } catch (RuntimeException e) {
+            throw new TradeRejectionException(e.getMessage());
+        }
+    }
+
+    private void adjustUserBalance(Long userId, BigDecimal delta) {
+        try {
+            userBalanceService.adjustBalance(userId, delta);
+        } catch (RuntimeException e) {
+            throw new TradeRejectionException(e.getMessage());
+        }
     }
 
     private void approve(TradeTransaction transaction, BigDecimal executionPrice) {
@@ -212,17 +261,37 @@ public class TradeProcessService {
     }
 
     private void reject(TradeTransaction transaction, String reason) {
+        Long userId = resolvePortfolioUserId(transaction.getPortfolioId());
+        refundReservedBuyBalance(transaction, userId);
+
         transaction.setStatus(TransactionStatus.REJECTED);
         transaction.setRejectionReason(reason);
         transaction.setProcessedAt(Instant.now());
         TradeTransaction saved = tradeTransactionRepository.save(transaction);
 
-        Long userId = portfolioRepository.findById(saved.getPortfolioId())
-                .map(Portfolio::getUserId)
-                .orElse(null);
-
         log.warn("Trade REJECTED. tradeId={}, userId={}, reason={}", saved.getId(), userId, reason);
         eventPublisher.publishEvent(TradeRejectedEvent.of(saved, userId, reason));
+    }
+
+    private void refundReservedBuyBalance(TradeTransaction transaction, Long userId) {
+        if (userId == null || transaction.getTransactionType() != TransactionType.BUY) {
+            return;
+        }
+
+        BigDecimal reservedAmount = reservedAmount(transaction);
+        if (reservedAmount.compareTo(BigDecimal.ZERO) > 0) {
+            adjustUserBalance(userId, reservedAmount);
+        }
+    }
+
+    private BigDecimal reservedAmount(TradeTransaction transaction) {
+        return transaction.getReservedAmount() == null ? BigDecimal.ZERO : transaction.getReservedAmount();
+    }
+
+    private Long resolvePortfolioUserId(Long portfolioId) {
+        return portfolioRepository.findById(portfolioId)
+                .map(Portfolio::getUserId)
+                .orElse(null);
     }
 
     /**
@@ -233,5 +302,12 @@ public class TradeProcessService {
         public TradeRejectionException(String message) {
             super(message);
         }
+    }
+
+    private record SettlementAmounts(
+            String nativeCurrency,
+            BigDecimal totalInPortfolioCurrency,
+            BigDecimal totalInBalanceCurrency
+    ) {
     }
 }

@@ -25,6 +25,12 @@ public record TradeResponse(
         @Schema(description = "Enstrüman ID", example = "5")
         Long instrumentId,
 
+        @Schema(description = "Enstrüman sembolü", example = "AKBNK.IS")
+        String instrumentSymbol,
+
+        @Schema(description = "Enstrüman tam adı", example = "Akbank T.A.Ş.")
+        String instrumentName,
+
         @Schema(description = "İşlem tipi", example = "BUY")
         TransactionType transactionType,
 
