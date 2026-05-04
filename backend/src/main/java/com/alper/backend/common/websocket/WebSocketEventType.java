@@ -11,6 +11,7 @@ public enum WebSocketEventType {
     TRADE_REJECTED,
     TRADE_CANCELLED,
     PORTFOLIO_UPDATED,
+    USER_BALANCE_UPDATED,
 
     // ---- Market (broadcast) ----
     STOCK_PRICES_UPDATED,

@@ -7,6 +7,7 @@ import com.alper.backend.portfolio.event.TradeApprovedEvent;
 import com.alper.backend.portfolio.event.TradeCancelledEvent;
 import com.alper.backend.portfolio.event.TradeRejectedEvent;
 import com.alper.backend.portfolio.model.TradeTransaction;
+import com.alper.backend.user.event.UserBalanceUpdatedEvent;
 import com.alper.backend.user.model.User;
 import com.alper.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +56,8 @@ public class TradeNotificationService {
                 WebSocketEventType.TRADE_APPROVED, buildTradePayload(tx));
         sendToUser(username, WebSocketTopics.USER_PORTFOLIO,
                 WebSocketEventType.PORTFOLIO_UPDATED, buildPortfolioPayload(tx.getPortfolioId()));
+        sendToUser(username, WebSocketTopics.USER_BALANCE,
+                WebSocketEventType.USER_BALANCE_UPDATED, buildUserBalancePayload(event.userId()));
 
         log.debug("Trade APPROVED bildirimi iletildi. tradeId={}, username={}", tx.getId(), username);
     }
@@ -75,6 +78,8 @@ public class TradeNotificationService {
         payload.put("rejectionReason", event.rejectionReason());
 
         sendToUser(username, WebSocketTopics.USER_TRADES, WebSocketEventType.TRADE_REJECTED, payload);
+        sendToUser(username, WebSocketTopics.USER_BALANCE,
+                WebSocketEventType.USER_BALANCE_UPDATED, buildUserBalancePayload(event.userId()));
         log.debug("Trade REJECTED bildirimi iletildi. tradeId={}, username={}", tx.getId(), username);
     }
 
@@ -92,7 +97,24 @@ public class TradeNotificationService {
         TradeTransaction tx = event.transaction();
         sendToUser(username, WebSocketTopics.USER_TRADES,
                 WebSocketEventType.TRADE_CANCELLED, buildTradePayload(tx));
+        sendToUser(username, WebSocketTopics.USER_BALANCE,
+                WebSocketEventType.USER_BALANCE_UPDATED, buildUserBalancePayload(event.userId()));
         log.debug("Trade CANCELLED bildirimi iletildi. tradeId={}, username={}", tx.getId(), username);
+    }
+
+    /**
+     * Trade submit sırasında PENDING BUY için bloke edilen bakiye değişimini bildirir.
+     */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onUserBalanceUpdated(UserBalanceUpdatedEvent event) {
+        String username = resolveUsername(event.userId());
+        if (username == null) {
+            return;
+        }
+
+        sendToUser(username, WebSocketTopics.USER_BALANCE,
+                WebSocketEventType.USER_BALANCE_UPDATED, buildUserBalancePayload(event.userId()));
+        log.debug("USER_BALANCE_UPDATED bildirimi iletildi. userId={}, username={}", event.userId(), username);
     }
 
     private void sendToUser(String username, String destination, WebSocketEventType type, Object data) {
@@ -110,6 +132,12 @@ public class TradeNotificationService {
     private Map<String, Object> buildPortfolioPayload(Long portfolioId) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("portfolioId", portfolioId);
+        return payload;
+    }
+
+    private Map<String, Object> buildUserBalancePayload(Long userId) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("userId", userId);
         return payload;
     }
 
