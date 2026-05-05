@@ -41,12 +41,18 @@ public class UserProvisioningService {
 
         return userRepository.findByKeycloakId(keycloakId)
                 .map(existing -> updateIfChanged(existing, username, email, firstName, lastName, role))
+                .or(() -> findExistingIdentity(username, email)
+                        .map(existing -> claimExistingIdentity(existing, keycloakId, username, email, firstName, lastName, role)))
                 .orElseGet(() -> createNew(keycloakId, username, email, firstName, lastName, role));
     }
 
     @Transactional(readOnly = true)
     public Optional<User> findExistingFromJwt(Jwt jwt) {
-        return resolveKeycloakId(jwt).flatMap(userRepository::findByKeycloakId);
+        return resolveKeycloakId(jwt)
+                .flatMap(userRepository::findByKeycloakId)
+                .or(() -> findExistingIdentity(
+                        jwt.getClaimAsString("preferred_username"),
+                        jwt.getClaimAsString("email")));
     }
 
     private Optional<String> resolveKeycloakId(Jwt jwt) {
@@ -55,6 +61,29 @@ public class UserProvisioningService {
             return Optional.empty();
         }
         return Optional.of(keycloakId);
+    }
+
+    private Optional<User> findExistingIdentity(String username, String email) {
+        if (username != null && !username.isBlank()) {
+            Optional<User> byUsername = userRepository.findByUsername(username);
+            if (byUsername.isPresent()) {
+                return byUsername;
+            }
+        }
+
+        if (email != null && !email.isBlank()) {
+            return userRepository.findByEmail(email);
+        }
+
+        return Optional.empty();
+    }
+
+    private User claimExistingIdentity(User user, String keycloakId, String username, String email,
+                                       String firstName, String lastName, UserRole role) {
+        log.warn("Mevcut kullanıcı yeni Keycloak kimliği ile eşleştiriliyor | userId={} | oldKeycloakId={} | newKeycloakId={}",
+                user.getId(), user.getKeycloakId(), keycloakId);
+        user.setKeycloakId(keycloakId);
+        return updateIfChanged(user, username, email, firstName, lastName, role);
     }
 
     private User createNew(String keycloakId, String username, String email,

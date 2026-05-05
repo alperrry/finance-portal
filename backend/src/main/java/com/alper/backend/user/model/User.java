@@ -22,6 +22,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Setter
     @Column(name = "keycloak_id", nullable = false, unique = true, length = 36)
     private String keycloakId;
 
