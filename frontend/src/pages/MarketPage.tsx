@@ -144,8 +144,16 @@ const compareNullableNumbersAsc = (left: number | null | undefined, right: numbe
     return normalizedLeft - normalizedRight;
 };
 
-const compareNullableNumbersDesc = (left: number | null | undefined, right: number | null | undefined) =>
-    compareNullableNumbersAsc(right, left);
+const compareNullableNumbersDesc = (left: number | null | undefined, right: number | null | undefined) => {
+    const normalizedLeft = toSafeNumber(left);
+    const normalizedRight = toSafeNumber(right);
+
+    if (normalizedLeft === null && normalizedRight === null) return 0;
+    if (normalizedLeft === null) return 1;
+    if (normalizedRight === null) return -1;
+
+    return normalizedRight - normalizedLeft;
+};
 
 const compareNullableStringsAsc = (left: string | null | undefined, right: string | null | undefined) => {
     const normalizedLeft = left?.trim() ?? "";

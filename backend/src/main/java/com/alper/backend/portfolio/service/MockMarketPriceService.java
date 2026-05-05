@@ -51,13 +51,22 @@ public class MockMarketPriceService {
     }
 
     private Optional<MarketPriceQuote> getStockQuote(Long stockId) {
-        BigDecimal basePrice = stockPriceSnapshotRepository
-                .findFirstByStockIdOrderByFetchedAtDesc(stockId)
-                .map(StockPriceSnapshot::getPrice)
-                .orElseGet(() -> stockPriceHistoryRepository
-                        .findFirstByStockIdOrderByTradeDateDesc(stockId)
-                        .map(history -> history.getClosePrice())
-                        .orElse(null));
+        Optional<StockPriceSnapshot> snapshotOpt = stockPriceSnapshotRepository
+                .findFirstByStockIdOrderByFetchedAtDesc(stockId);
+        if (snapshotOpt.isPresent()) {
+            StockPriceSnapshot snapshot = snapshotOpt.get();
+            return Optional.of(new MarketPriceQuote(
+                    snapshot.getPrice(),
+                    snapshot.getChange(),
+                    snapshot.getChangePercent(),
+                    buildTrend(InstrumentType.STOCK, stockId, snapshot.getPrice(), Instant.now().toEpochMilli() / 60000L)
+            ));
+        }
+
+        BigDecimal basePrice = stockPriceHistoryRepository
+                .findFirstByStockIdOrderByTradeDateDesc(stockId)
+                .map(history -> history.getClosePrice())
+                .orElse(null);
         if (basePrice == null) {
             return Optional.empty();
         }
@@ -77,9 +86,8 @@ public class MockMarketPriceService {
 
     private MarketPriceQuote buildQuote(InstrumentType type, Long instrumentId, BigDecimal basePrice) {
         long minuteSeed = Instant.now().toEpochMilli() / 60000L;
-        BigDecimal currentMovePct = deterministicPct(type, instrumentId, minuteSeed, 3);
         BigDecimal dailyMovePct = deterministicPct(type, instrumentId, minuteSeed / 1440L, 2);
-        BigDecimal currentPrice = applyPct(basePrice, currentMovePct);
+        BigDecimal currentPrice = basePrice.setScale(PRICE_SCALE, RoundingMode.HALF_UP);
         BigDecimal previousPrice = applyPct(basePrice, dailyMovePct.negate());
         BigDecimal dailyChange = currentPrice.subtract(previousPrice).setScale(PRICE_SCALE, RoundingMode.HALF_UP);
         BigDecimal dailyChangePct = previousPrice.compareTo(BigDecimal.ZERO) == 0

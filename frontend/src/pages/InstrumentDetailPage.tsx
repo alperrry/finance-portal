@@ -259,6 +259,16 @@ const createLinePath = (values: Array<number | null>, xAt: (index: number) => nu
 
 const getLastClose = (points: HistoryPoint[]) => [...points].reverse().find((point) => toSafeNumber(point.close) !== null)?.close ?? null;
 
+const getDisplayLatestValue = (summary: InstrumentSummary, latestClose: number | null) =>
+    summary.type === "stocks" ? summary.latestValue : latestClose ?? summary.latestValue;
+
+const getDisplayLatestNote = (summary: InstrumentSummary, latestClose: number | null, historyTo: string | null | undefined) =>
+    summary.type === "stocks"
+        ? `${formatLocalDate(summary.latestDate)} piyasa fiyatı`
+        : latestClose !== null
+          ? `${formatLocalDate(historyTo)}`
+          : summary.helper;
+
 const getFirstClose = (points: HistoryPoint[]) => points.find((point) => toSafeNumber(point.close) !== null)?.close ?? null;
 
 const calculatePeriodChange = (points: HistoryPoint[]) => {
@@ -749,8 +759,8 @@ export default function InstrumentDetailPage() {
         return [
             {
                 label: "Son Değer",
-                value: formatValueByType(summary.type, latestClose ?? summary.latestValue, summary.currency),
-                note: latestClose !== null ? `${formatLocalDate(history?.to)}` : summary.helper,
+                value: formatValueByType(summary.type, getDisplayLatestValue(summary, latestClose), summary.currency),
+                note: getDisplayLatestNote(summary, latestClose, history?.to),
             },
             {
                 label: `${range} Değişim`,

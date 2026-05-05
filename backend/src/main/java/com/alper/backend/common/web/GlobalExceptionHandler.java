@@ -4,6 +4,7 @@ import com.alper.backend.common.exception.BadRequestException;
 import com.alper.backend.common.exception.ConflictException;
 import com.alper.backend.common.exception.ErrorCode;
 import com.alper.backend.common.exception.ExternalApiException;
+import com.alper.backend.common.exception.GoneException;
 import com.alper.backend.common.exception.NotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -41,6 +42,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ApiErrorResponse> handleConflict(
             ConflictException ex, HttpServletRequest request) {
+        return build(ex.getErrorCode(), ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(GoneException.class)
+    public ResponseEntity<ApiErrorResponse> handleGone(
+            GoneException ex, HttpServletRequest request) {
         return build(ex.getErrorCode(), ex.getMessage(), request.getRequestURI());
     }
 

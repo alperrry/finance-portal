@@ -1706,7 +1706,7 @@ export default function AnalysisPage() {
     const metricCards = useMemo(
         () => [
             {
-                label: "Son Fiyat",
+                label: resolvedType === "stocks" ? "Son Kapanış" : "Son Değer",
                 value: formatValueByType(resolvedType, latestPoint?.close ?? null),
             },
             {
@@ -2270,79 +2270,81 @@ export default function AnalysisPage() {
                             </div>
                         </div>
 
-                        <div className="analysis-chart-toolbar">
-                            {supportsCandlestick ? (
-                                <div className="analysis-chart-type-switch" role="radiogroup" aria-label="Grafik türü">
-                                    <button
-                                        className={`analysis-toggle-chip ${chartType === "line" ? "active" : ""}`.trim()}
-                                        type="button"
-                                        role="radio"
-                                        aria-checked={chartType === "line"}
-                                        onClick={() => setChartType("line")}
-                                    >
-                                        Çizgi
-                                    </button>
-                                    <button
-                                        className={`analysis-toggle-chip ${chartType === "candle" ? "active" : ""}`.trim()}
-                                        type="button"
-                                        role="radio"
-                                        aria-checked={chartType === "candle"}
-                                        onClick={() => setChartType("candle")}
-                                    >
-                                        Mum
-                                    </button>
+                        <div className="analysis-chart-control-stack">
+                            <div className="analysis-chart-toolbar">
+                                {supportsCandlestick ? (
+                                    <div className="analysis-chart-type-switch" role="radiogroup" aria-label="Grafik türü">
+                                        <button
+                                            className={`analysis-toggle-chip ${chartType === "line" ? "active" : ""}`.trim()}
+                                            type="button"
+                                            role="radio"
+                                            aria-checked={chartType === "line"}
+                                            onClick={() => setChartType("line")}
+                                        >
+                                            Çizgi
+                                        </button>
+                                        <button
+                                            className={`analysis-toggle-chip ${chartType === "candle" ? "active" : ""}`.trim()}
+                                            type="button"
+                                            role="radio"
+                                            aria-checked={chartType === "candle"}
+                                            onClick={() => setChartType("candle")}
+                                        >
+                                            Mum
+                                        </button>
+                                    </div>
+                                ) : null}
+                            </div>
+
+                            {resolvedType === "stocks" ? (
+                                <div className="analysis-indicator-panel">
+                                    <div className="analysis-indicator-group">
+                                        <div>
+                                            <span className="analysis-panel-kicker">OVERLAY İNDİKATÖRLER</span>
+                                        </div>
+                                        <div className="analysis-toggle-list">
+                                            {OVERLAY_INDICATOR_OPTIONS.map((option) => (
+                                                <button
+                                                    key={option.key}
+                                                    className={`analysis-toggle-chip ${
+                                                        activeOverlayIndicators.includes(option.key) ? "active" : ""
+                                                    }`.trim()}
+                                                    type="button"
+                                                    aria-pressed={activeOverlayIndicators.includes(option.key)}
+                                                    onClick={() => toggleOverlayIndicator(option.key)}
+                                                >
+                                                    {option.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             ) : null}
-                        </div>
 
-                        {resolvedType === "stocks" ? (
-                            <div className="analysis-indicator-panel">
-                                <div className="analysis-indicator-group">
+                            {isIndicatorHistoryLoading ? (
+                                <div className="analysis-status-card compact">
                                     <div>
-                                        <span className="analysis-panel-kicker">OVERLAY İNDİKATÖRLER</span>
-                                    </div>
-                                    <div className="analysis-toggle-list">
-                                        {OVERLAY_INDICATOR_OPTIONS.map((option) => (
-                                            <button
-                                                key={option.key}
-                                                className={`analysis-toggle-chip ${
-                                                    activeOverlayIndicators.includes(option.key) ? "active" : ""
-                                                }`.trim()}
-                                                type="button"
-                                                aria-pressed={activeOverlayIndicators.includes(option.key)}
-                                                onClick={() => toggleOverlayIndicator(option.key)}
-                                            >
-                                                {option.label}
-                                            </button>
-                                        ))}
+                                        <strong>İndikatörler yükleniyor</strong>
+                                        <span>Seçili sembol ve aralık için teknik seriler alınıyor.</span>
                                     </div>
                                 </div>
-                            </div>
-                        ) : null}
+                            ) : indicatorHistoryError ? (
+                                <div className="analysis-status-card warning compact">
+                                    <div>
+                                        <strong>İndikatör verisi alınamadı</strong>
+                                        <span>{indicatorHistoryError}</span>
+                                    </div>
+                                </div>
+                            ) : null}
 
-                        {isIndicatorHistoryLoading ? (
-                            <div className="analysis-status-card compact">
-                                <div>
-                                    <strong>İndikatörler yükleniyor</strong>
-                                    <span>Seçili sembol ve aralık için teknik seriler alınıyor.</span>
-                                </div>
+                            <div className="analysis-series-legend">
+                                {chartLegendSeries.map((item) => (
+                                    <div key={item.key} className="analysis-legend-item">
+                                        <span className="analysis-legend-dot" style={{ backgroundColor: item.color }} />
+                                        <span>{item.label}</span>
+                                    </div>
+                                ))}
                             </div>
-                        ) : indicatorHistoryError ? (
-                            <div className="analysis-status-card warning compact">
-                                <div>
-                                    <strong>İndikatör verisi alınamadı</strong>
-                                    <span>{indicatorHistoryError}</span>
-                                </div>
-                            </div>
-                        ) : null}
-
-                        <div className="analysis-series-legend">
-                            {chartLegendSeries.map((item) => (
-                                <div key={item.key} className="analysis-legend-item">
-                                    <span className="analysis-legend-dot" style={{ backgroundColor: item.color }} />
-                                    <span>{item.label}</span>
-                                </div>
-                            ))}
                         </div>
 
                         {isHistoryLoading ? (
@@ -2366,14 +2368,16 @@ export default function AnalysisPage() {
                             </div>
                         ) : effectiveChartType === "candle" ? (
                             <div className="analysis-chart-stage">
-                                <DrawingToolbar
-                                    activeTool={drawingTool}
-                                    toolDisabled={drawingToolsDisabled}
-                                    busy={drawingBusy}
-                                    canClear={drawings.length > 0}
-                                    onSelect={handleDrawingToolSelect}
-                                    onClear={handleClearDrawings}
-                                />
+                                {supportsCandlestick ? (
+                                    <DrawingToolbar
+                                        activeTool={drawingTool}
+                                        toolDisabled={drawingToolsDisabled}
+                                        busy={drawingBusy}
+                                        canClear={drawings.length > 0}
+                                        onSelect={handleDrawingToolSelect}
+                                        onClear={handleClearDrawings}
+                                    />
+                                ) : null}
                                 <CandlestickChart
                                     key={`candle-${resolvedType}-${resolvedCode}-${selectedRange}-${activeOverlayIndicators.join(",")}`}
                                     data={candlestickData}
@@ -2391,14 +2395,6 @@ export default function AnalysisPage() {
                             </div>
                         ) : (
                             <div className="analysis-chart-stage">
-                                <DrawingToolbar
-                                    activeTool={drawingTool}
-                                    toolDisabled={drawingToolsDisabled}
-                                    busy={drawingBusy}
-                                    canClear={drawings.length > 0}
-                                    onSelect={handleDrawingToolSelect}
-                                    onClear={handleClearDrawings}
-                                />
                                 <LineChart
                                     dates={dates}
                                     series={chartSeries}

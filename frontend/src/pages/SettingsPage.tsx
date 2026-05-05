@@ -4,13 +4,25 @@ import {
     useRef,
     useState,
     type ChangeEvent,
+    type ClipboardEvent,
     type FormEvent,
     type KeyboardEvent,
     type MutableRefObject,
 } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { ApiError } from "../api/client";
-import { updateCurrentUser, type UpdateUserRequest, type UserResponse } from "../api/user";
+import {
+    changeCurrentUserPassword,
+    deleteOtpCredential,
+    fetchSecurityStatus,
+    setupOtp,
+    updateCurrentUser,
+    verifyOtp,
+    type OtpSetupResponse,
+    type SecurityStatusResponse,
+    type UpdateUserRequest,
+    type UserResponse,
+} from "../api/user";
 import { useAuth } from "../auth/AuthContext";
 import { useToast } from "../components/ToastContext";
 import { KapitalShell } from "../components/layout";
@@ -28,9 +40,14 @@ type ProfileForm = {
     firstName: string;
     lastName: string;
 };
+type PasswordForm = {
+    newPassword: string;
+    confirmPassword: string;
+};
 type ProfileField = keyof ProfileForm;
 type FormErrors = Partial<Record<ProfileField, string>>;
 type FieldTouched = Partial<Record<ProfileField, boolean>>;
+type PasswordErrors = Partial<Record<keyof PasswordForm, string>>;
 
 const SETTINGS_SECTIONS: Array<{ id: SettingsSection; label: string; description: string }> = [
     { id: "profile", label: "Profil", description: "Kullanici bilgileri" },
@@ -41,11 +58,15 @@ const SETTINGS_SECTIONS: Array<{ id: SettingsSection; label: string; description
 const KEYCLOAK_BASE_URL = import.meta.env.VITE_KEYCLOAK_URL ?? "http://localhost:8080";
 const KEYCLOAK_REALM = import.meta.env.VITE_KEYCLOAK_REALM ?? "finance-portal";
 const KEYCLOAK_ACCOUNT_URL = `${KEYCLOAK_BASE_URL}/realms/${KEYCLOAK_REALM}/account`;
-const KEYCLOAK_SECURITY_URL = `${KEYCLOAK_ACCOUNT_URL}/account-security/signing-in`;
 
 const EMPTY_FORM: ProfileForm = {
     firstName: "",
     lastName: "",
+};
+
+const EMPTY_PASSWORD_FORM: PasswordForm = {
+    newPassword: "",
+    confirmPassword: "",
 };
 
 function buildForm(user: UserResponse | null): ProfileForm {
@@ -140,6 +161,22 @@ function resolveProfileError(caughtError: unknown) {
 
     if (caughtError instanceof Error) return caughtError.message;
     return "Bir hata olustu. Lutfen tekrar deneyin.";
+}
+
+function validatePasswordForm(form: PasswordForm): PasswordErrors {
+    const errors: PasswordErrors = {};
+
+    if (form.newPassword.length < 8) {
+        errors.newPassword = "Şifre en az 8 karakter olmalıdır.";
+    } else if (form.newPassword.length > 128) {
+        errors.newPassword = "Şifre en fazla 128 karakter olabilir.";
+    }
+
+    if (form.confirmPassword !== form.newPassword) {
+        errors.confirmPassword = "Şifre tekrarı eşleşmiyor.";
+    }
+
+    return errors;
 }
 
 function openExternal(url: string) {
@@ -497,6 +534,173 @@ function ProfileSection() {
 }
 
 function SecuritySection() {
+    const { showToast } = useToast();
+    const [passwordForm, setPasswordForm] = useState<PasswordForm>(EMPTY_PASSWORD_FORM);
+    const [passwordTouched, setPasswordTouched] = useState<Partial<Record<keyof PasswordForm, boolean>>>({});
+    const [passwordError, setPasswordError] = useState<string | null>(null);
+    const [passwordSaving, setPasswordSaving] = useState(false);
+    const [securityStatus, setSecurityStatus] = useState<SecurityStatusResponse | null>(null);
+    const [securityLoading, setSecurityLoading] = useState(true);
+    const [securityError, setSecurityError] = useState<string | null>(null);
+    const [otpBusyId, setOtpBusyId] = useState<string | null>(null);
+
+    const [otpStep, setOtpStep] = useState<"idle" | "starting" | "qr" | "verify">("idle");
+    const [otpSetupData, setOtpSetupData] = useState<OtpSetupResponse | null>(null);
+    const [otpCode, setOtpCode] = useState<string[]>(["", "", "", "", "", ""]);
+    const [otpVerifying, setOtpVerifying] = useState(false);
+    const [otpError, setOtpError] = useState<string | null>(null);
+    const otpInputRefs = useRef<Array<HTMLInputElement | null>>([]);
+
+    const passwordErrors = useMemo(() => validatePasswordForm(passwordForm), [passwordForm]);
+    const passwordCanSubmit =
+        passwordForm.newPassword.length > 0 &&
+        passwordForm.confirmPassword.length > 0 &&
+        Object.keys(passwordErrors).length === 0 &&
+        !passwordSaving;
+
+    const loadSecurityStatus = async () => {
+        setSecurityLoading(true);
+        setSecurityError(null);
+
+        try {
+            setSecurityStatus(await fetchSecurityStatus());
+        } catch (caughtError) {
+            setSecurityError(resolveProfileError(caughtError));
+        } finally {
+            setSecurityLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        void loadSecurityStatus();
+    }, []);
+
+    const updatePasswordField = (field: keyof PasswordForm) => (event: ChangeEvent<HTMLInputElement>) => {
+        setPasswordForm((current) => ({ ...current, [field]: event.target.value }));
+        setPasswordTouched((current) => ({ ...current, [field]: true }));
+        setPasswordError(null);
+    };
+
+    const renderPasswordError = (field: keyof PasswordForm) => {
+        if (!passwordTouched[field] || !passwordErrors[field]) return null;
+        return <span className="settings-field-error">{passwordErrors[field]}</span>;
+    };
+
+    const handlePasswordSubmit = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setPasswordTouched({ newPassword: true, confirmPassword: true });
+
+        if (!passwordCanSubmit) return;
+
+        setPasswordSaving(true);
+        setPasswordError(null);
+
+        try {
+            await changeCurrentUserPassword(passwordForm.newPassword);
+            setPasswordForm(EMPTY_PASSWORD_FORM);
+            setPasswordTouched({});
+            showToast("Şifre güncellendi", "success");
+        } catch (caughtError) {
+            setPasswordError(resolveProfileError(caughtError));
+        } finally {
+            setPasswordSaving(false);
+        }
+    };
+
+    const handleDeleteOtp = async (credentialId: string) => {
+        if (!window.confirm("İki aşamalı doğrulama bu cihaz için kaldırılsın mı?")) return;
+
+        setOtpBusyId(credentialId);
+        setSecurityError(null);
+
+        try {
+            const nextStatus = await deleteOtpCredential(credentialId);
+            setSecurityStatus(nextStatus);
+            showToast("İki aşamalı doğrulama kaldırıldı", "success");
+        } catch (caughtError) {
+            setSecurityError(resolveProfileError(caughtError));
+        } finally {
+            setOtpBusyId(null);
+        }
+    };
+
+    const handleStartOtpSetup = async () => {
+        setOtpStep("starting");
+        setOtpError(null);
+        try {
+            const data = await setupOtp();
+            setOtpSetupData(data);
+            setOtpStep("qr");
+        } catch (err) {
+            setOtpStep("idle");
+            setOtpError(resolveProfileError(err));
+        }
+    };
+
+    const handleOtpSubmit = async (code: string) => {
+        if (code.length !== 6 || otpVerifying) return;
+        setOtpVerifying(true);
+        setOtpError(null);
+        try {
+            const status = await verifyOtp(code);
+            setSecurityStatus(status);
+            setOtpStep("idle");
+            setOtpSetupData(null);
+            setOtpCode(["", "", "", "", "", ""]);
+            showToast("Iki asamali dogrulama aktive edildi", "success");
+        } catch (err) {
+            if (err instanceof ApiError && err.status === 410) {
+                setOtpStep("idle");
+                setOtpSetupData(null);
+                setOtpError("Setup suresi doldu, yeniden baslatin.");
+            } else {
+                setOtpError(resolveProfileError(err));
+            }
+            setOtpCode(["", "", "", "", "", ""]);
+            window.requestAnimationFrame(() => otpInputRefs.current[0]?.focus());
+        } finally {
+            setOtpVerifying(false);
+        }
+    };
+
+    const handleOtpCodeChange = (index: number, rawValue: string) => {
+        const digit = rawValue.replace(/\D/g, "").slice(-1);
+        const next = otpCode.map((d, i) => (i === index ? digit : d));
+        setOtpCode(next);
+        setOtpError(null);
+        if (digit && index < 5) {
+            otpInputRefs.current[index + 1]?.focus();
+        }
+        if (digit && index === 5 && next.join("").length === 6) {
+            void handleOtpSubmit(next.join(""));
+        }
+    };
+
+    const handleOtpKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Backspace" && !otpCode[index] && index > 0) {
+            otpInputRefs.current[index - 1]?.focus();
+        }
+    };
+
+    const handleOtpPaste = (e: ClipboardEvent<HTMLInputElement>) => {
+        e.preventDefault();
+        const digits = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+        if (!digits) return;
+        const next = ["", "", "", "", "", ""];
+        for (let i = 0; i < digits.length; i++) next[i] = digits[i];
+        setOtpCode(next);
+        const focusIdx = Math.min(digits.length, 5);
+        otpInputRefs.current[focusIdx]?.focus();
+        if (digits.length === 6) void handleOtpSubmit(digits);
+    };
+
+    const resetOtpFlow = () => {
+        setOtpStep("idle");
+        setOtpSetupData(null);
+        setOtpCode(["", "", "", "", "", ""]);
+        setOtpError(null);
+    };
+
     return (
         <section className="settings-panel-content" id="settings-panel-security" role="tabpanel" aria-labelledby="settings-tab-security">
             <div className="settings-grid settings-grid-security">
@@ -508,16 +712,44 @@ function SecuritySection() {
                         </div>
                     </div>
                     <p className="settings-card-copy">
-                        Sifrenizi Keycloak Account Console uzerinden degistirebilirsiniz.
+                        Yeni şifrenizi bu sayfadan belirleyin. Değişiklik Keycloak hesabınıza doğrudan uygulanır.
                     </p>
-                    <p className="settings-card-muted">
-                        Guvenlik nedeniyle sifre degisikligi harici bir sayfada yapilir.
-                    </p>
-                    <div className="settings-action-row">
-                        <button className="settings-primary-btn" type="button" onClick={() => openExternal(KEYCLOAK_SECURITY_URL)}>
-                            Sifre Degistir
-                        </button>
-                    </div>
+                    <form className="settings-form" onSubmit={handlePasswordSubmit} noValidate>
+                        <label className="settings-field" htmlFor="settings-new-password">
+                            <span>Yeni Şifre</span>
+                            <input
+                                id="settings-new-password"
+                                type="password"
+                                value={passwordForm.newPassword}
+                                onChange={updatePasswordField("newPassword")}
+                                onBlur={() => setPasswordTouched((current) => ({ ...current, newPassword: true }))}
+                                autoComplete="new-password"
+                                className={passwordTouched.newPassword && passwordErrors.newPassword ? "invalid" : ""}
+                            />
+                            {renderPasswordError("newPassword")}
+                        </label>
+                        <label className="settings-field" htmlFor="settings-confirm-password">
+                            <span>Şifre Tekrarı</span>
+                            <input
+                                id="settings-confirm-password"
+                                type="password"
+                                value={passwordForm.confirmPassword}
+                                onChange={updatePasswordField("confirmPassword")}
+                                onBlur={() => setPasswordTouched((current) => ({ ...current, confirmPassword: true }))}
+                                autoComplete="new-password"
+                                className={passwordTouched.confirmPassword && passwordErrors.confirmPassword ? "invalid" : ""}
+                            />
+                            {renderPasswordError("confirmPassword")}
+                        </label>
+
+                        {passwordError ? <div className="settings-form-error">{passwordError}</div> : null}
+
+                        <div className="settings-form-actions">
+                            <button className="settings-primary-btn" type="submit" disabled={!passwordCanSubmit}>
+                                {passwordSaving ? "Güncelleniyor..." : "Şifreyi güncelle"}
+                            </button>
+                        </div>
+                    </form>
                 </article>
 
                 <article className="settings-card">
@@ -526,26 +758,156 @@ function SecuritySection() {
                             <span className="settings-card-kicker">Iki Asamali Dogrulama</span>
                             <h3 className="settings-card-title">2FA / OTP</h3>
                         </div>
-                        <span className="settings-neutral-pill">Account Console</span>
+                        <span className={`settings-status-pill ${securityStatus?.otpEnabled ? "active" : "passive"}`}>
+                            {securityStatus?.otpEnabled ? "Aktif" : "Pasif"}
+                        </span>
                     </div>
                     <p className="settings-card-copy">
                         Hesabiniza ekstra guvenlik katmani ekleyin. Authenticator uygulamasi ile her giriste 6 haneli kod isteyebiliriz.
                     </p>
                     <p className="settings-card-muted">
-                        Yonetim Keycloak Account Console uzerinde yapilir. Setup tamamlandiktan sonra bu sayfaya geri donebilirsiniz.
+                        Mevcut OTP cihazlarınızı bu sayfadan görüntüleyebilir ve kaldırabilirsiniz.
                     </p>
-                    <div className="settings-inline-note compact">
-                        <div>
-                            <strong>Durum gostergesi bu surumde okunmuyor.</strong>
-                            {/* TODO: OTP aktif/pasif durumu icin backend tarafinda Keycloak Admin API'ye bakan bir 2fa-status endpoint'i eklenebilir. */}
-                            <span>Ilk versiyonda dogrudan Keycloak guvenlik ekranina yonlendiriyoruz.</span>
+
+                    {securityLoading ? (
+                        <div className="settings-inline-note compact">
+                            <div>
+                                <strong>Durum okunuyor</strong>
+                                <span>Keycloak güvenlik bilgileri alınıyor.</span>
+                            </div>
                         </div>
-                    </div>
-                    <div className="settings-action-row">
-                        <button className="settings-primary-btn" type="button" onClick={() => openExternal(KEYCLOAK_SECURITY_URL)}>
-                            Iki Asamali Dogrulamayi Yonet
-                        </button>
-                    </div>
+                    ) : securityError ? (
+                        <div className="settings-status-card error">
+                            <div>
+                                <strong>Güvenlik bilgileri alınamadı</strong>
+                                <span>{securityError}</span>
+                            </div>
+                            <button className="settings-inline-btn" type="button" onClick={() => void loadSecurityStatus()}>
+                                Tekrar dene
+                            </button>
+                        </div>
+                    ) : securityStatus?.otpEnabled ? (
+                        <div className="settings-credential-list">
+                            {securityStatus.otpCredentials.map((credential) => (
+                                <div key={credential.id} className="settings-credential-row">
+                                    <div>
+                                        <strong>{credential.label || "Authenticator"}</strong>
+                                        <span>{credential.createdAt ? formatDate(new Date(credential.createdAt).toISOString()) : "Kayıt tarihi yok"}</span>
+                                    </div>
+                                    <button
+                                        className="settings-secondary-btn danger"
+                                        type="button"
+                                        disabled={otpBusyId === credential.id}
+                                        onClick={() => void handleDeleteOtp(credential.id)}
+                                    >
+                                        {otpBusyId === credential.id ? "Kaldırılıyor..." : "Kaldır"}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    ) : otpStep === "qr" && otpSetupData ? (
+                        <div className="otp-setup-flow">
+                            <div className="otp-setup-qr-block">
+                                <img src={otpSetupData.qrCodeDataUrl} alt="TOTP QR kodu" className="otp-setup-qr-img" />
+                            </div>
+                            <div className="otp-setup-secret-block">
+                                <span className="settings-card-kicker">Manuel giris icin kod</span>
+                                <div className="otp-setup-secret-row">
+                                    <code className="otp-setup-secret">{otpSetupData.secret}</code>
+                                    <button
+                                        className="settings-inline-btn"
+                                        type="button"
+                                        onClick={() => void navigator.clipboard.writeText(otpSetupData.secret)}
+                                    >
+                                        Kopyala
+                                    </button>
+                                </div>
+                                <p className="settings-card-muted">
+                                    Authenticator uygulamanizda "Manuel giris" secenegi ile yukardaki kodu girin veya QR kodu tarayin.
+                                </p>
+                            </div>
+                            <div className="settings-action-row">
+                                <button className="settings-secondary-btn" type="button" onClick={resetOtpFlow}>
+                                    Iptal
+                                </button>
+                                <button
+                                    className="settings-primary-btn"
+                                    type="button"
+                                    onClick={() => {
+                                        setOtpStep("verify");
+                                        window.requestAnimationFrame(() => otpInputRefs.current[0]?.focus());
+                                    }}
+                                >
+                                    Devam
+                                </button>
+                            </div>
+                        </div>
+                    ) : otpStep === "verify" ? (
+                        <div className="otp-setup-flow">
+                            <p className="settings-card-copy">Authenticator uygulamanizda gorunen 6 haneli kodu girin.</p>
+                            <div className="otp-digit-row">
+                                {otpCode.map((digit, i) => (
+                                    <input
+                                        key={i}
+                                        ref={(node) => {
+                                            otpInputRefs.current[i] = node;
+                                        }}
+                                        className={`otp-digit-input${otpError ? " invalid" : ""}`}
+                                        type="text"
+                                        inputMode="numeric"
+                                        maxLength={1}
+                                        value={digit}
+                                        autoComplete="one-time-code"
+                                        onChange={(e) => handleOtpCodeChange(i, e.target.value)}
+                                        onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                                        onPaste={handleOtpPaste}
+                                        disabled={otpVerifying}
+                                    />
+                                ))}
+                            </div>
+                            {otpError ? <div className="settings-form-error">{otpError}</div> : null}
+                            <div className="settings-action-row">
+                                <button
+                                    className="settings-secondary-btn"
+                                    type="button"
+                                    onClick={() => {
+                                        setOtpStep("qr");
+                                        setOtpError(null);
+                                        setOtpCode(["", "", "", "", "", ""]);
+                                    }}
+                                    disabled={otpVerifying}
+                                >
+                                    Geri
+                                </button>
+                                <button
+                                    className="settings-primary-btn"
+                                    type="button"
+                                    onClick={() => void handleOtpSubmit(otpCode.join(""))}
+                                    disabled={otpCode.join("").length !== 6 || otpVerifying}
+                                >
+                                    {otpVerifying ? "Dogrulanıyor..." : "Dogrula"}
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="settings-inline-note compact">
+                                <div>
+                                    <strong>2FA henuz aktif degil.</strong>
+                                    <span>Google Authenticator veya benzeri bir uygulama ile hesabinizi koruyun.</span>
+                                </div>
+                                <button
+                                    className="settings-primary-btn"
+                                    type="button"
+                                    onClick={() => void handleStartOtpSetup()}
+                                    disabled={otpStep === "starting"}
+                                >
+                                    {otpStep === "starting" ? "Hazirlaniyor..." : "Etkinlestir"}
+                                </button>
+                            </div>
+                            {otpError ? <div className="settings-form-error otp-idle-error">{otpError}</div> : null}
+                        </>
+                    )}
                 </article>
             </div>
         </section>

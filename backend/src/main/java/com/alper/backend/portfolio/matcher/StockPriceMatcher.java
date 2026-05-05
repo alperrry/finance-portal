@@ -66,7 +66,7 @@ public class StockPriceMatcher implements PriceMatcher {
         if (matched) {
             log.debug("Stock eşleşmesi tetiklendi. tradeId={}, type={}, currentPrice={}, targetPrice={}",
                     transaction.getId(), type, currentPrice, targetPrice);
-            return Optional.of(targetPrice);
+            return Optional.of(currentPrice);
         }
 
         return Optional.empty();

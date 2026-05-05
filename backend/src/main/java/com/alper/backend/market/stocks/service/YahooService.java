@@ -70,14 +70,9 @@ public class YahooService {
         log.info("Stock günlük history verisi gün içi snapshot'lardan oluşturuluyor...");
         List<Stock> stocks = stockRepository.findByIsActiveTrue();
         LocalDate tradeDate = LocalDate.now();
-        int saved = 0, skipped = 0, missingSnapshot = 0;
+        int saved = 0, updated = 0, missingSnapshot = 0;
 
         for (Stock stock : stocks) {
-            if (historyRepository.findByStockIdAndTradeDate(stock.getId(), tradeDate).isPresent()) {
-                skipped++;
-                continue;
-            }
-
             Optional<StockPriceSnapshot> latestSnapshot = snapshotRepository
                     .findTopByStockIdAndTradeDateOrderByFetchedAtDesc(stock.getId(), tradeDate);
 
@@ -87,10 +82,18 @@ public class YahooService {
                 continue;
             }
 
-            historyRepository.save(yahooMapper.toHistoryEntity(latestSnapshot.get()));
-            saved++;
+            Optional<StockPriceHistory> existingHistory = historyRepository
+                    .findByStockIdAndTradeDate(stock.getId(), tradeDate);
+            if (existingHistory.isPresent()) {
+                applySnapshotToHistory(existingHistory.get(), latestSnapshot.get());
+                historyRepository.save(existingHistory.get());
+                updated++;
+            } else {
+                historyRepository.save(yahooMapper.toHistoryEntity(latestSnapshot.get()));
+                saved++;
+            }
         }
-        log.info("History kaydedildi: {}, Atlandı: {}, Snapshot bulunamadı: {}", saved, skipped, missingSnapshot);
+        log.info("History kaydedildi: {}, Güncellendi: {}, Snapshot bulunamadı: {}", saved, updated, missingSnapshot);
     }
 
     @Transactional
@@ -121,6 +124,11 @@ public class YahooService {
                         .ofEpochSecond(timestamps.get(i).asLong())
                         .atZone(ZoneId.of("Europe/Istanbul"))
                         .toLocalDate();
+
+                if (!tradeDate.isBefore(LocalDate.now())) {
+                    skipped++;
+                    continue;
+                }
 
                 // Tatil/hafta sonu — Yahoo null fiyat dönebilir, bu satırı atla
                 BigDecimal closePrice = toDecimal(quote.path("close").get(i));
@@ -182,6 +190,14 @@ public class YahooService {
                 .filter(s -> s.getSymbol().equals(symbol))
                 .findFirst()
                 .orElse(null);
+    }
+
+    private void applySnapshotToHistory(StockPriceHistory history, StockPriceSnapshot snapshot) {
+        history.setOpenPrice(snapshot.getOpen());
+        history.setHighPrice(snapshot.getDayHigh());
+        history.setLowPrice(snapshot.getDayLow());
+        history.setClosePrice(snapshot.getPrice());
+        history.setVolume(snapshot.getVolume());
     }
 
     private BigDecimal toDecimal(JsonNode node) {

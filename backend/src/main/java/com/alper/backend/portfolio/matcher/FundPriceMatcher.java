@@ -62,7 +62,7 @@ public class FundPriceMatcher implements PriceMatcher {
         if (matched) {
             log.debug("Fon eşleşmesi tetiklendi. tradeId={}, type={}, currentPrice={}, targetPrice={}",
                     transaction.getId(), type, currentPrice, targetPrice);
-            return Optional.of(targetPrice);
+            return Optional.of(currentPrice);
         }
 
         return Optional.empty();

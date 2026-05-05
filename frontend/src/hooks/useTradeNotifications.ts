@@ -89,8 +89,18 @@ export function useTradeNotifications({
             }
         });
 
-        const unsubscribeStocks = websocketClient.subscribe("/topic/market/stocks/prices", () => undefined);
-        const unsubscribeFx = websocketClient.subscribe("/topic/market/fx/rates", () => undefined);
+        const unsubscribeStocks = websocketClient.subscribe("/topic/market/stocks/prices", () => {
+            const portfolioId = activePortfolioIdRef.current;
+            if (portfolioId) {
+                onPortfolioSignalRef.current(portfolioId);
+            }
+        });
+        const unsubscribeFx = websocketClient.subscribe("/topic/market/fx/rates", () => {
+            const portfolioId = activePortfolioIdRef.current;
+            if (portfolioId) {
+                onPortfolioSignalRef.current(portfolioId);
+            }
+        });
         const unsubscribeNews = websocketClient.subscribe("/topic/news", () => undefined);
 
         const onReconnect = (event: Event) => {

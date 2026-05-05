@@ -121,7 +121,7 @@ public class PortfolioValuationService {
         MockMarketPriceService.MarketPriceQuote quote = mockMarketPriceService
                 .getQuote(type, item.getInstrumentId())
                 .orElse(null);
-        BigDecimal currentPriceNative = quote != null ? quote.currentPrice() : info.currentPrice();
+        BigDecimal currentPriceNative = info.currentPrice();
         BigDecimal currentValueDisplay = null;
         BigDecimal costBasisDisplay = null;
         BigDecimal profitLossDisplay = null;

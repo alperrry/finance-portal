@@ -3,12 +3,10 @@ import {
     CandlestickSeries,
     ColorType,
     CrosshairMode,
-    HistogramSeries,
     LineSeries,
     LineStyle,
     createChart,
     type CandlestickData,
-    type HistogramData,
     type LineData,
     type LineWidth,
     type MouseEventParams,
@@ -370,7 +368,6 @@ export function CandlestickChart({
         });
 
         const { width, height } = resolveSize();
-        const volumePaneHeight = 72;
         const chart = createChart(container, {
             width,
             height,
@@ -443,24 +440,6 @@ export function CandlestickChart({
         }));
         candleSeries.setData(candleData);
 
-        const volumePane = chart.addPane(true);
-        const volumeSeries = volumePane.addSeries(HistogramSeries, {
-            color: "rgba(118, 128, 139, 0.28)",
-            priceFormat: { type: "volume" },
-            priceLineVisible: false,
-            lastValueVisible: false,
-        });
-
-        const volumeData: HistogramData<Time>[] = preparedData.map((point) => ({
-            time: point.time,
-            value: point.volume ?? 0,
-            color:
-                point.close >= point.open
-                    ? "rgba(91, 184, 112, 0.35)"
-                    : "rgba(224, 88, 88, 0.35)",
-        }));
-        volumeSeries.setData(volumeData);
-
         const pointsByIndex = new Map(preparedData.map((point) => [point.sourceIndex, point]));
         overlays.forEach((overlay) => {
             const lineData: LineData<Time>[] = overlay.points
@@ -526,17 +505,10 @@ export function CandlestickChart({
 
         const applyPaneLayout = (currentHeight: number) => {
             const mainPane = chart.panes()[0];
-            const mainPaneHeight = Math.max(220, currentHeight - volumePaneHeight);
+            const mainPaneHeight = Math.max(220, currentHeight);
 
-            mainPane?.setStretchFactor(5);
+            mainPane?.setStretchFactor(1);
             mainPane?.setHeight(mainPaneHeight);
-            volumePane.setStretchFactor(1);
-            volumePane.setHeight(volumePaneHeight);
-            volumePane.priceScale("right").applyOptions({
-                borderVisible: false,
-                scaleMargins: { top: 0.08, bottom: 0.04 },
-                visible: false,
-            });
         };
 
         applyPaneLayout(height);
@@ -830,24 +802,39 @@ export function CandlestickChart({
 
         chart.timeScale().subscribeVisibleTimeRangeChange(handleVisibleRangeChange);
 
-        const handleResize = () => {
+        const handleResize = (resetVisibleRange = true) => {
             const nextSize = resolveSize();
             chart.resize(nextSize.width, nextSize.height, true);
             applyPaneLayout(nextSize.height);
-            chart.timeScale().fitContent();
+            if (resetVisibleRange) {
+                chart.timeScale().fitContent();
+            }
             scheduleCloudOverlay();
             scheduleDrawingOverlay();
         };
-        const initialPaintRaf = window.requestAnimationFrame(handleResize);
+        const initialPaintRafs: number[] = [];
+        const scheduleInitialPaint = () => {
+            const firstFrame = window.requestAnimationFrame(() => {
+                handleResize();
+                const secondFrame = window.requestAnimationFrame(() => {
+                    handleResize(false);
+                });
+                initialPaintRafs.push(secondFrame);
+            });
+            initialPaintRafs.push(firstFrame);
+        };
+
+        scheduleInitialPaint();
 
         let cleanupResize: () => void = () => undefined;
         if (typeof ResizeObserver !== "undefined") {
-            const observer = new ResizeObserver(handleResize);
+            const observer = new ResizeObserver(() => handleResize(false));
             observer.observe(container);
             cleanupResize = () => observer.disconnect();
         } else {
-            window.addEventListener("resize", handleResize);
-            cleanupResize = () => window.removeEventListener("resize", handleResize);
+            const onWindowResize = () => handleResize(false);
+            window.addEventListener("resize", onWindowResize);
+            cleanupResize = () => window.removeEventListener("resize", onWindowResize);
         }
 
         return () => {
@@ -859,7 +846,7 @@ export function CandlestickChart({
             clearDrawingPreviewRef.current = () => undefined;
             setCloudOverlayShapes([]);
             setDrawingOverlayShapes([]);
-            window.cancelAnimationFrame(initialPaintRaf);
+            initialPaintRafs.forEach((frame) => window.cancelAnimationFrame(frame));
             if (cloudOverlayRaf !== null) {
                 window.cancelAnimationFrame(cloudOverlayRaf);
                 cloudOverlayRaf = null;

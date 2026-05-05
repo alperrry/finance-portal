@@ -5,7 +5,7 @@
   "registrationAllowed": true,
   "rememberMe": true,
   "resetPasswordAllowed": true,
-  "verifyEmail": false,
+  "verifyEmail": true,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "registrationEmailAsUsername": false,
@@ -14,6 +14,17 @@
   "loginTheme": "finance-portal",
   "emailTheme": "finance-portal",
   "accountTheme": "keycloak.v2",
+  "smtpServer": {
+    "host": "mailhog",
+    "port": "1025",
+    "from": "noreply@finance-portal.local",
+    "fromDisplayName": "Finance Portal",
+    "replyTo": "noreply@finance-portal.local",
+    "replyToDisplayName": "Finance Portal",
+    "ssl": "false",
+    "starttls": "false",
+    "auth": "false"
+  },
   "requiredCredentials": [
     "password"
   ],

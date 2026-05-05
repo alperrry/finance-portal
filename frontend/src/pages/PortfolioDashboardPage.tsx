@@ -1368,7 +1368,7 @@ export function PortfolioDetailPage() {
             if (!websocketClient.isConnected()) {
                 refreshPortfolio(validPortfolioId);
             }
-        }, 10000);
+        }, 60000);
         return () => clearInterval(intervalId);
     }, [validPortfolioId, token, refreshPortfolio]);
 

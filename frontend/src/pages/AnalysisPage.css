@@ -402,6 +402,24 @@
   padding: 24px;
 }
 
+.analysis-chart-panel {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  contain: paint;
+  isolation: isolate;
+}
+
+.analysis-candlestick-container,
+.analysis-candlestick-container canvas {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+.analysis-candlestick-container {
+  contain: layout paint;
+}
+
 .analysis-panel-head,
 .analysis-compare-head {
   display: flex;
@@ -470,8 +488,11 @@
   stroke-linejoin: round;
 }
 
-.analysis-chart-toolbar {
+.analysis-chart-control-stack {
   margin-top: 22px;
+}
+
+.analysis-chart-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -548,23 +569,23 @@
 
 .analysis-chart-stage {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .analysis-drawing-toolbar {
-  position: absolute;
-  top: 34px;
-  left: 18px;
-  z-index: 14;
+  position: static;
+  z-index: auto;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-self: flex-start;
   gap: 7px;
   border: 1px solid rgba(17, 17, 17, 0.08);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.88);
+  background: #fff;
   box-shadow: 0 14px 34px rgba(17, 17, 17, 0.12);
   padding: 7px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
 }
 
 .analysis-drawing-tool {
@@ -620,9 +641,10 @@
 }
 
 .analysis-drawing-divider {
-  height: 1px;
+  width: 1px;
+  height: auto;
   background: rgba(17, 17, 17, 0.08);
-  margin: 1px 4px;
+  margin: 4px 1px;
 }
 
 .analysis-drawing-spinner {
@@ -942,7 +964,7 @@
   border-radius: 0;
   border: none;
   padding: 18px;
-  overflow: auto;
+  overflow: hidden;
   background:
     radial-gradient(circle at top left, rgba(193, 98, 47, 0.1), transparent 34%),
     var(--kp-bg);
@@ -955,9 +977,55 @@
   flex: 0 0 auto;
 }
 
+.analysis-chart-panel.fullscreen .analysis-chart-control-stack,
+.analysis-chart-panel:fullscreen .analysis-chart-control-stack {
+  position: fixed;
+  top: 96px;
+  right: 0;
+  z-index: 80;
+  width: min(340px, calc(100vw - 32px));
+  max-height: calc(100vh - 128px);
+  overflow: auto;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  border-right: none;
+  border-radius: 18px 0 0 18px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: -14px 18px 46px rgba(17, 17, 17, 0.16);
+  padding: 14px;
+  transform: translateX(calc(100% - 18px));
+  transition: transform 0.18s ease;
+}
+
+.analysis-chart-panel.fullscreen .analysis-chart-control-stack:hover,
+.analysis-chart-panel.fullscreen .analysis-chart-control-stack:focus-within,
+.analysis-chart-panel:fullscreen .analysis-chart-control-stack:hover,
+.analysis-chart-panel:fullscreen .analysis-chart-control-stack:focus-within {
+  transform: translateX(0);
+}
+
+.analysis-chart-panel.fullscreen .analysis-chart-control-stack::before,
+.analysis-chart-panel:fullscreen .analysis-chart-control-stack::before {
+  content: "";
+  position: absolute;
+  top: 16px;
+  left: 5px;
+  width: 4px;
+  height: 54px;
+  border-radius: 999px;
+  background: rgba(193, 98, 47, 0.56);
+}
+
 .analysis-chart-panel.fullscreen .analysis-chart-toolbar,
-.analysis-chart-panel:fullscreen .analysis-chart-toolbar {
-  margin-top: 16px;
+.analysis-chart-panel:fullscreen .analysis-chart-toolbar,
+.analysis-chart-panel.fullscreen .analysis-series-legend,
+.analysis-chart-panel:fullscreen .analysis-series-legend {
+  margin-top: 0;
+}
+
+.analysis-chart-panel.fullscreen .analysis-indicator-panel,
+.analysis-chart-panel:fullscreen .analysis-indicator-panel {
+  margin-top: 14px;
+  padding: 14px 0;
 }
 
 .analysis-chart-panel.fullscreen .analysis-chart-frame,
@@ -968,14 +1036,14 @@
 
 .analysis-chart-panel.fullscreen .analysis-chart-svg,
 .analysis-chart-panel:fullscreen .analysis-chart-svg {
-  height: min(72vh, calc(100vh - 250px));
-  min-height: 460px;
+  height: calc(100vh - 156px);
+  min-height: 0;
 }
 
 .analysis-chart-panel.fullscreen .analysis-candlestick-chart,
 .analysis-chart-panel:fullscreen .analysis-candlestick-chart {
-  height: min(72vh, calc(100vh - 250px));
-  min-height: 460px;
+  height: calc(100vh - 156px);
+  min-height: 0;
 }
 
 @media (max-width: 1100px) {
@@ -1004,6 +1072,7 @@
   .analysis-panel-actions,
   .analysis-compare-head,
   .analysis-chart-toolbar,
+  .analysis-chart-control-stack,
   .analysis-compare-actions {
     flex-direction: column;
     align-items: stretch;

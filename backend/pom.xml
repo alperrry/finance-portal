@@ -158,6 +158,13 @@
             <artifactId>ta4j-core</artifactId>
             <version>0.22.6</version>
         </dependency>
+        <!-- ===== TOTP / 2FA ===== -->
+        <dependency>
+            <groupId>dev.samstevens.totp</groupId>
+            <artifactId>totp</artifactId>
+            <version>1.7.1</version>
+        </dependency>
+
         <!-- ===== RSS PARSER ===== -->
         <dependency>
             <groupId>com.rometools</groupId>

@@ -108,7 +108,8 @@ Bu repo icinde mevcut setup'i bozmamak icin sadece Keycloak DB eklenir.
 - `rememberMe`: `true`
 - `registrationAllowed`: `true`
 - `resetPasswordAllowed`: `true`
-- `verifyEmail`: `false` (dev)
+- `verifyEmail`: `true`
+- Dev SMTP: Docker Compose icindeki MailHog (`mailhog:1025`, UI: `http://localhost:8025`)
 - `otpPolicyType`: `totp`
 - Realm role'lari: `NORMAL_USER`, `ADMIN`
 - Public PKCE client: `finance-portal-frontend`
@@ -134,14 +135,21 @@ Realm import kullanmak istemezseniz veya mevcut backend Keycloak ayarinizi bozma
    - `User registration`: on
    - `Forgot password`: on
    - `Remember me`: on
-   - `Verify email`: dev icin off, prod icin on
+   - `Verify email`: on
 3. `Realm Settings -> Themes` altinda:
    - `Login Theme`: `finance-portal`
    - `Email Theme`: `finance-portal`
    - `Account Theme`: `keycloak.v2`
-4. `Realm Roles` altinda `NORMAL_USER` ve `ADMIN` role'larini olusturun.
-5. `Default Roles` tarafinda yeni kullanicilara `NORMAL_USER` verin.
-6. `Clients -> Create client` ile `finance-portal-frontend` olusturun:
+4. `Realm Settings -> Email` altinda dev icin SMTP ayarlarini girin:
+   - `Host`: `mailhog`
+   - `Port`: `1025`
+   - `From`: `noreply@finance-portal.local`
+   - `Enable SSL`: off
+   - `Enable StartTLS`: off
+   - `Authentication`: off
+5. `Realm Roles` altinda `NORMAL_USER` ve `ADMIN` role'larini olusturun.
+6. `Default Roles` tarafinda yeni kullanicilara `NORMAL_USER` verin.
+7. `Clients -> Create client` ile `finance-portal-frontend` olusturun:
    - Type: `OpenID Connect`
    - Client authentication: off
    - Standard flow: on
@@ -152,7 +160,7 @@ Realm import kullanmak istemezseniz veya mevcut backend Keycloak ayarinizi bozma
    - Web origins:
      - `http://localhost:3000`
      - `http://localhost:5173`
-7. Eger backend'in profile update / admin API senaryolari kullanilacaksa `finance-portal-backend` client'ini ayri olusturun:
+8. Eger backend'in profile update / admin API senaryolari kullanilacaksa `finance-portal-backend` client'ini ayri olusturun:
    - Client authentication: on
    - Service accounts roles: on
    - Standard flow: off
