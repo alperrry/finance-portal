@@ -1,18 +1,15 @@
-package com.alper.backend.news.dto;
+package com.alper.backend.admin.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
-public class SourceRequest {
+public class CategoryRequest {
 
     @NotBlank(message = "Name is required")
     private String name;
 
-    @NotBlank(message = "Source URL is required")
-    private String sourceUrl;
-
     private Boolean isActive;
 
-    public SourceRequest() {}
+    public CategoryRequest() {}
 
     public String getName() {
         return name;
@@ -20,14 +17,6 @@ public class SourceRequest {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getSourceUrl() {
-        return sourceUrl;
-    }
-
-    public void setSourceUrl(String sourceUrl) {
-        this.sourceUrl = sourceUrl;
     }
 
     public Boolean getIsActive() {

@@ -1,27 +1,25 @@
-package com.alper.backend.news.dto;
+package com.alper.backend.admin.dto;
 
-import com.alper.backend.news.model.Source;
+import com.alper.backend.news.model.Category;
 
 import java.time.OffsetDateTime;
 
-public class SourceResponse {
+public class CategoryResponse {
 
     private Long id;
     private String name;
-    private String sourceUrl;
     private boolean isActive;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
 
-    public SourceResponse() {}
+    public CategoryResponse() {}
 
-    public SourceResponse(Source source) {
-        this.id = source.getId();
-        this.name = source.getName();
-        this.sourceUrl = source.getSourceUrl();
-        this.isActive = source.isActive();
-        this.createdAt = source.getCreatedAt();
-        this.updatedAt = source.getUpdatedAt();
+    public CategoryResponse(Category category) {
+        this.id = category.getId();
+        this.name = category.getName();
+        this.isActive = category.isActive();
+        this.createdAt = category.getCreatedAt();
+        this.updatedAt = category.getUpdatedAt();
     }
 
     public Long getId() {
@@ -38,14 +36,6 @@ public class SourceResponse {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getSourceUrl() {
-        return sourceUrl;
-    }
-
-    public void setSourceUrl(String sourceUrl) {
-        this.sourceUrl = sourceUrl;
     }
 
     public boolean isActive() {
