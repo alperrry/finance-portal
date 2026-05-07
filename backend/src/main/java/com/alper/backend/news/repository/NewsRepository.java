@@ -17,7 +17,39 @@ public interface NewsRepository extends JpaRepository<News, Long> {
 
     // Base pagination query
     @Override
+    @EntityGraph(attributePaths = {"source", "categories"})
     Page<News> findAll(Pageable pageable);
+
+    @EntityGraph(attributePaths = {"source", "categories"})
+    @Query(value = """
+            SELECT DISTINCT n FROM News n
+            LEFT JOIN n.categories c
+            WHERE (:search IS NULL
+                   OR LOWER(n.title) LIKE CONCAT('%', :search, '%')
+                   OR LOWER(COALESCE(n.context, '')) LIKE CONCAT('%', :search, '%')
+                   OR LOWER(n.canonicalUrl) LIKE CONCAT('%', :search, '%'))
+              AND (:status IS NULL OR n.status = :status)
+              AND (:sourceId IS NULL OR n.source.id = :sourceId)
+              AND (:categoryId IS NULL OR c.id = :categoryId)
+            """,
+            countQuery = """
+            SELECT COUNT(DISTINCT n) FROM News n
+            LEFT JOIN n.categories c
+            WHERE (:search IS NULL
+                   OR LOWER(n.title) LIKE CONCAT('%', :search, '%')
+                   OR LOWER(COALESCE(n.context, '')) LIKE CONCAT('%', :search, '%')
+                   OR LOWER(n.canonicalUrl) LIKE CONCAT('%', :search, '%'))
+              AND (:status IS NULL OR n.status = :status)
+              AND (:sourceId IS NULL OR n.source.id = :sourceId)
+              AND (:categoryId IS NULL OR c.id = :categoryId)
+            """)
+    Page<News> searchAdminNews(
+            @Param("search") String search,
+            @Param("status") NewsStatus status,
+            @Param("sourceId") Long sourceId,
+            @Param("categoryId") Long categoryId,
+            Pageable pageable
+    );
 
     // Find by canonical URL
     Optional<News> findByCanonicalUrl(String canonicalUrl);

@@ -28,6 +28,9 @@ public class News {
     @Column(name = "external_id")
     private String externalId;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private NewsStatus status = NewsStatus.published;
@@ -68,6 +71,9 @@ public class News {
 
     public String getExternalId() { return externalId; }
     public void setExternalId(String externalId) { this.externalId = externalId; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
     public NewsStatus getStatus() { return status; }
     public void setStatus(NewsStatus status) { this.status = status; }

@@ -23,6 +23,7 @@ public class NewsResponse implements Serializable {
     private OffsetDateTime publishedAt;
     private String canonicalUrl;
     private String externalId;
+    private String imageUrl;
     private NewsStatus status;
     private SourceSummary source;
     private List<CategorySummary> categories = new ArrayList<>();
@@ -38,6 +39,7 @@ public class NewsResponse implements Serializable {
         this.publishedAt = news.getPublishedAt();
         this.canonicalUrl = news.getCanonicalUrl();
         this.externalId = news.getExternalId();
+        this.imageUrl = news.getImageUrl();
         this.status = news.getStatus();
         if (news.getSource() != null) {
             this.source = new SourceSummary(news.getSource());
@@ -98,6 +100,14 @@ public class NewsResponse implements Serializable {
 
     public void setExternalId(String externalId) {
         this.externalId = externalId;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public NewsStatus getStatus() {
