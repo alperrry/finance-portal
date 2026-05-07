@@ -9,6 +9,16 @@ import NewsList from "./pages/NewsList";
 import NewsDetail from "./pages/NewsDetail";
 import SettingsPage from "./pages/SettingsPage";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
+import { AdminGuard } from "./features/admin/AdminGuard";
+import { AdminLayout } from "./features/admin/AdminLayout";
+import { AdminDashboardPage } from "./features/admin/pages/AdminDashboardPage";
+import { AdminCategoriesPage } from "./features/admin/pages/AdminCategoriesPage";
+import { AdminMarketJobsPage } from "./features/admin/pages/AdminMarketJobsPage";
+import { AdminNewsManagementPage } from "./features/admin/pages/AdminNewsManagementPage";
+import { AdminNewsSourcesPage } from "./features/admin/pages/AdminNewsSourcesPage";
+import { AdminUserDetailPage } from "./features/admin/pages/AdminUserDetailPage";
+import { AdminUsersPage } from "./features/admin/pages/AdminUsersPage";
+import { ForbiddenPage } from "./features/admin/pages/ForbiddenPage";
 
 function RouteTracker() {
     const location = useLocation();
@@ -109,6 +119,18 @@ export default function App() {
                         </ProtectedRoute>
                     }
                 />
+                <Route path="/forbidden" element={<ForbiddenPage />} />
+                <Route element={<AdminGuard />}>
+                    <Route path="/admin" element={<AdminLayout />}>
+                        <Route index element={<AdminDashboardPage />} />
+                        <Route path="users" element={<AdminUsersPage />} />
+                        <Route path="users/:id" element={<AdminUserDetailPage />} />
+                        <Route path="news" element={<AdminNewsManagementPage />} />
+                        <Route path="categories" element={<AdminCategoriesPage />} />
+                        <Route path="news-sources" element={<AdminNewsSourcesPage />} />
+                        <Route path="market-jobs" element={<AdminMarketJobsPage />} />
+                    </Route>
+                </Route>
             </Routes>
         </BrowserRouter>
     );

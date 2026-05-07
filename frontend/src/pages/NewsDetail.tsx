@@ -174,6 +174,19 @@ export default function NewsDetail() {
 
                             <h1 className="news-detail-title">{news.title}</h1>
 
+                            {news.imageUrl ? (
+                                <img
+                                    className="news-detail-image"
+                                    src={news.imageUrl}
+                                    alt=""
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer"
+                                    onError={(event) => {
+                                        event.currentTarget.hidden = true;
+                                    }}
+                                />
+                            ) : null}
+
                             <div className="news-detail-content">
                                 {news.context ? (
                                     news.context.split("\n").map((paragraph, index) => (

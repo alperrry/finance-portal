@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { ApiError } from "../api/client";
@@ -38,6 +38,7 @@ import { useToast } from "../components/ToastContext";
 import { KapitalShell } from "../components/layout";
 import { useTradeNotifications } from "../hooks/useTradeNotifications";
 import { websocketClient } from "../services/websocketClient";
+import { exportPortfolioPdf } from "../utils/portfolioPdfExport";
 import "./PortfolioDashboardPage.css";
 
 type PortfolioLoadState = {
@@ -80,6 +81,7 @@ type PortfolioFormState = {
 };
 
 const TRADE_PAGE_SIZE = 8;
+const TRADE_EXPORT_PAGE_SIZE = 100;
 const CHART_PALETTE = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"];
 
 const STATUS_LABELS: Record<TransactionStatus, string> = {
@@ -167,16 +169,23 @@ function formatSignedMoney(value: number | null | undefined, currency = "TRY") {
 function useAnimatedNumber(value: number | null | undefined, duration = 700) {
     const target = toNumber(value) ?? 0;
     const [displayValue, setDisplayValue] = useState(target);
+    const displayValueRef = useRef(target);
 
     useEffect(() => {
-        const startValue = displayValue;
+        displayValueRef.current = displayValue;
+    }, [displayValue]);
+
+    useEffect(() => {
+        const startValue = displayValueRef.current;
         const startedAt = performance.now();
         let frame = 0;
 
         const tick = (now: number) => {
             const progress = Math.min((now - startedAt) / duration, 1);
             const eased = 1 - Math.pow(1 - progress, 3);
-            setDisplayValue(startValue + (target - startValue) * eased);
+            const nextValue = startValue + (target - startValue) * eased;
+            displayValueRef.current = nextValue;
+            setDisplayValue(nextValue);
             if (progress < 1) frame = requestAnimationFrame(tick);
         };
 
@@ -268,6 +277,19 @@ function statusTone(status: TransactionStatus) {
     if (status === "APPROVED") return "success";
     if (status === "REJECTED") return "error";
     return "muted";
+}
+
+function filterTrades(trades: TradeResponse[], filters: TradeFilters) {
+    return trades.filter((trade) => {
+        const created = trade.createdAt ? new Date(trade.createdAt) : null;
+        const fromOk = !filters.from || (created && created >= new Date(`${filters.from}T00:00:00`));
+        const toOk = !filters.to || (created && created <= new Date(`${filters.to}T23:59:59`));
+        const instrumentOk = !filters.instrument || `${trade.instrumentType}:${trade.instrumentId}` === filters.instrument;
+        const typeOk = !filters.type || trade.transactionType === filters.type;
+        const query = filters.query.trim().toLocaleLowerCase("tr-TR");
+        const queryOk = !query || (trade.instrumentSymbol || "").toLocaleLowerCase("tr-TR").includes(query);
+        return Boolean(fromOk && toOk && instrumentOk && typeOk && queryOk);
+    });
 }
 
 function buildAllocationData(items: PortfolioItemResponse[]) {
@@ -675,7 +697,10 @@ function TradeHistoryTable({
     onFiltersChange,
     onPageChange,
     onCancel,
+    onExportPdf,
     cancelingTradeId,
+    exportBusy,
+    canExport,
 }: {
     state: TradeHistoryState;
     status: TransactionStatus | "";
@@ -685,21 +710,15 @@ function TradeHistoryTable({
     onFiltersChange: (filters: TradeFilters) => void;
     onPageChange: (page: number) => void;
     onCancel: (trade: TradeResponse) => void;
+    onExportPdf: () => void;
     cancelingTradeId: number | null;
+    exportBusy: boolean;
+    canExport: boolean;
 }) {
     const page = state.page;
     const trades = useMemo(() => {
         const rows = page?.content ?? [];
-        return rows.filter((trade) => {
-            const created = trade.createdAt ? new Date(trade.createdAt) : null;
-            const fromOk = !filters.from || (created && created >= new Date(`${filters.from}T00:00:00`));
-            const toOk = !filters.to || (created && created <= new Date(`${filters.to}T23:59:59`));
-            const instrumentOk = !filters.instrument || `${trade.instrumentType}:${trade.instrumentId}` === filters.instrument;
-            const typeOk = !filters.type || trade.transactionType === filters.type;
-            const query = filters.query.trim().toLocaleLowerCase("tr-TR");
-            const queryOk = !query || (trade.instrumentSymbol || "").toLocaleLowerCase("tr-TR").includes(query);
-            return fromOk && toOk && instrumentOk && typeOk && queryOk;
-        });
+        return filterTrades(rows, filters);
     }, [filters, page?.content]);
     const instrumentOptions = useMemo(() => {
         const unique = new Map<string, string>();
@@ -709,28 +728,6 @@ function TradeHistoryTable({
         return [...unique.entries()].sort((left, right) => collator.compare(left[1], right[1]));
     }, [page?.content]);
 
-    const exportCsv = () => {
-        const header = ["Tarih", "Enstrüman", "Emir", "Tip", "Miktar", "Hedef", "Gerçekleşme", "Tutar", "Durum"];
-        const rows = trades.map((trade) => [
-            trade.createdAt ?? "",
-            trade.instrumentSymbol || "",
-            ORDER_LABELS[trade.orderType ?? "LIMIT"],
-            TRANSACTION_LABELS[trade.transactionType],
-            String(trade.quantity),
-            String(trade.targetPrice ?? ""),
-            String(trade.executedPrice ?? ""),
-            String(trade.totalAmount ?? ""),
-            STATUS_LABELS[trade.status],
-        ]);
-        const csv = [header, ...rows].map((row) => row.map((cell) => `"${cell.replaceAll("\"", "\"\"")}"`).join(",")).join("\n");
-        const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "islem-gecmisi.csv";
-        link.click();
-        URL.revokeObjectURL(url);
-    };
-
     return (
         <section className="portfolio-section">
             <div className="portfolio-section-head">
@@ -738,7 +735,9 @@ function TradeHistoryTable({
                     <span className="portfolio-kicker">Lifecycle</span>
                     <h3>İşlem Geçmişi</h3>
                 </div>
-                <button type="button" className="portfolio-secondary-btn" onClick={exportCsv} disabled={trades.length === 0}>CSV Export</button>
+                <button type="button" className="portfolio-secondary-btn" onClick={onExportPdf} disabled={!canExport || exportBusy}>
+                    {exportBusy ? "PDF hazırlanıyor..." : "PDF Rapor"}
+                </button>
             </div>
             <div className="portfolio-filter-bar">
                 <input type="date" value={filters.from} onChange={(event) => onFiltersChange({ ...filters, from: event.target.value })} />
@@ -849,6 +848,8 @@ function PortfolioDetailPageContent({
     onTradeFiltersChange,
     onTradePageChange,
     onCancelTrade,
+    onExportPdf,
+    exportBusy,
 }: {
     state: DetailState;
     trades: TradeHistoryState;
@@ -864,6 +865,8 @@ function PortfolioDetailPageContent({
     onTradeFiltersChange: (filters: TradeFilters) => void;
     onTradePageChange: (page: number) => void;
     onCancelTrade: (trade: TradeResponse) => void;
+    onExportPdf: () => void;
+    exportBusy: boolean;
 }) {
     const portfolio = state.data;
 
@@ -924,7 +927,10 @@ function PortfolioDetailPageContent({
                         onFiltersChange={onTradeFiltersChange}
                         onPageChange={onTradePageChange}
                         onCancel={onCancelTrade}
+                        onExportPdf={onExportPdf}
                         cancelingTradeId={cancelingTradeId}
+                        exportBusy={exportBusy}
+                        canExport={Boolean(portfolio)}
                     />
 
                     <section className="portfolio-danger-zone">
@@ -1284,6 +1290,7 @@ export function PortfolioDetailPage() {
     const [tradeBusy, setTradeBusy] = useState(false);
     const [tradeError, setTradeError] = useState<string | null>(null);
     const [cancelingTradeId, setCancelingTradeId] = useState<number | null>(null);
+    const [exportBusy, setExportBusy] = useState(false);
 
     useEffect(() => {
         if (!validPortfolioId) {
@@ -1449,6 +1456,46 @@ export function PortfolioDetailPage() {
         }
     };
 
+    const fetchAllTradesForExport = async () => {
+        if (!validPortfolioId) return [];
+
+        const firstPage = await fetchPortfolioTrades(validPortfolioId, {
+            status: tradeStatus,
+            page: 0,
+            size: TRADE_EXPORT_PAGE_SIZE,
+        });
+        const allTrades = [...firstPage.content];
+
+        for (let page = 1; page < firstPage.totalPages; page += 1) {
+            const nextPage = await fetchPortfolioTrades(validPortfolioId, {
+                status: tradeStatus,
+                page,
+                size: TRADE_EXPORT_PAGE_SIZE,
+            });
+            allTrades.push(...nextPage.content);
+        }
+
+        return filterTrades(allTrades, tradeFilters);
+    };
+
+    const handleExportPdf = async () => {
+        if (!detailState.data || !validPortfolioId) return;
+
+        setExportBusy(true);
+        try {
+            const filteredTrades = await fetchAllTradesForExport();
+            await exportPortfolioPdf({
+                portfolio: detailState.data,
+                trades: filteredTrades,
+                filters: tradeFilters,
+            });
+        } catch (caughtError) {
+            showToast(resolveApiError(caughtError, "PDF raporu oluşturulamadı."), "error");
+        } finally {
+            setExportBusy(false);
+        }
+    };
+
     const selectedPortfolio = detailState.data;
 
     return (
@@ -1485,6 +1532,8 @@ export function PortfolioDetailPage() {
                         onTradeFiltersChange={setTradeFilters}
                         onTradePageChange={setTradePage}
                         onCancelTrade={handleCancelTrade}
+                        onExportPdf={handleExportPdf}
+                        exportBusy={exportBusy}
                     />
                 </div>
             </div>

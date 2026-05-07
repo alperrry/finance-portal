@@ -152,6 +152,15 @@ export default function KapitalShell({
                             <span aria-hidden="true">₺</span>
                             {formatMoney(currentUser?.balance, "TRY")}
                         </span>
+                        {currentUser?.role === "ADMIN" ? (
+                            <button
+                                className="kp-nav-action secondary"
+                                type="button"
+                                onClick={() => navigate("/admin/users")}
+                            >
+                                Admin Paneli
+                            </button>
+                        ) : null}
                         <button
                             className={`kp-nav-user ${activePage === "profile" || activePage === "settings" ? "active" : ""}`.trim()}
                             type="button"

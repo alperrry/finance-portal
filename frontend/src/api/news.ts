@@ -18,6 +18,7 @@ export type NewsItem = {
     publishedAt: string | null;
     canonicalUrl?: string | null;
     externalId?: string | null;
+    imageUrl?: string | null;
     status?: string | null;
     source?: NewsSource | null;
     categories?: NewsCategory[];
@@ -82,6 +83,8 @@ type RawNewsItem = {
     canonical_url?: string | null;
     externalId?: string | null;
     external_id?: string | null;
+    imageUrl?: string | null;
+    image_url?: string | null;
     status?: string | null;
     source?: RawNewsSource;
     categories?: RawNewsCategory[];
@@ -128,6 +131,7 @@ const normalizeNewsItem = (raw: RawNewsItem): NewsItem => {
         publishedAt: raw.publishedAt ?? raw.published_at ?? raw.createdAt ?? raw.created_at ?? null,
         canonicalUrl: raw.canonicalUrl ?? raw.canonical_url ?? null,
         externalId: raw.externalId ?? raw.external_id ?? null,
+        imageUrl: raw.imageUrl ?? raw.image_url ?? null,
         status: raw.status ?? null,
         source,
         categories,

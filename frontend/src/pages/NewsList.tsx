@@ -298,6 +298,18 @@ export default function NewsList() {
 
                             return (
                                 <article key={news.id} className="news-card">
+                                    {news.imageUrl ? (
+                                        <img
+                                            className="news-card-image"
+                                            src={news.imageUrl}
+                                            alt=""
+                                            loading="lazy"
+                                            referrerPolicy="no-referrer"
+                                            onError={(event) => {
+                                                event.currentTarget.hidden = true;
+                                            }}
+                                        />
+                                    ) : null}
                                     <div className="news-card-meta">
                                         <span className="news-meta-source">{news.source?.name ?? "Bilinmeyen Kaynak"}</span>
                                         <span className="news-meta-date">{formatDate(news.publishedAt)}</span>

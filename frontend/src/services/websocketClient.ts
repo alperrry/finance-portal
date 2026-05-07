@@ -10,7 +10,11 @@ export type WebSocketEventType =
     | "USER_BALANCE_UPDATED"
     | "STOCK_PRICES_UPDATED"
     | "FX_RATES_UPDATED"
-    | "NEWS_PUBLISHED";
+    | "NEWS_PUBLISHED"
+    | "ADMIN_AUDIT_LOGGED"
+    | "ADMIN_USER_UPDATED"
+    | "ADMIN_USER_ROLE_CHANGED"
+    | "ADMIN_USER_STATUS_CHANGED";
 
 export type WebSocketEnvelope<T = unknown> = {
     type: WebSocketEventType;
