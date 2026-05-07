@@ -4,6 +4,7 @@ import com.alper.backend.common.exception.ExternalApiException;
 import com.alper.backend.common.exception.ServiceType;
 import com.alper.backend.user.dto.KeycloakUser;
 import com.alper.backend.user.dto.SecurityStatusResponse;
+import com.alper.backend.user.model.UserRole;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
@@ -353,5 +354,196 @@ public class KeycloakAdminService {
         } catch (Exception e) {
             throw new RuntimeException("JSON serialize hatası", e);
         }
+    }
+
+
+    public void setEnabled(String keycloakId, boolean enabled) {
+        String token = getAdminToken();
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("enabled", enabled);
+
+        String url = String.format("%s/admin/realms/%s/users/%s",
+                internalUrl, realm, encodePath(keycloakId));
+
+        Request request = new Request.Builder()
+                .url(url)
+                .header("Authorization", "Bearer " + token)
+                .header("Content-Type", "application/json")
+                .put(RequestBody.create(toJson(body), MediaType.parse("application/json")))
+                .build();
+
+        executeNoContent(request, "Keycloak enabled flag güncelleme başarısız", keycloakId);
+        log.info("Keycloak kullanıcı durumu güncellendi | keycloakId={} | enabled={}",
+                keycloakId, enabled);
+    }
+
+
+    public void syncRole(String keycloakId, UserRole newRole) {
+        String token = getAdminToken();
+        String roleMappingsUrl = String.format("%s/admin/realms/%s/users/%s/role-mappings/realm",
+                internalUrl, realm, encodePath(keycloakId));
+
+        // 1. Mevcut realm rollerini çek
+        List<JsonNode> currentManagedRoles = fetchManagedRoles(roleMappingsUrl, token, keycloakId);
+
+        // 2. Eğer kullanıcıda zaten doğru tek rol varsa, hiçbir şey yapma
+        boolean alreadyHasOnlyTargetRole = currentManagedRoles.size() == 1
+                && newRole.name().equals(currentManagedRoles.get(0).path("name").asText());
+        if (alreadyHasOnlyTargetRole) {
+            log.debug("Keycloak rolü zaten doğru | keycloakId={} | role={}", keycloakId, newRole);
+            return;
+        }
+
+        // 3. Mevcut yönetilen rolleri kaldır (NORMAL_USER ve/veya ADMIN)
+        if (!currentManagedRoles.isEmpty()) {
+            deleteRealmRoles(roleMappingsUrl, token, currentManagedRoles, keycloakId);
+        }
+
+        // 4. Hedef rolün representation'ını available listesinden al
+        //    (GET /roles/{name} view-realm gerektirir; available sadece manage-users ile çalışır)
+        JsonNode newRoleRepresentation = fetchAvailableRoleRepresentation(
+                roleMappingsUrl + "/available", token, newRole.name(), keycloakId);
+
+        // 5. Yeni rolü ekle
+        addRealmRole(roleMappingsUrl, token, newRoleRepresentation, keycloakId);
+
+        log.info("Keycloak kullanıcı rolü güncellendi | keycloakId={} | newRole={}",
+                keycloakId, newRole);
+    }
+
+// ---------------------------------------------------------------------------
+// syncRole yardımcı metodları — sınıfın altına private olarak ekle
+// ---------------------------------------------------------------------------
+
+    /**
+     * Kullanıcının mevcut realm rolleri arasında NORMAL_USER ve ADMIN olanları döner.
+     * Diğer teknik roller filtrelenir.
+     */
+    private List<JsonNode> fetchManagedRoles(String roleMappingsUrl, String token, String keycloakId) {
+        Request request = new Request.Builder()
+                .url(roleMappingsUrl)
+                .header("Authorization", "Bearer " + token)
+                .get()
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                String errorBody = response.body() != null ? response.body().string() : "";
+                log.error("Keycloak role-mappings fetch başarısız | keycloakId={} | status={} | body={}",
+                        keycloakId, response.code(), errorBody);
+                throw new ExternalApiException(
+                        "Kullanıcı rolleri alınamadı: HTTP " + response.code(),
+                        ServiceType.KEYCLOAK);
+            }
+
+            assert response.body() != null;
+            JsonNode roles = objectMapper.readTree(response.body().string());
+            List<JsonNode> managed = new ArrayList<>();
+            if (!roles.isArray()) {
+                return managed;
+            }
+            for (JsonNode role : roles) {
+                String name = role.path("name").asText("");
+                if (UserRole.NORMAL_USER.name().equals(name) || UserRole.ADMIN.name().equals(name)) {
+                    managed.add(role);
+                }
+            }
+            return managed;
+        } catch (IOException e) {
+            log.error("Keycloak role-mappings fetch I/O hatası | keycloakId={}", keycloakId, e);
+            throw new ExternalApiException("Keycloak Admin API'ye erişilemedi",
+                    e, ServiceType.KEYCLOAK);
+        }
+    }
+
+    /**
+     * Kullanıcıya atanabilir (available) roller arasından hedef rolü bulur.
+     * GET /role-mappings/realm/available — sadece manage-users yetkisi gerektirir;
+     * GET /roles/{name} yerine bu kullanılır çünkü o view-realm ister.
+     */
+    private JsonNode fetchAvailableRoleRepresentation(String availableUrl, String token,
+                                                      String roleName, String keycloakId) {
+        Request request = new Request.Builder()
+                .url(availableUrl)
+                .header("Authorization", "Bearer " + token)
+                .get()
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                String errorBody = response.body() != null ? response.body().string() : "";
+                log.error("Keycloak available roles fetch başarısız | keycloakId={} | status={} | body={}",
+                        keycloakId, response.code(), errorBody);
+                throw new ExternalApiException(
+                        "Kullanıcıya atanabilir roller alınamadı: HTTP " + response.code(),
+                        ServiceType.KEYCLOAK);
+            }
+
+            assert response.body() != null;
+            JsonNode roles = objectMapper.readTree(response.body().string());
+            if (roles.isArray()) {
+                for (JsonNode role : roles) {
+                    if (roleName.equals(role.path("name").asText(""))) {
+                        return role;
+                    }
+                }
+            }
+
+            log.error("Hedef rol available listesinde bulunamadı | keycloakId={} | role={}",
+                    keycloakId, roleName);
+            throw new ExternalApiException("Rol bulunamadı: " + roleName, ServiceType.KEYCLOAK);
+        } catch (IOException e) {
+            log.error("Keycloak available roles fetch I/O hatası | keycloakId={}", keycloakId, e);
+            throw new ExternalApiException("Keycloak Admin API'ye erişilemedi",
+                    e, ServiceType.KEYCLOAK);
+        }
+    }
+
+    /**
+     * Verilen rolleri kullanıcıdan kaldırır.
+     */
+    private void deleteRealmRoles(String roleMappingsUrl, String token,
+                                  List<JsonNode> rolesToRemove, String keycloakId) {
+        String body = toJsonArray(rolesToRemove);
+
+        Request request = new Request.Builder()
+                .url(roleMappingsUrl)
+                .header("Authorization", "Bearer " + token)
+                .header("Content-Type", "application/json")
+                .delete(RequestBody.create(body, MediaType.parse("application/json")))
+                .build();
+
+        executeNoContent(request, "Keycloak role-mapping silme başarısız", keycloakId);
+    }
+
+    /**
+     * Verilen rolü kullanıcıya ekler.
+     */
+    private void addRealmRole(String roleMappingsUrl, String token,
+                              JsonNode roleRepresentation, String keycloakId) {
+        String body = "[" + roleRepresentation.toString() + "]";
+
+        Request request = new Request.Builder()
+                .url(roleMappingsUrl)
+                .header("Authorization", "Bearer " + token)
+                .header("Content-Type", "application/json")
+                .post(RequestBody.create(body, MediaType.parse("application/json")))
+                .build();
+
+        executeNoContent(request, "Keycloak role-mapping ekleme başarısız", keycloakId);
+    }
+
+    /**
+     * JsonNode listesini JSON array string'e çevirir.
+     */
+    private String toJsonArray(List<JsonNode> nodes) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < nodes.size(); i++) {
+            if (i > 0) sb.append(",");
+            sb.append(nodes.get(i).toString());
+        }
+        sb.append("]");
+        return sb.toString();
     }
 }

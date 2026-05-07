@@ -6,6 +6,8 @@ public record SecurityStatusResponse(
         boolean otpEnabled,
         List<OtpCredential> otpCredentials
 ) {
+
+
     public record OtpCredential(
             String id,
             String label,

@@ -33,7 +33,6 @@ public abstract class AbstractBackfillService<T> {
         }
 
         List<T> items = getAllItems();
-
         for (T item : items) {
             String seriesCode = getSeriesCode(item);
             try {
@@ -43,7 +42,6 @@ public abstract class AbstractBackfillService<T> {
 
                 Optional<LocalDate> latestDateOpt = getLatestRateDate(item);
 
-                // 1. Son tarih güncel değilse backfill başlat
                 if (latestDateOpt.isEmpty() || latestDateOpt.get().isBefore(lastCompleted)) {
                     LocalDate startLocal = latestDateOpt
                             .map(d -> d.plusDays(1))
@@ -52,7 +50,6 @@ public abstract class AbstractBackfillService<T> {
                     continue;
                 }
 
-                // 2. Son tarih güncel ama gap var mı?
                 long expected = TurkishHolidayUtil.countTradingDays(backfillStart, lastCompleted);
                 long actual = countExistingRecords(item, backfillStart, lastCompleted);
 

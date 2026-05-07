@@ -82,19 +82,7 @@ public class TradeService {
     private final BondRepository bondRepository;
     private final BondRateHistoryRepository bondRateHistoryRepository;
 
-    /**
-     * Yeni alış/satış talebi.
-     *
-     * <p>Akış:
-     * <ol>
-     *     <li>Portföy ownership kontrolü</li>
-     *     <li>Enstrüman varlık kontrolü</li>
-     *     <li>SELL ise submit-time pozisyon kontrolü (available = current - pending sells)</li>
-     *     <li>BOND ise market order: anında execute, scheduler'a düşmesin</li>
-     *     <li>Diğer enstrümanlar: PENDING kaydet, scheduler eşleştirsin</li>
-     * </ol>
-     * </p>
-     */
+
     @Transactional
     public TradeResponse submitTrade(Long portfolioId, Long userId, TradeRequest request) {
         Portfolio portfolio = portfolioService.getOwnedPortfolio(portfolioId, userId);
@@ -179,11 +167,7 @@ public class TradeService {
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
-    /**
-     * Bond için market order: bond_rate_history'den son faiz oranını çek,
-     * bunu execution price olarak kullan ve TradeProcessService ile anında işle.
-     * Faiz verisi yoksa BadRequestException.
-     */
+
     private TradeResponse submitBondMarketOrder(TradeTransaction transaction) {
         Optional<BondRateHistory> historyOpt = bondRateHistoryRepository
                 .findFirstByBondIdOrderByRateDateDesc(transaction.getInstrumentId());
@@ -192,25 +176,20 @@ public class TradeService {
             throw new BadRequestException("Bond için güncel fiyat verisi bulunamadı");
         }
 
-        // Bond için target_price doldurulması gerekiyor (NOT NULL constraint).
-        // Market order olduğu için target = execution.
+
         BigDecimal executionPrice = historyOpt.get().getInterestRate();
         transaction.setTargetPrice(executionPrice);
 
         TradeTransaction saved = tradeTransactionRepository.save(transaction);
         tradeProcessService.execute(saved, executionPrice);
 
-        // execute() içinde status APPROVED'a çekildi ve event yayınlandı.
-        // saved entity güncel halini almak için yeniden fetch.
+
         TradeTransaction refreshed = tradeTransactionRepository.findById(saved.getId()).orElse(saved);
         log.info("Bond market order tamamlandı. tradeId={}, status={}", refreshed.getId(), refreshed.getStatus());
         return toEnrichedResponses(List.of(refreshed)).get(0);
     }
 
-    /**
-     * SELL submit-time kontrolü: available_qty = current_qty - SUM(pending SELL qty).
-     * Yetersizse 422 BusinessRuleException.
-     */
+
     private void verifySellable(Long portfolioId, TradeRequest request) {
         BigDecimal currentQty = portfolioItemRepository
                 .findByPortfolioIdAndInstrumentTypeAndInstrumentId(
@@ -240,9 +219,7 @@ public class TradeService {
         }
     }
 
-    /**
-     * Enstrümanın ilgili master tablodan varlığını doğrular.
-     */
+
     private void verifyInstrumentExists(InstrumentType type, Long instrumentId) {
         boolean exists = switch (type) {
             case STOCK -> stockRepository.existsById(instrumentId);
@@ -277,10 +254,7 @@ public class TradeService {
         return toEnrichedResponses(List.of(tx)).get(0);
     }
 
-    /**
-     * WebSocket reconnect senaryosu: belirtilen tarihten sonra updated_at almış trade'leri döner.
-     * Frontend bağlantı koptuğunda kaçırdığı event'leri bu endpoint'ten çekerek senkronize olur.
-     */
+
     @Transactional(readOnly = true)
     public List<TradeResponse> getTradesSince(Long portfolioId, Long userId, Instant since) {
         portfolioService.verifyPortfolioBelongsToUser(portfolioId, userId);
@@ -371,10 +345,7 @@ public class TradeService {
         }
     }
 
-    /**
-     * Sadece PENDING durumdaki trade kullanıcı tarafından iptal edilebilir.
-     * Diğer durumlar 400 BadRequest döner.
-     */
+  
     @Transactional
     public void cancelTrade(Long portfolioId, Long userId, Long tradeId) {
         Portfolio portfolio = portfolioService.getOwnedPortfolio(portfolioId, userId);

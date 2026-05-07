@@ -3,11 +3,7 @@ package com.alper.backend.common.exception;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
-/**
- * Doküman'daki standart hata kodları (Bölüm 4 - Validasyon ve Hata Yönetimi).
- * Her kod doküman'da tanımlanan formata birebir uyar:
- * "{numericPrefix}_FP_{ERROR_NAME}"
- */
+
 @Getter
 public enum ErrorCode {
 
