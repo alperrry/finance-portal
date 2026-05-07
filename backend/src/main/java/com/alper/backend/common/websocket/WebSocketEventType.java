@@ -1,22 +1,38 @@
 package com.alper.backend.common.websocket;
 
-/**
- * WebSocketEnvelope.type alanında kullanılan tüm event tiplerinin merkezi enum'u.
- * Frontend bu değerlere göre payload'u parse eder ve UI güncellemesini yönlendirir.
- */
 public enum WebSocketEventType {
-
-    // ---- Portfolio (kullanıcıya özel) ----
     TRADE_APPROVED,
     TRADE_REJECTED,
     TRADE_CANCELLED,
     PORTFOLIO_UPDATED,
     USER_BALANCE_UPDATED,
 
-    // ---- Market (broadcast) ----
     STOCK_PRICES_UPDATED,
     FX_RATES_UPDATED,
 
-    // ---- News (broadcast) ----
-    NEWS_PUBLISHED
+    NEWS_PUBLISHED,
+
+    ADMIN_AUDIT_LOGGED,
+    ADMIN_USER_UPDATED,
+    ADMIN_USER_ROLE_CHANGED,
+    ADMIN_USER_STATUS_CHANGED,
+
+    ADMIN_SOURCE_CREATED,
+    ADMIN_SOURCE_UPDATED,
+    ADMIN_SOURCE_DELETED,
+    ADMIN_SOURCE_TOGGLED,
+    ADMIN_CATEGORY_CREATED,
+    ADMIN_CATEGORY_UPDATED,
+    ADMIN_CATEGORY_DELETED,
+
+    ADMIN_JOB_STARTED,
+    ADMIN_JOB_COMPLETED,
+    ADMIN_JOB_FAILED,
+    ADMIN_JOB_TOGGLED,
+
+    ADMIN_TRADE_PENDING,
+    ADMIN_TRADE_APPROVED,
+    ADMIN_TRADE_REJECTED,
+
+    ADMIN_NOTIFICATION
 }
