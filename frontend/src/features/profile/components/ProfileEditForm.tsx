@@ -1,0 +1,135 @@
+import { Alert, Box, Button, Card, CardContent, CircularProgress, Stack, TextField, Typography } from "@mui/material";
+import { type ChangeEvent, type FormEvent, type RefObject } from "react";
+import type { UserResponse } from "../api/userApi";
+import type { FieldTouched, FormErrors, ProfileField, ProfileForm } from "../types";
+
+type Props = {
+    currentUser: UserResponse;
+    form: ProfileForm;
+    touched: FieldTouched;
+    errors: FormErrors;
+    saving: boolean;
+    hasChanges: boolean;
+    canSubmit: boolean;
+    serverError: string | null;
+    firstNameRef: RefObject<HTMLInputElement | null>;
+    lastNameRef: RefObject<HTMLInputElement | null>;
+    emailRef: RefObject<HTMLInputElement | null>;
+    onUpdateField: (field: ProfileField) => (event: ChangeEvent<HTMLInputElement>) => void;
+    onTouchField: (field: ProfileField) => void;
+    onReset: () => void;
+    onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+};
+
+export function ProfileEditForm({
+    currentUser,
+    form,
+    touched,
+    errors,
+    saving,
+    hasChanges,
+    canSubmit,
+    serverError,
+    firstNameRef,
+    lastNameRef,
+    emailRef,
+    onUpdateField,
+    onTouchField,
+    onReset,
+    onSubmit,
+}: Props) {
+    return (
+        <Card sx={{ flex: 1 }}>
+            <CardContent>
+                <Box sx={{ mb: 2 }}>
+                    <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>
+                        Bilgi Düzenleme
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
+                        Profili Düzenle
+                    </Typography>
+                </Box>
+
+                <Box component="form" onSubmit={onSubmit} noValidate>
+                    <Stack sx={{ gap: 2 }}>
+                        <TextField
+                            inputRef={firstNameRef}
+                            label="Ad"
+                            value={form.firstName}
+                            onChange={onUpdateField("firstName")}
+                            onBlur={() => onTouchField("firstName")}
+                            error={Boolean(touched.firstName && errors.firstName)}
+                            helperText={touched.firstName ? errors.firstName : undefined}
+                            inputProps={{ maxLength: 100 }}
+                            size="small"
+                            fullWidth
+                        />
+                        <TextField
+                            inputRef={lastNameRef}
+                            label="Soyad"
+                            value={form.lastName}
+                            onChange={onUpdateField("lastName")}
+                            onBlur={() => onTouchField("lastName")}
+                            error={Boolean(touched.lastName && errors.lastName)}
+                            helperText={touched.lastName ? errors.lastName : undefined}
+                            inputProps={{ maxLength: 100 }}
+                            size="small"
+                            fullWidth
+                        />
+                        <TextField
+                            inputRef={emailRef}
+                            label="E-posta"
+                            type="email"
+                            value={form.email}
+                            onChange={onUpdateField("email")}
+                            onBlur={() => onTouchField("email")}
+                            error={Boolean(touched.email && errors.email)}
+                            helperText={touched.email ? errors.email : undefined}
+                            inputProps={{ maxLength: 255 }}
+                            size="small"
+                            fullWidth
+                        />
+                        <TextField
+                            label="Kullanıcı adı"
+                            value={currentUser.username}
+                            disabled
+                            size="small"
+                            fullWidth
+                            helperText="Bu alan Keycloak'tan yönetilir."
+                        />
+                        <TextField
+                            label="Rol"
+                            value={currentUser.role}
+                            disabled
+                            size="small"
+                            fullWidth
+                            helperText="Rol sadece admin panelinden değiştirilebilir."
+                        />
+
+                        {serverError ? <Alert severity="error">{serverError}</Alert> : null}
+
+                        <Stack direction="row" sx={{ gap: 1, pt: 1 }}>
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                color="secondary"
+                                disabled={!canSubmit}
+                                startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
+                            >
+                                {saving ? "Kaydediliyor..." : "Kaydet"}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outlined"
+                                onClick={onReset}
+                                disabled={saving || !hasChanges}
+                            >
+                                İptal
+                            </Button>
+                        </Stack>
+                    </Stack>
+                </Box>
+            </CardContent>
+        </Card>
+    );
+}
