@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { AppBar, Avatar, Box, Button, Chip, Stack, Toolbar, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { fetchCategories, type NewsCategory } from "../../api/news";
-import { useAuth } from "../../auth/AuthContext";
+import { fetchCategories, type NewsCategory } from "../../features/news/api/newsApi";
+import { useAuth } from "../../app/auth/AuthContext";
 import KapitalTicker from "./KapitalTicker";
 
 type ActivePage = "portfolio" | "portfolios" | "news" | "analysis" | "tools" | "profile" | "settings";
@@ -121,97 +122,158 @@ export default function KapitalShell({
     };
 
     return (
-        <div className={`kp-shell ${showCategories ? "" : "kp-shell-no-categories"}`.trim()}>
+        <Box sx={{ minHeight: "100vh", background: "radial-gradient(circle at 15% -10%, rgba(193, 98, 47, 0.09), transparent 40%), #edeae4" }}>
             <KapitalTicker />
 
-            <header className="kp-navbar" role="banner">
-                <div className="kp-navbar-top">
-                    <button className="kp-logo" type="button" onClick={() => navigate("/portfolio")}
+            <AppBar
+                position="sticky"
+                color="inherit"
+                elevation={0}
+                component="header"
+                role="banner"
+                sx={{
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
+                    backgroundColor: "rgba(255, 255, 255, 0.94)",
+                    backdropFilter: "blur(18px)",
+                    zIndex: (theme) => theme.zIndex.appBar,
+                }}
+            >
+                <Toolbar
+                    disableGutters
+                    sx={{
+                        minHeight: "auto",
+                        px: { xs: 2, lg: 4 },
+                        py: 1.5,
+                        display: "grid",
+                        gridTemplateColumns: { xs: "1fr", lg: "auto 1fr auto" },
+                        alignItems: "center",
+                        gap: 2,
+                    }}
+                >
+                    <Button
+                        color="inherit"
+                        type="button"
+                        onClick={() => navigate("/portfolio")}
+                        startIcon={<Box component="span" sx={{ color: "secondary.main" }}>◈</Box>}
+                        sx={{ justifySelf: "start", fontSize: 20, fontWeight: 900 }}
                     >
-                        <span className="kp-logo-sym">◈</span>
-                        <span className="kp-logo-text">Kapital</span>
-                    </button>
+                        Kapital
+                    </Button>
 
-                    <nav className="kp-nav-links" aria-label="Ana menü">
+                    <Stack
+                        component="nav"
+                        direction="row"
+                        aria-label="Ana menü"
+                        sx={{
+                            gap: 1,
+                            flexWrap: "wrap",
+                            justifyContent: { xs: "flex-start", lg: "center" },
+                        }}
+                    >
                         {navItems.map((item) => (
-                            <button
+                            <Button
                                 key={item.id}
-                                className={`kp-nav-btn ${activePage === item.id ? "active" : ""}`.trim()}
+                                variant={activePage === item.id ? "contained" : "text"}
+                                color={activePage === item.id ? "primary" : "inherit"}
                                 type="button"
                                 onClick={() => navigate(item.to)}
+                                size="small"
                             >
                                 {item.label}
-                            </button>
+                            </Button>
                         ))}
-                    </nav>
+                    </Stack>
 
-                    <div className="kp-nav-right">
-                        <span className="kp-nav-chip">{navDate}</span>
-                        <span className="kp-nav-chip">{navTime}</span>
-                        <span className="kp-nav-balance" aria-label="Kullanıcı bakiyesi">
-                            <span aria-hidden="true">₺</span>
-                            {formatMoney(currentUser?.balance, "TRY")}
-                        </span>
+                    <Stack
+                        direction="row"
+                        sx={{
+                            gap: 1,
+                            flexWrap: "wrap",
+                            justifyContent: { xs: "flex-start", lg: "flex-end" },
+                            alignItems: "center",
+                        }}
+                    >
+                        <Chip size="small" label={navDate} variant="outlined" />
+                        <Chip size="small" label={navTime} variant="outlined" />
+                        <Chip size="small" label={formatMoney(currentUser?.balance, "TRY")} aria-label="Kullanıcı bakiyesi" />
                         {currentUser?.role === "ADMIN" ? (
-                            <button
-                                className="kp-nav-action secondary"
+                            <Button
+                                variant="outlined"
+                                color="secondary"
+                                size="small"
                                 type="button"
                                 onClick={() => navigate("/admin/users")}
                             >
                                 Admin Paneli
-                            </button>
+                            </Button>
                         ) : null}
-                        <button
-                            className={`kp-nav-user ${activePage === "profile" || activePage === "settings" ? "active" : ""}`.trim()}
+                        <Button
+                            variant={activePage === "profile" || activePage === "settings" ? "contained" : "outlined"}
+                            color="inherit"
                             type="button"
                             onClick={() => navigate("/settings/profile")}
                             aria-label="Ayarlar"
+                            startIcon={<Avatar sx={{ width: 28, height: 28, fontSize: 12 }}>{userInitials}</Avatar>}
+                            sx={{ maxWidth: { xs: "100%", sm: 260 }, justifyContent: "flex-start" }}
                         >
-                            <span className="kp-nav-avatar" aria-hidden="true">{userInitials}</span>
-                            <span className="kp-nav-user-copy">
-                                <span className="kp-nav-user-name">Merhaba, {userGreetingName}</span>
-                                <span className="kp-nav-user-meta">
-                                    <span>Ayarlar</span>
-                                    {currentUser?.role === "ADMIN" ? <span className="kp-role-badge admin">Admin</span> : null}
-                                </span>
-                            </span>
-                        </button>
-                        <button className="kp-nav-action" type="button" onClick={logout}>Çıkış</button>
-                    </div>
-                </div>
+                            <Stack sx={{ alignItems: "flex-start", gap: 0, minWidth: 0 }}>
+                                <Typography variant="caption" noWrap sx={{ fontWeight: 800 }}>
+                                    Merhaba, {userGreetingName}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" noWrap>
+                                    Ayarlar{currentUser?.role === "ADMIN" ? " · Admin" : ""}
+                                </Typography>
+                            </Stack>
+                        </Button>
+                        <Button variant="contained" size="small" type="button" onClick={logout}>Çıkış</Button>
+                    </Stack>
+                </Toolbar>
 
                 {showCategories ? (
-                    <div className="kp-category-row" aria-label="Haber kategorileri">
-                        <button
-                            className={`kp-category-pill ${selectedCategoryId === "" ? "active" : ""}`.trim()}
+                    <Stack
+                        direction="row"
+                        aria-label="Haber kategorileri"
+                        sx={{ gap: 1, px: { xs: 2, lg: 4 }, pb: 1.5, overflow: "auto" }}
+                    >
+                        <Button
+                            variant={selectedCategoryId === "" ? "contained" : "outlined"}
+                            color={selectedCategoryId === "" ? "primary" : "inherit"}
+                            size="small"
                             type="button"
                             onClick={() => openCategory()}
+                            sx={{ flex: "0 0 auto" }}
                         >
-                            Tum kategoriler
-                        </button>
+                            Tüm kategoriler
+                        </Button>
 
                         {loadingCategories ? (
-                            <span className="kp-category-loading">Kategoriler yukleniyor...</span>
+                            <Typography variant="body2" color="text.secondary" sx={{ alignSelf: "center" }}>
+                                Kategoriler yükleniyor...
+                            </Typography>
                         ) : (
                             categories.map((category) => {
                                 const currentId = String(category.id);
                                 return (
-                                    <button
+                                    <Button
                                         key={category.id}
-                                        className={`kp-category-pill ${selectedCategoryId === currentId ? "active" : ""}`.trim()}
+                                        variant={selectedCategoryId === currentId ? "contained" : "outlined"}
+                                        color={selectedCategoryId === currentId ? "primary" : "inherit"}
+                                        size="small"
                                         type="button"
                                         onClick={() => openCategory(currentId)}
+                                        sx={{ flex: "0 0 auto" }}
                                     >
                                         {category.name}
-                                    </button>
+                                    </Button>
                                 );
                             })
                         )}
-                    </div>
+                    </Stack>
                 ) : null}
-            </header>
+            </AppBar>
 
-            <main className="kp-shell-main">{children}</main>
-        </div>
+            <Box component="main" sx={{ pb: "44px" }}>{children}</Box>
+        </Box>
     );
 }

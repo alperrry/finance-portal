@@ -12,7 +12,7 @@ import {
     type MouseEventParams,
     type Time,
 } from "lightweight-charts";
-import type { DrawingResponse, DrawingType } from "../../api/drawings";
+import type { DrawingResponse, DrawingType } from "../../features/analysis/api/drawingsApi";
 
 export type CandlestickPoint = {
     date: string;

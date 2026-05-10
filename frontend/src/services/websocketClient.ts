@@ -1,6 +1,6 @@
 import { Client, type IMessage, type StompSubscription } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
-import { API_BASE } from "../api/market";
+import { API_BASE } from "./api/client";
 
 export type WebSocketEventType =
     | "TRADE_APPROVED"

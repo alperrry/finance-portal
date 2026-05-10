@@ -1,5 +1,5 @@
 import type { Content, TDocumentDefinitions, TableCell } from "pdfmake/interfaces";
-import type { PortfolioItemResponse, PortfolioResponse, TradeResponse } from "../api/portfolio";
+import type { PortfolioItemResponse, PortfolioResponse, TradeResponse } from "../features/portfolio/api/portfolioApi";
 
 type TradeFilters = {
     from: string;

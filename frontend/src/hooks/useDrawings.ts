@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ApiError } from "../api/client";
+import { ApiError } from "../services/api/client";
 import {
     clearAllDrawings,
     createDrawing,
@@ -8,7 +8,7 @@ import {
     type CreateDrawingRequest,
     type DrawingResponse,
     type InstrumentType,
-} from "../api/drawings";
+} from "../features/analysis/api/drawingsApi";
 
 const sortDrawings = (items: DrawingResponse[]) =>
     [...items].sort((left, right) => left.createdAt.localeCompare(right.createdAt) || left.id - right.id);

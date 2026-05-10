@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Box } from "@mui/material";
 import { ToastContext, type ToastContextType, type ToastTone } from "./ToastContext";
 
 type ToastItem = {
@@ -10,6 +11,12 @@ type ToastItem = {
 type ToastEventDetail = {
     message?: string;
     tone?: ToastTone;
+};
+
+const DOT_COLOR: Record<ToastTone, string> = {
+    success: "#5bb870",
+    error: "#e05858",
+    info: "#c1622f",
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -57,14 +64,56 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     return (
         <ToastContext.Provider value={value}>
             {children}
-            <div className="kp-toast-viewport" aria-live="polite" aria-relevant="additions">
+            <Box
+                aria-live="polite"
+                aria-relevant="additions"
+                sx={{
+                    position: "fixed",
+                    top: 18,
+                    right: 18,
+                    zIndex: 10000,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                    width: "min(380px, calc(100vw - 36px))",
+                    pointerEvents: "none",
+                }}
+            >
                 {toasts.map((toast) => (
-                    <div key={toast.id} className={`kp-toast ${toast.tone}`} role={toast.tone === "error" ? "alert" : "status"}>
-                        <span className="kp-toast-dot" aria-hidden="true" />
+                    <Box
+                        key={toast.id}
+                        role={toast.tone === "error" ? "alert" : "status"}
+                        sx={{
+                            border: "1px solid",
+                            borderColor: toast.tone === "error" ? "rgba(224, 88, 88, 0.26)" : "rgba(17, 17, 17, 0.09)",
+                            bgcolor: "rgba(255, 255, 255, 0.94)",
+                            color: "rgba(17, 17, 17, 0.82)",
+                            boxShadow: "0 16px 42px rgba(17, 17, 17, 0.12)",
+                            backdropFilter: "blur(18px)",
+                            borderRadius: "18px",
+                            p: "13px 14px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            fontSize: 13,
+                            lineHeight: 1.45,
+                            pointerEvents: "auto",
+                        }}
+                    >
+                        <Box
+                            aria-hidden="true"
+                            sx={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: "50%",
+                                bgcolor: DOT_COLOR[toast.tone],
+                                flexShrink: 0,
+                            }}
+                        />
                         <span>{toast.message}</span>
-                    </div>
+                    </Box>
                 ))}
-            </div>
+            </Box>
         </ToastContext.Provider>
     );
 }

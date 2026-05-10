@@ -1,3 +1,5 @@
+import { Box, GlobalStyles } from "@mui/material";
+
 type TickerDirection = "up" | "down";
 
 type TickerItem = {
@@ -22,22 +24,76 @@ const tickerItems: TickerItem[] = [
 
 const rollingItems = [...tickerItems, ...tickerItems];
 
-type KapitalTickerProps = {
-    className?: string;
-};
-
-export default function KapitalTicker({ className = "" }: KapitalTickerProps) {
+export default function KapitalTicker() {
     return (
-        <div className={`kp-ticker-bar ${className}`.trim()}>
-            <div className="kp-ticker-track">
-                {rollingItems.map((item, index) => (
-                    <div className="kp-ticker-item" key={`${item.name}-${index}`}>
-                        <span className="kp-ticker-name">{item.name}</span>
-                        <span>{item.price}</span>
-                        <span className={`kp-ticker-change ${item.direction}`}>{item.change}</span>
-                    </div>
-                ))}
-            </div>
-        </div>
+        <>
+            <GlobalStyles styles={{
+                "@keyframes kpTickerMove": {
+                    "0%": { transform: "translateX(0)" },
+                    "100%": { transform: "translateX(-50%)" },
+                },
+            }} />
+            <Box
+                sx={{
+                    bgcolor: "#0e0e0e",
+                    height: 34,
+                    display: "flex",
+                    alignItems: "center",
+                    overflow: "hidden",
+                    position: "relative",
+                    "&::after": {
+                        content: '""',
+                        position: "absolute",
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        width: 72,
+                        background: "linear-gradient(to right, transparent, #0e0e0e)",
+                        pointerEvents: "none",
+                        zIndex: 2,
+                    },
+                }}
+            >
+                <Box
+                    sx={{
+                        display: "flex",
+                        whiteSpace: "nowrap",
+                        width: "max-content",
+                        animation: "kpTickerMove 30s linear infinite",
+                        "&:hover": { animationPlayState: "paused" },
+                    }}
+                >
+                    {rollingItems.map((item, index) => (
+                        <Box
+                            key={`${item.name}-${index}`}
+                            sx={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "8px",
+                                borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+                                px: "26px",
+                                fontFamily: '"JetBrains Mono", monospace',
+                                fontSize: 11,
+                                color: "rgba(255, 255, 255, 0.84)",
+                            }}
+                        >
+                            <Box component="span" sx={{ color: "rgba(255, 255, 255, 0.38)", fontSize: 10, letterSpacing: "0.06em" }}>
+                                {item.name}
+                            </Box>
+                            <Box component="span">{item.price}</Box>
+                            <Box
+                                component="span"
+                                sx={{
+                                    fontWeight: 600,
+                                    color: item.direction === "up" ? "#5bb870" : "#e05858",
+                                }}
+                            >
+                                {item.change}
+                            </Box>
+                        </Box>
+                    ))}
+                </Box>
+            </Box>
+        </>
     );
 }

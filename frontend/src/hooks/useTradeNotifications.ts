@@ -3,7 +3,7 @@ import {
     fetchPortfolioTradesSince,
     fetchTrade,
     type TradeResponse,
-} from "../api/portfolio";
+} from "../features/portfolio/api/portfolioApi";
 import { useToast } from "../components/ToastContext";
 import { websocketClient, type WebSocketEnvelope } from "../services/websocketClient";
 
