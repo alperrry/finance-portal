@@ -49,6 +49,9 @@ public class TefasMapper {
     }
 
     private LocalDate toLocalDate(String epochMillis) {
+        if (epochMillis != null && epochMillis.contains("-")) {
+            return LocalDate.parse(epochMillis);
+        }
         return Instant.ofEpochMilli(Long.parseLong(epochMillis))
                 .atZone(ZoneId.of("Europe/Istanbul"))
                 .toLocalDate();

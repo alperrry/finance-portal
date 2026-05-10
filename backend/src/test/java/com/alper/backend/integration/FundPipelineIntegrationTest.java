@@ -33,17 +33,17 @@ class FundPipelineIntegrationTest extends AbstractIntegrationTest {
                 if (path == null) {
                     return new MockResponse().setResponseCode(404);
                 }
-                if (path.startsWith("/dummy/tefas/FonAnaliz.aspx")) {
+                if (path.startsWith("/dummy/tefas/fon-verileri")) {
                     return new MockResponse()
                             .setResponseCode(200)
                             .addHeader("Set-Cookie", "TEFASSESSION=test-cookie; Path=/; HttpOnly")
                             .addHeader("Content-Type", "text/html")
                             .setBody("<html>ok</html>");
                 }
-                if (path.startsWith("/dummy/tefas/BindHistoryInfo")) {
+                if (path.startsWith("/api/funds/fonGnlBlgSiraliGetir")) {
                     return jsonResponse(infoFixture);
                 }
-                if (path.startsWith("/dummy/tefas/BindHistoryAllocation")) {
+                if (path.startsWith("/api/funds/dagilimSiraliGetirT")) {
                     return jsonResponse(allocationFixture);
                 }
                 return new MockResponse().setResponseCode(404);

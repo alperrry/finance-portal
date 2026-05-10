@@ -7,6 +7,7 @@ import com.alper.backend.market.fund.repository.FundAllocationRepository;
 import com.alper.backend.market.fund.repository.FundPriceRepository;
 import com.alper.backend.market.fund.repository.FundRepository;
 import com.alper.backend.market.common.AbstractBackfillService;
+import com.alper.backend.market.common.TurkishHolidayUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -64,18 +65,64 @@ public class TefasBackfillService extends AbstractBackfillService<Fund> {
     @Override
     protected void fetchAndSave(Fund fund, String startDate, String endDate) {
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-        LocalDate start = LocalDate.parse(startDate, fmt);
-        LocalDate end = LocalDate.parse(endDate, fmt);
+        LocalDate lowerBound = LocalDate.parse(startDate, fmt);
+        LocalDate requestedEnd = LocalDate.parse(endDate, fmt);
+        LocalDate lastCompletedTradingDay = TurkishHolidayUtil.lastCompletedTradingDay(LocalDate.now());
+        LocalDate cursor = requestedEnd.isBefore(lastCompletedTradingDay) ? requestedEnd : lastCompletedTradingDay;
 
-        while (!start.isAfter(end)) {
-            LocalDate chunkEnd = start.plusDays(89).isAfter(end) ? end : start.plusDays(89);
+        int successfulChunks = 0;
+        int failedChunks = 0;
+        int emptyChunks = 0;
+        int totalChunks = countReverseMonthlyChunks(lowerBound, cursor);
+
+        log.info("TEFAS backfill planı: {} | {} ← {} | chunk={} | tahminiİstek={}",
+                fund.getCode(), lowerBound, cursor, totalChunks, totalChunks * 2);
+
+        while (!cursor.isBefore(lowerBound)) {
+            LocalDate monthStart = cursor.withDayOfMonth(1);
+            LocalDate chunkStart = monthStart.isBefore(lowerBound) ? lowerBound : monthStart;
+            LocalDate chunkEnd = cursor;
             try {
-                tefasService.fetchAndSaveForDate(fund.getCode(), start, chunkEnd);
+                TefasFetchResult result = tefasService.fetchAndSaveForDate(fund.getCode(), chunkStart, chunkEnd);
+                successfulChunks++;
+                if (result.empty()) {
+                    emptyChunks++;
+                    log.info("TEFAS boş ay tespit edildi, fon için daha eski backfill durduruluyor: {} | {} → {}",
+                            fund.getCode(), chunkStart, chunkEnd);
+                    break;
+                }
             } catch (Exception e) {
+                failedChunks++;
                 log.warn("TEFAS chunk başarısız: {} | {} → {} → {}",
-                        fund.getCode(), start, chunkEnd, e.getMessage());
+                        fund.getCode(), chunkStart, chunkEnd, e.getMessage());
             }
-            start = chunkEnd.plusDays(1);
+            cursor = chunkStart.minusDays(1);
         }
+
+        if (successfulChunks == 0 && failedChunks > 0) {
+            throw new IllegalStateException("TEFAS backfill tüm chunk'larda başarısız oldu: " + fund.getCode());
+        }
+
+        if (failedChunks > 0 || emptyChunks > 0) {
+            log.warn("TEFAS backfill eksik tamamlandı: {} | başarılıChunk={}, başarısızChunk={}, boşChunk={}",
+                    fund.getCode(), successfulChunks, failedChunks, emptyChunks);
+        } else {
+            log.info("TEFAS backfill başarıyla tamamlandı: {} | başarılıChunk={}",
+                    fund.getCode(), successfulChunks);
+        }
+    }
+
+    private int countReverseMonthlyChunks(LocalDate start, LocalDate end) {
+        int count = 0;
+        LocalDate cursor = end;
+        while (!cursor.isBefore(start)) {
+            LocalDate chunkStart = cursor.withDayOfMonth(1);
+            if (chunkStart.isBefore(start)) {
+                chunkStart = start;
+            }
+            count++;
+            cursor = chunkStart.minusDays(1);
+        }
+        return count;
     }
 }
