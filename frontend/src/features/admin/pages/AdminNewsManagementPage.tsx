@@ -1,7 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ApiError } from "../../../api/client";
+import {
+    Alert,
+    Box,
+    Button,
+    Checkbox,
+    Chip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControl,
+    FormControlLabel,
+    NativeSelect,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    TextField,
+    Typography,
+} from "@mui/material";
+import { ApiError } from "../../../services/api/client";
 import { useToast } from "../../../components/ToastContext";
 import { updateAdminNewsCategories, updateAdminNewsStatus } from "../api/adminApi";
 import { invalidateAdminQuery } from "../api/adminQueryBus";
@@ -13,6 +36,21 @@ import type { AdminCategory, AdminNewsQuery, AdminNewsStatus, AdminNewsSummary, 
 
 const NEWS_AUDIT_TARGETS = ["news"];
 const NEWS_STATUSES: AdminNewsStatus[] = ["published", "archived", "removed"];
+
+const PANEL_SX = {
+    borderRadius: "22px",
+    overflow: "hidden",
+    bgcolor: "rgba(247, 245, 241, 0.92)",
+    border: "1px solid",
+    borderColor: "rgba(255, 255, 255, 0.72)",
+    boxShadow: "0 18px 52px rgba(17, 17, 17, 0.09)",
+} as const;
+
+const STATUS_COLORS: Record<AdminNewsStatus, { bgcolor: string; color: string }> = {
+    published: { bgcolor: "rgba(46, 164, 79, 0.12)", color: "#1a7a35" },
+    archived: { bgcolor: "rgba(100, 100, 100, 0.12)", color: "#555" },
+    removed: { bgcolor: "rgba(220, 53, 69, 0.12)", color: "#9e1818" },
+};
 
 type NewsDialogState =
     | { type: "status"; news: AdminNewsSummary }
@@ -72,7 +110,7 @@ export function AdminNewsManagementPage() {
     const newsQuery = useAdminNews(query);
     const categoriesQuery = useAdminCategories();
     const sourcesQuery = useAdminNewsSources();
-    const auditQuery = useAdminAuditLogs(NEWS_AUDIT_TARGETS, "news-audit");
+    const auditQuery = useAdminAuditLogs(NEWS_AUDIT_TARGETS);
     const [dialog, setDialog] = useState<NewsDialogState>(null);
     const [pending, setPending] = useState(false);
 
@@ -122,117 +160,156 @@ export function AdminNewsManagementPage() {
     };
 
     return (
-        <section className="admin-page">
-            <div className="admin-panel">
-                <div className="admin-panel-head">
-                    <div>
-                        <span>News Management</span>
-                        <h2>Haber Yönetimi</h2>
-                    </div>
-                    <strong>{newsQuery.data.totalElements} haber</strong>
-                </div>
-                <div className="admin-filter-bar news">
-                    <input value={query.search} onChange={(event) => updateFilter("search", event.target.value)} placeholder="Başlık, içerik veya URL ara" />
-                    <select value={query.status} onChange={(event) => updateFilter("status", event.target.value)}>
-                        <option value="">Tüm durumlar</option>
-                        {NEWS_STATUSES.map((status) => <option key={status} value={status}>{statusLabel(status)}</option>)}
-                    </select>
-                    <select value={query.sourceId} onChange={(event) => updateFilter("sourceId", event.target.value)}>
-                        <option value="">Tüm kaynaklar</option>
-                        {sourcesQuery.data.map((source) => <option key={source.id} value={source.id}>{source.name}</option>)}
-                    </select>
-                    <select value={query.categoryId} onChange={(event) => updateFilter("categoryId", event.target.value)}>
-                        <option value="">Tüm kategoriler</option>
-                        {categoriesQuery.data.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-                    </select>
-                    <select value={query.size} onChange={(event) => updateFilter("size", event.target.value)}>
-                        <option value="10">10</option>
-                        <option value="20">20</option>
-                        <option value="50">50</option>
-                    </select>
-                </div>
+        <Box sx={{ display: "grid", gap: 2.25 }}>
+            <Paper sx={PANEL_SX}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, p: "20px 22px", borderBottom: "1px solid", borderColor: "divider" }}>
+                    <Box>
+                        <Typography sx={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "text.secondary" }}>News Management</Typography>
+                        <Typography variant="h6" sx={{ mt: 0.5, fontSize: 24, letterSpacing: 0, fontWeight: 700 }}>Haber Yönetimi</Typography>
+                    </Box>
+                    <Typography sx={{ fontWeight: 700 }}>{newsQuery.data.totalElements} haber</Typography>
+                </Box>
 
-                {newsQuery.loading ? <div className="admin-empty">Haberler yükleniyor...</div> : null}
-                {!newsQuery.loading && newsQuery.error ? <div className="admin-error">{newsQuery.error}</div> : null}
-                {!newsQuery.loading && !newsQuery.error && newsQuery.data.content.length === 0 ? <div className="admin-empty">Bu filtrede haber yok.</div> : null}
+                <Box sx={{ display: "grid", gridTemplateColumns: "1fr repeat(4, 160px)", gap: 1.25, p: "16px 22px", borderBottom: "1px solid", borderColor: "divider" }}>
+                    <TextField
+                        size="small"
+                        value={query.search}
+                        onChange={(event) => updateFilter("search", event.target.value)}
+                        placeholder="Başlık, içerik veya URL ara"
+                    />
+                    <FormControl size="small">
+                        <NativeSelect value={query.status} onChange={(event) => updateFilter("status", event.target.value)}>
+                            <option value="">Tüm durumlar</option>
+                            {NEWS_STATUSES.map((status) => <option key={status} value={status}>{statusLabel(status)}</option>)}
+                        </NativeSelect>
+                    </FormControl>
+                    <FormControl size="small">
+                        <NativeSelect value={query.sourceId} onChange={(event) => updateFilter("sourceId", event.target.value)}>
+                            <option value="">Tüm kaynaklar</option>
+                            {sourcesQuery.data.map((source) => <option key={source.id} value={source.id}>{source.name}</option>)}
+                        </NativeSelect>
+                    </FormControl>
+                    <FormControl size="small">
+                        <NativeSelect value={query.categoryId} onChange={(event) => updateFilter("categoryId", event.target.value)}>
+                            <option value="">Tüm kategoriler</option>
+                            {categoriesQuery.data.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+                        </NativeSelect>
+                    </FormControl>
+                    <FormControl size="small">
+                        <NativeSelect value={query.size} onChange={(event) => updateFilter("size", event.target.value)}>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </NativeSelect>
+                    </FormControl>
+                </Box>
+
+                {newsQuery.loading ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Haberler yükleniyor...</Typography> : null}
+                {!newsQuery.loading && newsQuery.error ? <Alert severity="error" sx={{ m: 2 }}>{newsQuery.error}</Alert> : null}
+                {!newsQuery.loading && !newsQuery.error && newsQuery.data.content.length === 0 ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Bu filtrede haber yok.</Typography> : null}
 
                 {!newsQuery.loading && !newsQuery.error && newsQuery.data.content.length > 0 ? (
                     <>
-                        <div className="admin-table-wrap">
-                            <table className="admin-table admin-news-table">
-                                <thead>
-                                    <tr>
-                                        <th>Haber</th>
-                                        <th>Kaynak</th>
-                                        <th>Kategoriler</th>
-                                        <th>Durum</th>
-                                        <th>Yayın</th>
-                                        <th>Aksiyon</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                        <TableContainer sx={{ overflowX: "auto" }}>
+                            <Table size="small" sx={{ minWidth: 900 }}>
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>Haber</TableCell>
+                                        <TableCell>Kaynak</TableCell>
+                                        <TableCell>Kategoriler</TableCell>
+                                        <TableCell>Durum</TableCell>
+                                        <TableCell>Yayın</TableCell>
+                                        <TableCell>Aksiyon</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
                                     {newsQuery.data.content.map((news) => (
-                                        <tr key={news.id}>
-                                            <td>
-                                                <div className="admin-news-cell">
+                                        <TableRow key={news.id} sx={{ "&:last-child td": { borderBottom: 0 } }}>
+                                            <TableCell sx={{ maxWidth: 380 }}>
+                                                <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5, minWidth: 300 }}>
                                                     {news.imageUrl ? (
-                                                        <img
-                                                            className="admin-news-thumb"
+                                                        <Box
+                                                            component="img"
                                                             src={news.imageUrl}
                                                             alt=""
                                                             loading="lazy"
                                                             referrerPolicy="no-referrer"
-                                                            onError={(event) => {
+                                                            onError={(event: React.SyntheticEvent<HTMLImageElement>) => {
                                                                 event.currentTarget.hidden = true;
                                                             }}
+                                                            sx={{ width: 74, height: 54, objectFit: "cover", borderRadius: 1, border: "1px solid", borderColor: "divider", flexShrink: 0 }}
                                                         />
                                                     ) : null}
-                                                    <div className="admin-news-title">
-                                                        <strong>{news.title}</strong>
-                                                        <small>{news.canonicalUrl ?? "-"}</small>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>{news.source?.name ?? "-"}</td>
-                                            <td>
-                                                <div className="admin-pill-row">
+                                                    <Box sx={{ minWidth: 0 }}>
+                                                        <Typography variant="body2" sx={{ fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                            {news.title}
+                                                        </Typography>
+                                                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                            {news.canonicalUrl ?? "-"}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell>{news.source?.name ?? "-"}</TableCell>
+                                            <TableCell>
+                                                <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap" }}>
                                                     {news.categories.length > 0 ? news.categories.map((category) => (
-                                                        <span className="admin-pill" key={category.id}>{category.name}</span>
+                                                        <Chip
+                                                            key={category.id}
+                                                            size="small"
+                                                            label={category.name}
+                                                            sx={{ height: 20, fontSize: 10, fontWeight: 600, bgcolor: "rgba(17,17,17,0.07)" }}
+                                                        />
                                                     )) : "-"}
-                                                </div>
-                                            </td>
-                                            <td><span className={`admin-pill status-${news.status}`}>{statusLabel(news.status)}</span></td>
-                                            <td>{formatDateTime(news.publishedAt)}</td>
-                                            <td>
-                                                <div className="admin-row-actions">
-                                                    <button type="button" onClick={() => setDialog({ type: "status", news })}>Durum</button>
-                                                    <button type="button" onClick={() => setDialog({ type: "categories", news })}>Kategori</button>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    size="small"
+                                                    label={statusLabel(news.status)}
+                                                    sx={{
+                                                        height: 22,
+                                                        fontSize: 11,
+                                                        fontWeight: 700,
+                                                        ...STATUS_COLORS[news.status],
+                                                    }}
+                                                />
+                                            </TableCell>
+                                            <TableCell>{formatDateTime(news.publishedAt)}</TableCell>
+                                            <TableCell>
+                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                                                    <Button size="small" variant="outlined" onClick={() => setDialog({ type: "status", news })}>Durum</Button>
+                                                    <Button size="small" variant="outlined" onClick={() => setDialog({ type: "categories", news })}>Kategori</Button>
+                                                </Box>
+                                            </TableCell>
+                                        </TableRow>
                                     ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <Pagination page={query.page} totalPages={newsQuery.data.totalPages} onPage={(page) => updateFilter("page", String(page))} />
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                        <Pagination
+                            page={query.page}
+                            totalPages={newsQuery.data.totalPages}
+                            onPage={(page) => updateFilter("page", String(page))}
+                        />
                     </>
                 ) : null}
-            </div>
+            </Paper>
 
             <AuditPanel loading={auditQuery.loading} error={auditQuery.error} items={auditQuery.data} />
             <StatusDialog state={dialog} pending={pending} onClose={() => setDialog(null)} onSubmit={submitStatus} />
             <CategoryOverrideDialog state={dialog} categories={categoriesQuery.data} pending={pending} onClose={() => setDialog(null)} onSubmit={submitCategories} />
-        </section>
+        </Box>
     );
 }
 
 function Pagination({ page, totalPages, onPage }: { page: number; totalPages: number; onPage: (page: number) => void }) {
     return (
-        <div className="admin-pagination">
-            <button type="button" className="admin-secondary-btn" disabled={page <= 0} onClick={() => onPage(page - 1)}>Önceki</button>
-            <span>{totalPages === 0 ? 0 : page + 1} / {totalPages}</span>
-            <button type="button" className="admin-secondary-btn" disabled={totalPages === 0 || page >= totalPages - 1} onClick={() => onPage(page + 1)}>Sonraki</button>
-        </div>
+        <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 1.25, p: "16px 22px" }}>
+            <Button variant="outlined" size="small" disabled={page <= 0} onClick={() => onPage(page - 1)}>Önceki</Button>
+            <Typography variant="body2">{totalPages === 0 ? 0 : page + 1} / {totalPages}</Typography>
+            <Button variant="outlined" size="small" disabled={totalPages === 0 || page >= totalPages - 1} onClick={() => onPage(page + 1)}>Sonraki</Button>
+        </Box>
     );
 }
 
@@ -248,32 +325,27 @@ function StatusDialog({ state, pending, onClose, onSubmit }: {
     }, [state]);
     if (state?.type !== "status") return null;
     return (
-        <div className="admin-modal-backdrop" role="presentation">
-            <section className="admin-modal" role="dialog" aria-modal="true">
-                <div className="admin-modal-head">
-                    <div>
-                        <span>Haber</span>
-                        <h2>Durum değiştir</h2>
-                    </div>
-                    <button type="button" onClick={onClose}>×</button>
-                </div>
-                <form className="admin-dialog-form" onSubmit={(event: FormEvent) => {
-                    event.preventDefault();
-                    void onSubmit(state.news, status);
-                }}>
-                    <label>
-                        Durum
-                        <select value={status} onChange={(event) => setStatus(event.target.value as AdminNewsStatus)}>
+        <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
+            <DialogTitle>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Haber</Typography>
+                Durum değiştir
+            </DialogTitle>
+            <Box component="form" onSubmit={(event: FormEvent) => { event.preventDefault(); void onSubmit(state.news, status); }}>
+                <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <FormControl fullWidth size="small">
+                        <NativeSelect value={status} onChange={(event) => setStatus(event.target.value as AdminNewsStatus)}>
                             {NEWS_STATUSES.map((item) => <option key={item} value={item}>{statusLabel(item)}</option>)}
-                        </select>
-                    </label>
-                    <div className="admin-dialog-actions">
-                        <button type="button" className="admin-secondary-btn" onClick={onClose}>Vazgeç</button>
-                        <button type="submit" className="admin-primary-btn" disabled={pending}>{pending ? "Kaydediliyor..." : "Kaydet"}</button>
-                    </div>
-                </form>
-            </section>
-        </div>
+                        </NativeSelect>
+                    </FormControl>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onClose} variant="outlined" size="small">Vazgeç</Button>
+                    <Button type="submit" variant="contained" color="secondary" size="small" disabled={pending}>
+                        {pending ? "Kaydediliyor..." : "Kaydet"}
+                    </Button>
+                </DialogActions>
+            </Box>
+        </Dialog>
     );
 }
 
@@ -296,63 +368,70 @@ function CategoryOverrideDialog({ state, categories, pending, onClose, onSubmit 
             : [...current, categoryId]);
     };
     return (
-        <div className="admin-modal-backdrop" role="presentation">
-            <section className="admin-modal" role="dialog" aria-modal="true">
-                <div className="admin-modal-head">
-                    <div>
-                        <span>Haber</span>
-                        <h2>Kategorileri düzenle</h2>
-                    </div>
-                    <button type="button" onClick={onClose}>×</button>
-                </div>
-                <form className="admin-dialog-form" onSubmit={(event: FormEvent) => {
-                    event.preventDefault();
-                    void onSubmit(state.news, selectedIds);
-                }}>
-                    <div className="admin-checkbox-list">
+        <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
+            <DialogTitle>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Haber</Typography>
+                Kategorileri düzenle
+            </DialogTitle>
+            <Box component="form" onSubmit={(event: FormEvent) => { event.preventDefault(); void onSubmit(state.news, selectedIds); }}>
+                <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <Box sx={{ maxHeight: 280, overflow: "auto", border: "1px solid", borderColor: "divider", borderRadius: "14px", p: 1.5, display: "flex", flexDirection: "column" }}>
                         {categories.filter((category) => category.active).map((category) => (
-                            <label key={category.id}>
-                                <input type="checkbox" checked={selectedIds.includes(category.id)} onChange={() => toggle(category.id)} />
-                                {category.name}
-                            </label>
+                            <FormControlLabel
+                                key={category.id}
+                                control={
+                                    <Checkbox
+                                        size="small"
+                                        checked={selectedIds.includes(category.id)}
+                                        onChange={() => toggle(category.id)}
+                                    />
+                                }
+                                label={category.name}
+                            />
                         ))}
-                    </div>
-                    <div className="admin-dialog-actions">
-                        <button type="button" className="admin-secondary-btn" onClick={onClose}>Vazgeç</button>
-                        <button type="submit" className="admin-primary-btn" disabled={pending || selectedIds.length === 0}>{pending ? "Kaydediliyor..." : "Kaydet"}</button>
-                    </div>
-                </form>
-            </section>
-        </div>
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onClose} variant="outlined" size="small">Vazgeç</Button>
+                    <Button type="submit" variant="contained" color="secondary" size="small" disabled={pending || selectedIds.length === 0}>
+                        {pending ? "Kaydediliyor..." : "Kaydet"}
+                    </Button>
+                </DialogActions>
+            </Box>
+        </Dialog>
     );
 }
 
 function AuditPanel({ loading, error, items }: { loading: boolean; error: string | null; items: AuditLogItem[] }) {
     return (
-        <div className="admin-panel">
-            <div className="admin-panel-head">
-                <div>
-                    <span>Audit Trail</span>
-                    <h2>Haber audit geçmişi</h2>
-                </div>
-                <strong>{items.length} kayıt</strong>
-            </div>
-            {loading ? <div className="admin-empty">Audit kayıtları yükleniyor...</div> : null}
-            {!loading && error ? <div className="admin-error">{error}</div> : null}
-            {!loading && !error && items.length === 0 ? <div className="admin-empty">Audit kaydı bulunamadı.</div> : null}
+        <Paper sx={{ borderRadius: "22px", overflow: "hidden", bgcolor: "rgba(247, 245, 241, 0.92)", border: "1px solid", borderColor: "rgba(255, 255, 255, 0.72)", boxShadow: "0 18px 52px rgba(17, 17, 17, 0.09)" }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, p: "20px 22px", borderBottom: "1px solid", borderColor: "divider" }}>
+                <Box>
+                    <Typography sx={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "text.secondary" }}>Audit Trail</Typography>
+                    <Typography variant="h6" sx={{ mt: 0.5, fontSize: 24, letterSpacing: 0, fontWeight: 700 }}>Haber audit geçmişi</Typography>
+                </Box>
+                <Typography sx={{ fontWeight: 700 }}>{items.length} kayıt</Typography>
+            </Box>
+            {loading ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Audit kayıtları yükleniyor...</Typography> : null}
+            {!loading && error ? <Alert severity="error" sx={{ m: 2 }}>{error}</Alert> : null}
+            {!loading && !error && items.length === 0 ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Audit kaydı bulunamadı.</Typography> : null}
             {!loading && !error && items.length > 0 ? (
-                <div className="admin-audit-list">
+                <Box>
                     {items.map((item) => (
-                        <article key={item.id}>
-                            <div>
-                                <strong>{auditTitle(item)}</strong>
-                                <span>{`${item.actorUsername ?? "Sistem"} -> ${item.targetId ? `news #${item.targetId}` : "news"}`}</span>
-                            </div>
-                            <time>{formatDateTime(item.createdAt ?? item.timestamp ?? null)}</time>
-                        </article>
+                        <Box key={item.id} component="article" sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2, px: 2.25, py: 1.5, borderBottom: "1px solid", borderColor: "divider", "&:last-child": { borderBottom: 0 } }}>
+                            <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>{auditTitle(item)}</Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
+                                    {`${item.actorUsername ?? "Sistem"} -> ${item.targetId ? `news #${item.targetId}` : "news"}`}
+                                </Typography>
+                            </Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+                                {formatDateTime(item.createdAt ?? item.timestamp ?? null)}
+                            </Typography>
+                        </Box>
                     ))}
-                </div>
+                </Box>
             ) : null}
-        </div>
+        </Paper>
     );
 }

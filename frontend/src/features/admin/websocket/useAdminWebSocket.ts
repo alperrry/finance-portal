@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useAuth } from "../../../auth/AuthContext";
+import { useAuth } from "../../../app/auth/AuthContext";
 import { websocketClient } from "../../../services/websocketClient";
 import { useToast } from "../../../components/ToastContext";
 import { invalidateAdminQuery } from "../api/adminQueryBus";

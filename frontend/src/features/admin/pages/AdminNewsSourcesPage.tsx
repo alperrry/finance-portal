@@ -1,6 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { ApiError } from "../../../api/client";
+import {
+    Alert,
+    Box,
+    Button,
+    Chip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Link,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    TextField,
+    Typography,
+} from "@mui/material";
+import { ApiError } from "../../../services/api/client";
 import { useToast } from "../../../components/ToastContext";
 import { useAdminAuditLogs } from "../api/useAdminAuditLogs";
 import { useAdminNewsSources, useFilteredAdminNewsSources } from "../api/useAdminNewsSources";
@@ -14,6 +34,32 @@ import { invalidateAdminQuery } from "../api/adminQueryBus";
 import type { AdminNewsSource, AdminNewsSourceRequest, AuditLogItem } from "../types/admin.types";
 
 const NEWS_AUDIT_TARGETS = ["source", "news"];
+
+const PANEL_SX = {
+    borderRadius: "22px",
+    overflow: "hidden",
+    bgcolor: "rgba(247, 245, 241, 0.92)",
+    border: "1px solid",
+    borderColor: "rgba(255, 255, 255, 0.72)",
+    boxShadow: "0 18px 52px rgba(17, 17, 17, 0.09)",
+} as const;
+
+const PANEL_HEAD_SX = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 2,
+    p: "20px 22px",
+    borderBottom: "1px solid",
+    borderColor: "divider",
+} as const;
+
+const KICKER_SX = {
+    fontSize: 11,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.08em",
+    color: "text.secondary",
+} as const;
 
 type SourceDialogState =
     | { type: "create"; source?: undefined }
@@ -61,7 +107,7 @@ export function AdminNewsSourcesPage() {
     const [dialog, setDialog] = useState<SourceDialogState>(null);
     const [pendingAction, setPendingAction] = useState<string | null>(null);
     const sourcesQuery = useAdminNewsSources();
-    const auditQuery = useAdminAuditLogs(NEWS_AUDIT_TARGETS, "news-audit");
+    const auditQuery = useAdminAuditLogs(NEWS_AUDIT_TARGETS);
     const sources = useFilteredAdminNewsSources(sourcesQuery.data, search);
 
     const closeDialog = () => setDialog(null);
@@ -116,64 +162,98 @@ export function AdminNewsSourcesPage() {
     };
 
     return (
-        <section className="admin-page">
-            <div className="admin-panel">
-                <div className="admin-panel-head">
-                    <div>
-                        <span>RSS Source Management</span>
-                        <h2>RSS Kaynakları</h2>
-                    </div>
-                    <div className="admin-detail-actions">
-                        <button type="button" className="admin-secondary-btn" disabled={pendingAction === "fetch-all"} onClick={() => void triggerFetch()}>
+        <Box sx={{ display: "grid", gap: 2.25 }}>
+            <Paper sx={PANEL_SX}>
+                <Box sx={PANEL_HEAD_SX}>
+                    <Box>
+                        <Typography sx={KICKER_SX}>RSS Source Management</Typography>
+                        <Typography variant="h6" sx={{ mt: 0.5, fontSize: 24, letterSpacing: 0, fontWeight: 700 }}>RSS Kaynakları</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            disabled={pendingAction === "fetch-all"}
+                            onClick={() => void triggerFetch()}
+                        >
                             Tümünden çek
-                        </button>
-                        <button type="button" className="admin-primary-btn" onClick={() => setDialog({ type: "create" })}>
+                        </Button>
+                        <Button variant="contained" color="secondary" size="small" onClick={() => setDialog({ type: "create" })}>
                             Kaynak ekle
-                        </button>
-                    </div>
-                </div>
-                <div className="admin-filter-bar compact">
-                    <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Kaynak adı veya RSS URL ara" />
-                    <strong>{sources.length} kaynak</strong>
-                </div>
+                        </Button>
+                    </Box>
+                </Box>
 
-                {sourcesQuery.loading ? <div className="admin-empty">RSS kaynakları yükleniyor...</div> : null}
-                {!sourcesQuery.loading && sourcesQuery.error ? <div className="admin-error">{sourcesQuery.error}</div> : null}
-                {!sourcesQuery.loading && !sourcesQuery.error && sources.length === 0 ? <div className="admin-empty">Bu filtrede kaynak yok.</div> : null}
+                <Box sx={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 1.25, p: "16px 22px", borderBottom: "1px solid", borderColor: "divider", alignItems: "center" }}>
+                    <TextField
+                        size="small"
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        placeholder="Kaynak adı veya RSS URL ara"
+                    />
+                    <Typography sx={{ fontWeight: 700 }}>{sources.length} kaynak</Typography>
+                </Box>
+
+                {sourcesQuery.loading ? <Typography sx={{ p: "22px", color: "text.secondary" }}>RSS kaynakları yükleniyor...</Typography> : null}
+                {!sourcesQuery.loading && sourcesQuery.error ? <Alert severity="error" sx={{ m: 2 }}>{sourcesQuery.error}</Alert> : null}
+                {!sourcesQuery.loading && !sourcesQuery.error && sources.length === 0 ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Bu filtrede kaynak yok.</Typography> : null}
 
                 {!sourcesQuery.loading && !sourcesQuery.error && sources.length > 0 ? (
-                    <div className="admin-table-wrap">
-                        <table className="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>Kaynak</th>
-                                    <th>RSS URL</th>
-                                    <th>Durum</th>
-                                    <th>Güncelleme</th>
-                                    <th>Aksiyon</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                    <TableContainer sx={{ overflowX: "auto" }}>
+                        <Table size="small" sx={{ minWidth: 720 }}>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Kaynak</TableCell>
+                                    <TableCell>RSS URL</TableCell>
+                                    <TableCell>Durum</TableCell>
+                                    <TableCell>Güncelleme</TableCell>
+                                    <TableCell>Aksiyon</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
                                 {sources.map((source) => (
-                                    <tr key={source.id}>
-                                        <td><strong>{source.name}</strong></td>
-                                        <td><a className="admin-link" href={source.sourceUrl} target="_blank" rel="noreferrer">{source.sourceUrl}</a></td>
-                                        <td><span className={`admin-pill status-${source.active ? "active" : "passive"}`}>{source.active ? "Aktif" : "Pasif"}</span></td>
-                                        <td>{formatDateTime(source.updatedAt ?? source.createdAt)}</td>
-                                        <td>
-                                            <div className="admin-row-actions">
-                                                <button type="button" disabled={pendingAction === `fetch-${source.id}`} onClick={() => void triggerFetch(source)}>Çek</button>
-                                                <button type="button" onClick={() => setDialog({ type: "edit", source })}>Düzenle</button>
-                                                <button type="button" onClick={() => setDialog({ type: "delete", source })}>Sil</button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                    <TableRow key={source.id} sx={{ "&:last-child td": { borderBottom: 0 } }}>
+                                        <TableCell><Typography variant="body2" sx={{ fontWeight: 700 }}>{source.name}</Typography></TableCell>
+                                        <TableCell sx={{ maxWidth: 320 }}>
+                                            <Link href={source.sourceUrl} target="_blank" rel="noreferrer" color="secondary" variant="body2" sx={{ wordBreak: "break-all" }}>
+                                                {source.sourceUrl}
+                                            </Link>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Chip
+                                                size="small"
+                                                label={source.active ? "Aktif" : "Pasif"}
+                                                sx={{
+                                                    height: 22,
+                                                    fontSize: 11,
+                                                    fontWeight: 700,
+                                                    bgcolor: source.active ? "rgba(46, 164, 79, 0.12)" : "rgba(220, 53, 69, 0.12)",
+                                                    color: source.active ? "#1a7a35" : "#9e1818",
+                                                }}
+                                            />
+                                        </TableCell>
+                                        <TableCell>{formatDateTime(source.updatedAt ?? source.createdAt)}</TableCell>
+                                        <TableCell>
+                                            <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                                                <Button
+                                                    size="small"
+                                                    variant="outlined"
+                                                    disabled={pendingAction === `fetch-${source.id}`}
+                                                    onClick={() => void triggerFetch(source)}
+                                                >
+                                                    Çek
+                                                </Button>
+                                                <Button size="small" variant="outlined" onClick={() => setDialog({ type: "edit", source })}>Düzenle</Button>
+                                                <Button size="small" variant="outlined" color="error" onClick={() => setDialog({ type: "delete", source })}>Sil</Button>
+                                            </Box>
+                                        </TableCell>
+                                    </TableRow>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
                 ) : null}
-            </div>
+            </Paper>
 
             <AuditPanel
                 title="RSS ve haber audit geçmişi"
@@ -182,8 +262,14 @@ export function AdminNewsSourcesPage() {
                 items={auditQuery.data}
             />
 
-            <SourceDialog state={dialog} pending={pendingAction === "source-save"} onClose={closeDialog} onSubmit={saveSource} onDelete={deleteSource} />
-        </section>
+            <SourceDialog
+                state={dialog}
+                pending={pendingAction === "source-save"}
+                onClose={closeDialog}
+                onSubmit={saveSource}
+                onDelete={deleteSource}
+            />
+        </Box>
     );
 }
 
@@ -210,92 +296,99 @@ function SourceDialog({
         setForm(initialValue);
     }, [initialValue]);
 
+    if (state?.type === "delete") {
+        return (
+            <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
+                <DialogTitle>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>RSS Kaynağı</Typography>
+                    Kaynağı sil
+                </DialogTitle>
+                <DialogContent>
+                    <Alert severity="warning" sx={{ fontSize: "0.8rem" }}>
+                        {state.source.name} kaynağı silinecek.
+                    </Alert>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onClose} variant="outlined" size="small">Vazgeç</Button>
+                    <Button variant="contained" color="error" size="small" onClick={() => void onDelete(state.source)}>Sil</Button>
+                </DialogActions>
+            </Dialog>
+        );
+    }
+
     if (!state) return null;
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
-        void onSubmit({
-            name: form.name.trim(),
-            sourceUrl: form.sourceUrl.trim(),
-        });
+        void onSubmit({ name: form.name.trim(), sourceUrl: form.sourceUrl.trim() });
     };
 
-    if (state.type === "delete") {
-        return (
-            <div className="admin-modal-backdrop" role="presentation">
-                <section className="admin-modal" role="dialog" aria-modal="true">
-                    <div className="admin-modal-head">
-                        <div>
-                            <span>RSS Kaynağı</span>
-                            <h2>Kaynağı sil</h2>
-                        </div>
-                        <button type="button" onClick={onClose}>×</button>
-                    </div>
-                    <p className="admin-dialog-warning">{state.source.name} kaynağı silinecek.</p>
-                    <div className="admin-dialog-actions">
-                        <button type="button" className="admin-secondary-btn" onClick={onClose}>Vazgeç</button>
-                        <button type="button" className="admin-danger-btn" onClick={() => void onDelete(state.source)}>Sil</button>
-                    </div>
-                </section>
-            </div>
-        );
-    }
-
     return (
-        <div className="admin-modal-backdrop" role="presentation">
-            <section className="admin-modal" role="dialog" aria-modal="true">
-                <div className="admin-modal-head">
-                    <div>
-                        <span>RSS Kaynağı</span>
-                        <h2>{state.type === "edit" ? "Kaynağı düzenle" : "Kaynak ekle"}</h2>
-                    </div>
-                    <button type="button" onClick={onClose}>×</button>
-                </div>
-                <form className="admin-dialog-form" onSubmit={submit}>
-                    <label>
-                        Kaynak adı
-                        <input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} required />
-                    </label>
-                    <label>
-                        RSS URL
-                        <input value={form.sourceUrl} onChange={(event) => setForm((current) => ({ ...current, sourceUrl: event.target.value }))} required />
-                    </label>
-                    <div className="admin-dialog-actions">
-                        <button type="button" className="admin-secondary-btn" onClick={onClose}>Vazgeç</button>
-                        <button type="submit" className="admin-primary-btn" disabled={pending}>{pending ? "Kaydediliyor..." : "Kaydet"}</button>
-                    </div>
-                </form>
-            </section>
-        </div>
+        <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
+            <DialogTitle>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>RSS Kaynağı</Typography>
+                {state.type === "edit" ? "Kaynağı düzenle" : "Kaynak ekle"}
+            </DialogTitle>
+            <Box component="form" onSubmit={submit}>
+                <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <TextField
+                        label="Kaynak adı"
+                        value={form.name}
+                        onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                        required
+                        fullWidth
+                        size="small"
+                    />
+                    <TextField
+                        label="RSS URL"
+                        value={form.sourceUrl}
+                        onChange={(event) => setForm((current) => ({ ...current, sourceUrl: event.target.value }))}
+                        required
+                        fullWidth
+                        size="small"
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onClose} variant="outlined" size="small">Vazgeç</Button>
+                    <Button type="submit" variant="contained" color="secondary" size="small" disabled={pending}>
+                        {pending ? "Kaydediliyor..." : "Kaydet"}
+                    </Button>
+                </DialogActions>
+            </Box>
+        </Dialog>
     );
 }
 
 function AuditPanel({ title, loading, error, items }: { title: string; loading: boolean; error: string | null; items: AuditLogItem[] }) {
     return (
-        <div className="admin-panel">
-            <div className="admin-panel-head">
-                <div>
-                    <span>Audit Trail</span>
-                    <h2>{title}</h2>
-                </div>
-                <strong>{items.length} kayıt</strong>
-            </div>
-            {loading ? <div className="admin-empty">Audit kayıtları yükleniyor...</div> : null}
-            {!loading && error ? <div className="admin-error">{error}</div> : null}
-            {!loading && !error && items.length === 0 ? <div className="admin-empty">Audit kaydı bulunamadı.</div> : null}
+        <Paper sx={{ borderRadius: "22px", overflow: "hidden", bgcolor: "rgba(247, 245, 241, 0.92)", border: "1px solid", borderColor: "rgba(255, 255, 255, 0.72)", boxShadow: "0 18px 52px rgba(17, 17, 17, 0.09)" }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, p: "20px 22px", borderBottom: "1px solid", borderColor: "divider" }}>
+                <Box>
+                    <Typography sx={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "text.secondary" }}>Audit Trail</Typography>
+                    <Typography variant="h6" sx={{ mt: 0.5, fontSize: 24, letterSpacing: 0, fontWeight: 700 }}>{title}</Typography>
+                </Box>
+                <Typography sx={{ fontWeight: 700 }}>{items.length} kayıt</Typography>
+            </Box>
+            {loading ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Audit kayıtları yükleniyor...</Typography> : null}
+            {!loading && error ? <Alert severity="error" sx={{ m: 2 }}>{error}</Alert> : null}
+            {!loading && !error && items.length === 0 ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Audit kaydı bulunamadı.</Typography> : null}
             {!loading && !error && items.length > 0 ? (
-                <div className="admin-audit-list">
+                <Box>
                     {items.map((item) => (
-                        <article key={item.id}>
-                            <div>
-                                <strong>{auditTitle(item)}</strong>
-                                <span>{auditDescription(item)}</span>
-                            </div>
-                            <time>{formatDateTime(item.createdAt ?? item.timestamp ?? null)}</time>
-                        </article>
+                        <Box key={item.id} component="article" sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2, px: 2.25, py: 1.5, borderBottom: "1px solid", borderColor: "divider", "&:last-child": { borderBottom: 0 } }}>
+                            <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>{auditTitle(item)}</Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
+                                    {auditDescription(item)}
+                                </Typography>
+                            </Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+                                {formatDateTime(item.createdAt ?? item.timestamp ?? null)}
+                            </Typography>
+                        </Box>
                     ))}
-                </div>
+                </Box>
             ) : null}
-        </div>
+        </Paper>
     );
 }

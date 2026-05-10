@@ -1,6 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
-import { ApiError } from "../../../api/client";
+import {
+    Alert,
+    Box,
+    Button,
+    Checkbox,
+    Chip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControlLabel,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    TextField,
+    Typography,
+} from "@mui/material";
+import { ApiError } from "../../../services/api/client";
 import { useToast } from "../../../components/ToastContext";
 import { createAdminCategory, deleteAdminCategory, updateAdminCategory } from "../api/adminApi";
 import { invalidateAdminQuery } from "../api/adminQueryBus";
@@ -9,6 +29,33 @@ import { useAdminCategories, useFilteredAdminCategories } from "../api/useAdminC
 import type { AdminCategory, AdminCategoryRequest, AuditLogItem } from "../types/admin.types";
 
 const CATEGORY_AUDIT_TARGETS = ["category"];
+
+const PANEL_SX = {
+    borderRadius: "22px",
+    overflow: "hidden",
+    bgcolor: "rgba(247, 245, 241, 0.92)",
+    border: "1px solid",
+    borderColor: "rgba(255, 255, 255, 0.72)",
+    boxShadow: "0 18px 52px rgba(17, 17, 17, 0.09)",
+} as const;
+
+const PANEL_HEAD_SX = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 2,
+    p: "20px 22px",
+    borderBottom: "1px solid",
+    borderColor: "divider",
+} as const;
+
+const KICKER_SX = {
+    fontSize: 11,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.08em",
+    color: "text.secondary",
+} as const;
+
 
 type CategoryDialogState =
     | { type: "create"; category?: undefined }
@@ -47,7 +94,7 @@ function auditTitle(item: AuditLogItem) {
 export function AdminCategoriesPage() {
     const { showToast } = useToast();
     const categoriesQuery = useAdminCategories();
-    const auditQuery = useAdminAuditLogs(CATEGORY_AUDIT_TARGETS, "category-audit");
+    const auditQuery = useAdminAuditLogs(CATEGORY_AUDIT_TARGETS);
     const [search, setSearch] = useState("");
     const [dialog, setDialog] = useState<CategoryDialogState>(null);
     const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -106,63 +153,94 @@ export function AdminCategoriesPage() {
     };
 
     return (
-        <section className="admin-page">
-            <div className="admin-panel">
-                <div className="admin-panel-head">
-                    <div>
-                        <span>Category Management</span>
-                        <h2>Kategori Yönetimi</h2>
-                    </div>
-                    <button type="button" className="admin-primary-btn" onClick={() => setDialog({ type: "create" })}>Kategori ekle</button>
-                </div>
-                <div className="admin-filter-bar compact">
-                    <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Kategori ara" />
-                    <strong>{categories.length} kategori</strong>
-                </div>
+        <Box sx={{ display: "grid", gap: 2.25 }}>
+            <Paper sx={PANEL_SX}>
+                <Box sx={PANEL_HEAD_SX}>
+                    <Box>
+                        <Typography sx={KICKER_SX}>Category Management</Typography>
+                        <Typography variant="h6" sx={{ mt: 0.5, fontSize: 24, letterSpacing: 0, fontWeight: 700 }}>Kategori Yönetimi</Typography>
+                    </Box>
+                    <Button variant="contained" color="secondary" size="small" onClick={() => setDialog({ type: "create" })}>
+                        Kategori ekle
+                    </Button>
+                </Box>
 
-                {categoriesQuery.loading ? <div className="admin-empty">Kategoriler yükleniyor...</div> : null}
-                {!categoriesQuery.loading && categoriesQuery.error ? <div className="admin-error">{categoriesQuery.error}</div> : null}
-                {!categoriesQuery.loading && !categoriesQuery.error && categories.length === 0 ? <div className="admin-empty">Bu filtrede kategori yok.</div> : null}
+                <Box sx={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 1.25, p: "16px 22px", borderBottom: "1px solid", borderColor: "divider", alignItems: "center" }}>
+                    <TextField
+                        size="small"
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        placeholder="Kategori ara"
+                    />
+                    <Typography sx={{ fontWeight: 700 }}>{categories.length} kategori</Typography>
+                </Box>
+
+                {categoriesQuery.loading ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Kategoriler yükleniyor...</Typography> : null}
+                {!categoriesQuery.loading && categoriesQuery.error ? <Alert severity="error" sx={{ m: 2 }}>{categoriesQuery.error}</Alert> : null}
+                {!categoriesQuery.loading && !categoriesQuery.error && categories.length === 0 ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Bu filtrede kategori yok.</Typography> : null}
 
                 {!categoriesQuery.loading && !categoriesQuery.error && categories.length > 0 ? (
-                    <div className="admin-table-wrap">
-                        <table className="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>Kategori</th>
-                                    <th>Durum</th>
-                                    <th>Oluşturma</th>
-                                    <th>Güncelleme</th>
-                                    <th>Aksiyon</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                    <TableContainer sx={{ overflowX: "auto" }}>
+                        <Table size="small" sx={{ minWidth: 680 }}>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Kategori</TableCell>
+                                    <TableCell>Durum</TableCell>
+                                    <TableCell>Oluşturma</TableCell>
+                                    <TableCell>Güncelleme</TableCell>
+                                    <TableCell>Aksiyon</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
                                 {categories.map((category) => (
-                                    <tr key={category.id}>
-                                        <td><strong>{category.name}</strong></td>
-                                        <td><span className={`admin-pill status-${category.active ? "active" : "passive"}`}>{category.active ? "Aktif" : "Pasif"}</span></td>
-                                        <td>{formatDateTime(category.createdAt)}</td>
-                                        <td>{formatDateTime(category.updatedAt)}</td>
-                                        <td>
-                                            <div className="admin-row-actions">
-                                                <button type="button" disabled={pendingAction === `toggle-${category.id}`} onClick={() => void toggleCategory(category)}>
+                                    <TableRow key={category.id} sx={{ "&:last-child td": { borderBottom: 0 } }}>
+                                        <TableCell><Typography variant="body2" sx={{ fontWeight: 700 }}>{category.name}</Typography></TableCell>
+                                        <TableCell>
+                                            <Chip
+                                                size="small"
+                                                label={category.active ? "Aktif" : "Pasif"}
+                                                sx={{
+                                                    height: 22,
+                                                    fontSize: 11,
+                                                    fontWeight: 700,
+                                                    bgcolor: category.active ? "rgba(46, 164, 79, 0.12)" : "rgba(220, 53, 69, 0.12)",
+                                                    color: category.active ? "#1a7a35" : "#9e1818",
+                                                }}
+                                            />
+                                        </TableCell>
+                                        <TableCell>{formatDateTime(category.createdAt)}</TableCell>
+                                        <TableCell>{formatDateTime(category.updatedAt)}</TableCell>
+                                        <TableCell>
+                                            <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                                                <Button
+                                                    size="small"
+                                                    variant="outlined"
+                                                    disabled={pendingAction === `toggle-${category.id}`}
+                                                    onClick={() => void toggleCategory(category)}
+                                                >
                                                     {category.active ? "Pasifleştir" : "Aktifleştir"}
-                                                </button>
-                                                <button type="button" onClick={() => setDialog({ type: "edit", category })}>Düzenle</button>
-                                                <button type="button" onClick={() => setDialog({ type: "delete", category })}>Sil</button>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                                </Button>
+                                                <Button size="small" variant="outlined" onClick={() => setDialog({ type: "edit", category })}>Düzenle</Button>
+                                                <Button size="small" variant="outlined" color="error" onClick={() => setDialog({ type: "delete", category })}>Sil</Button>
+                                            </Box>
+                                        </TableCell>
+                                    </TableRow>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
                 ) : null}
-            </div>
+            </Paper>
 
             <AuditPanel loading={auditQuery.loading} error={auditQuery.error} items={auditQuery.data} />
-            <CategoryDialog state={dialog} pending={pendingAction === "save"} onClose={() => setDialog(null)} onSubmit={saveCategory} onDelete={removeCategory} />
-        </section>
+            <CategoryDialog
+                state={dialog}
+                pending={pendingAction === "save"}
+                onClose={() => setDialog(null)}
+                onSubmit={saveCategory}
+                onDelete={removeCategory}
+            />
+        </Box>
     );
 }
 
@@ -183,91 +261,110 @@ function CategoryDialog({ state, pending, onClose, onSubmit, onDelete }: {
         setForm(initialValue);
     }, [initialValue]);
 
-    if (!state) return null;
-
-    if (state.type === "delete") {
+    if (state?.type === "delete") {
         return (
-            <div className="admin-modal-backdrop" role="presentation">
-                <section className="admin-modal" role="dialog" aria-modal="true">
-                    <div className="admin-modal-head">
-                        <div>
-                            <span>Kategori</span>
-                            <h2>Kategoriyi sil</h2>
-                        </div>
-                        <button type="button" onClick={onClose}>×</button>
-                    </div>
-                    <p className="admin-dialog-warning">{state.category.name} kategorisi silinecek.</p>
-                    <div className="admin-dialog-actions">
-                        <button type="button" className="admin-secondary-btn" onClick={onClose}>Vazgeç</button>
-                        <button type="button" className="admin-danger-btn" onClick={() => void onDelete(state.category)}>Sil</button>
-                    </div>
-                </section>
-            </div>
+            <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
+                <DialogTitle>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Kategori</Typography>
+                    Kategoriyi sil
+                </DialogTitle>
+                <DialogContent>
+                    <Alert severity="warning" sx={{ fontSize: "0.8rem" }}>
+                        {state.category.name} kategorisi silinecek.
+                    </Alert>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onClose} variant="outlined" size="small">Vazgeç</Button>
+                    <Button variant="contained" color="error" size="small" onClick={() => void onDelete(state.category)}>Sil</Button>
+                </DialogActions>
+            </Dialog>
         );
     }
 
+    if (!state) return null;
+
     return (
-        <div className="admin-modal-backdrop" role="presentation">
-            <section className="admin-modal" role="dialog" aria-modal="true">
-                <div className="admin-modal-head">
-                    <div>
-                        <span>Kategori</span>
-                        <h2>{state.type === "edit" ? "Kategoriyi düzenle" : "Kategori ekle"}</h2>
-                    </div>
-                    <button type="button" onClick={onClose}>×</button>
-                </div>
-                <form className="admin-dialog-form" onSubmit={(event: FormEvent) => {
+        <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
+            <DialogTitle>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Kategori</Typography>
+                {state.type === "edit" ? "Kategoriyi düzenle" : "Kategori ekle"}
+            </DialogTitle>
+            <Box
+                component="form"
+                onSubmit={(event: React.FormEvent) => {
                     event.preventDefault();
                     void onSubmit({ name: form.name.trim(), isActive: form.isActive });
-                }}>
-                    <label>
-                        Kategori adı
-                        <input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} required />
-                    </label>
-                    <label className="admin-checkbox-inline">
-                        <input
-                            type="checkbox"
-                            checked={form.isActive}
-                            onChange={(event: ChangeEvent<HTMLInputElement>) => setForm((current) => ({ ...current, isActive: event.target.checked }))}
-                        />
-                        Aktif
-                    </label>
-                    <div className="admin-dialog-actions">
-                        <button type="button" className="admin-secondary-btn" onClick={onClose}>Vazgeç</button>
-                        <button type="submit" className="admin-primary-btn" disabled={pending}>{pending ? "Kaydediliyor..." : "Kaydet"}</button>
-                    </div>
-                </form>
-            </section>
-        </div>
+                }}
+            >
+                <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <TextField
+                        label="Kategori adı"
+                        value={form.name}
+                        onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                        required
+                        fullWidth
+                        size="small"
+                    />
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                size="small"
+                                checked={form.isActive}
+                                onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))}
+                            />
+                        }
+                        label="Aktif"
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onClose} variant="outlined" size="small">Vazgeç</Button>
+                    <Button type="submit" variant="contained" color="secondary" size="small" disabled={pending}>
+                        {pending ? "Kaydediliyor..." : "Kaydet"}
+                    </Button>
+                </DialogActions>
+            </Box>
+        </Dialog>
     );
 }
 
 function AuditPanel({ loading, error, items }: { loading: boolean; error: string | null; items: AuditLogItem[] }) {
+    const PANEL_SX_LOCAL = {
+        borderRadius: "22px",
+        overflow: "hidden",
+        bgcolor: "rgba(247, 245, 241, 0.92)",
+        border: "1px solid",
+        borderColor: "rgba(255, 255, 255, 0.72)",
+        boxShadow: "0 18px 52px rgba(17, 17, 17, 0.09)",
+    };
     return (
-        <div className="admin-panel">
-            <div className="admin-panel-head">
-                <div>
-                    <span>Audit Trail</span>
-                    <h2>Kategori audit geçmişi</h2>
-                </div>
-                <strong>{items.length} kayıt</strong>
-            </div>
-            {loading ? <div className="admin-empty">Audit kayıtları yükleniyor...</div> : null}
-            {!loading && error ? <div className="admin-error">{error}</div> : null}
-            {!loading && !error && items.length === 0 ? <div className="admin-empty">Audit kaydı bulunamadı.</div> : null}
+        <Paper sx={PANEL_SX_LOCAL}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, p: "20px 22px", borderBottom: "1px solid", borderColor: "divider" }}>
+                <Box>
+                    <Typography sx={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "text.secondary" }}>Audit Trail</Typography>
+                    <Typography variant="h6" sx={{ mt: 0.5, fontSize: 24, letterSpacing: 0, fontWeight: 700 }}>Kategori audit geçmişi</Typography>
+                </Box>
+                <Typography sx={{ fontWeight: 700 }}>{items.length} kayıt</Typography>
+            </Box>
+            {loading ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Audit kayıtları yükleniyor...</Typography> : null}
+            {!loading && error ? <Alert severity="error" sx={{ m: 2 }}>{error}</Alert> : null}
+            {!loading && !error && items.length === 0 ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Audit kaydı bulunamadı.</Typography> : null}
             {!loading && !error && items.length > 0 ? (
-                <div className="admin-audit-list">
+                <Box>
                     {items.map((item) => (
-                        <article key={item.id}>
-                            <div>
-                                <strong>{auditTitle(item)}</strong>
-                                <span>{`${item.actorUsername ?? "Sistem"} -> ${item.targetId ? `category #${item.targetId}` : "category"}`}</span>
-                            </div>
-                            <time>{formatDateTime(item.createdAt ?? item.timestamp ?? null)}</time>
-                        </article>
+                        <Box key={item.id} component="article" sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2, px: 2.25, py: 1.5, borderBottom: "1px solid", borderColor: "divider", "&:last-child": { borderBottom: 0 } }}>
+                            <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>{auditTitle(item)}</Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
+                                    {`${item.actorUsername ?? "Sistem"} -> ${item.targetId ? `category #${item.targetId}` : "category"}`}
+                                </Typography>
+                            </Box>
+                            <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+                                {formatDateTime(item.createdAt ?? item.timestamp ?? null)}
+                            </Typography>
+                        </Box>
                     ))}
-                </div>
+                </Box>
             ) : null}
-        </div>
+        </Paper>
     );
 }

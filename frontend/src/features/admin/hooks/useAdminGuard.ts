@@ -1,4 +1,4 @@
-import { useAuth } from "../../../auth/AuthContext";
+import { useAuth } from "../../../app/auth/AuthContext";
 
 export function useAdminGuard() {
     const { ready, authenticated, currentUser, userLoading } = useAuth();

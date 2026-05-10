@@ -1,13 +1,13 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Typography } from "@mui/material";
 import { useAdminGuard } from "./hooks/useAdminGuard";
-import "./admin.css";
 
 export function AdminGuard() {
     const location = useLocation();
     const { loading, authenticated, isAdmin } = useAdminGuard();
 
     if (loading) {
-        return <div className="admin-route-loading">Yükleniyor...</div>;
+        return <Typography sx={{ p: "22px", color: "text.secondary" }}>Yükleniyor...</Typography>;
     }
 
     if (!authenticated) {

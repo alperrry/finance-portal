@@ -1,35 +1,28 @@
-import { useState } from "react";
-import { ApiError } from "../../../api/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "../../../components/ToastContext";
 import type { UpdateUserRoleRequest } from "../types/admin.types";
 import { updateAdminUserRole } from "./adminApi";
-import { invalidateAdminQuery } from "./adminQueryBus";
-
-function resolveError(error: unknown, fallback: string) {
-    if (error instanceof ApiError) return error.payload?.message || error.message || fallback;
-    if (error instanceof Error) return error.message;
-    return fallback;
-}
 
 export function useUpdateUserRole() {
     const { showToast } = useToast();
-    const [pending, setPending] = useState(false);
+    const queryClient = useQueryClient();
 
-    const mutate = async (userId: number, payload: UpdateUserRoleRequest) => {
-        setPending(true);
-        try {
-            await updateAdminUserRole(userId, payload);
-            invalidateAdminQuery({ scope: "users" });
-            invalidateAdminQuery({ scope: "user-detail", userId });
+    const mutation = useMutation({
+        mutationFn: ({ userId, payload }: { userId: number; payload: UpdateUserRoleRequest }) =>
+            updateAdminUserRole(userId, payload),
+        onSuccess: (_data, { userId }) => {
+            void queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+            void queryClient.invalidateQueries({ queryKey: ["admin", "user-detail", userId] });
             showToast("Kullanıcı rolü güncellendi.", "success");
-        } catch (caughtError) {
-            const message = resolveError(caughtError, "Rol güncellenemedi.");
+        },
+        onError: (error) => {
+            const message = error instanceof Error ? error.message : "Rol güncellenemedi.";
             showToast(message, "error");
-            throw new Error(message);
-        } finally {
-            setPending(false);
-        }
-    };
+        },
+    });
 
-    return { mutate, pending };
+    return {
+        mutate: (userId: number, payload: UpdateUserRoleRequest) => mutation.mutateAsync({ userId, payload }),
+        pending: mutation.isPending,
+    };
 }

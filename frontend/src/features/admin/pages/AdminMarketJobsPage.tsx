@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ApiError } from "../../../api/client";
+import { Alert, Box, Button, Paper, Typography } from "@mui/material";
+import { ApiError } from "../../../services/api/client";
 import { useToast } from "../../../components/ToastContext";
 import { triggerAdminMarketBackfill } from "../api/adminApi";
 import { invalidateAdminQuery } from "../api/adminQueryBus";
@@ -18,6 +19,44 @@ const MARKET_JOBS: Array<{
     { module: "bonds", title: "Tahvil backfill", description: "TCMB EVDS tahvil geçmişini tamamlar." },
     { module: "funds", title: "Fon backfill", description: "TEFAS geçmiş fon fiyatlarını tamamlar." },
 ];
+
+const PANEL_SX = {
+    borderRadius: "22px",
+    overflow: "hidden",
+    bgcolor: "rgba(247, 245, 241, 0.92)",
+    border: "1px solid",
+    borderColor: "rgba(255, 255, 255, 0.72)",
+    boxShadow: "0 18px 52px rgba(17, 17, 17, 0.09)",
+} as const;
+
+const PANEL_HEAD_SX = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 2,
+    p: "20px 22px",
+    borderBottom: "1px solid",
+    borderColor: "divider",
+} as const;
+
+const KICKER_SX = {
+    fontSize: 11,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.08em",
+    color: "text.secondary",
+} as const;
+
+const AUDIT_ITEM_SX = {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 2,
+    px: 2.25,
+    py: 1.5,
+    borderBottom: "1px solid",
+    borderColor: "divider",
+    "&:last-child": { borderBottom: 0 },
+} as const;
 
 function resolveError(error: unknown, fallback: string) {
     if (error instanceof ApiError) return error.payload?.message || error.message || fallback;
@@ -46,7 +85,7 @@ function auditDescription(item: AuditLogItem) {
 export function AdminMarketJobsPage() {
     const { showToast } = useToast();
     const [pendingModule, setPendingModule] = useState<AdminMarketBackfillModule | null>(null);
-    const auditQuery = useAdminAuditLogs(MARKET_AUDIT_TARGETS, "market-audit");
+    const auditQuery = useAdminAuditLogs(MARKET_AUDIT_TARGETS);
 
     const triggerBackfill = async (module: AdminMarketBackfillModule) => {
         setPendingModule(module);
@@ -62,61 +101,70 @@ export function AdminMarketJobsPage() {
     };
 
     return (
-        <section className="admin-page">
-            <div className="admin-panel">
-                <div className="admin-panel-head">
-                    <div>
-                        <span>Market Operations</span>
-                        <h2>Market İşleri</h2>
-                    </div>
-                    <strong>{MARKET_JOBS.length} operasyon</strong>
-                </div>
-                <div className="admin-job-grid">
+        <Box sx={{ display: "grid", gap: 2.25 }}>
+            <Paper sx={PANEL_SX}>
+                <Box sx={PANEL_HEAD_SX}>
+                    <Box>
+                        <Typography sx={KICKER_SX}>Market Operations</Typography>
+                        <Typography variant="h6" sx={{ mt: 0.5, fontSize: 24, letterSpacing: 0, fontWeight: 700 }}>Market İşleri</Typography>
+                    </Box>
+                    <Typography sx={{ fontWeight: 700 }}>{MARKET_JOBS.length} operasyon</Typography>
+                </Box>
+                <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 1.75, p: "18px 22px 22px" }}>
                     {MARKET_JOBS.map((job) => (
-                        <article className="admin-job-card" key={job.module}>
-                            <div>
-                                <span>{job.module.toLocaleUpperCase("tr-TR")}</span>
-                                <h3>{job.title}</h3>
-                                <p>{job.description}</p>
-                            </div>
-                            <button
-                                type="button"
-                                className="admin-primary-btn"
+                        <Paper key={job.module} elevation={0} sx={{ borderRadius: "18px", p: 2.5, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 2, border: "1px solid", borderColor: "divider", bgcolor: "rgba(255,255,255,0.7)" }}>
+                            <Box>
+                                <Typography sx={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: "text.secondary", fontFamily: '"JetBrains Mono", monospace' }}>
+                                    {job.module.toLocaleUpperCase("tr-TR")}
+                                </Typography>
+                                <Typography variant="h6" sx={{ mt: 0.5, fontWeight: 700, fontSize: 16 }}>{job.title}</Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{job.description}</Typography>
+                            </Box>
+                            <Button
+                                variant="contained"
+                                color="secondary"
+                                size="small"
                                 disabled={pendingModule === job.module}
                                 onClick={() => void triggerBackfill(job.module)}
                             >
                                 {pendingModule === job.module ? "Başlatılıyor..." : "Backfill başlat"}
-                            </button>
-                        </article>
+                            </Button>
+                        </Paper>
                     ))}
-                </div>
-            </div>
+                </Box>
+            </Paper>
 
-            <div className="admin-panel">
-                <div className="admin-panel-head">
-                    <div>
-                        <span>Audit Trail</span>
-                        <h2>Market audit geçmişi</h2>
-                    </div>
-                    <strong>{auditQuery.data.length} kayıt</strong>
-                </div>
-                {auditQuery.loading ? <div className="admin-empty">Audit kayıtları yükleniyor...</div> : null}
-                {!auditQuery.loading && auditQuery.error ? <div className="admin-error">{auditQuery.error}</div> : null}
-                {!auditQuery.loading && !auditQuery.error && auditQuery.data.length === 0 ? <div className="admin-empty">Audit kaydı bulunamadı.</div> : null}
+            <Paper sx={PANEL_SX}>
+                <Box sx={PANEL_HEAD_SX}>
+                    <Box>
+                        <Typography sx={KICKER_SX}>Audit Trail</Typography>
+                        <Typography variant="h6" sx={{ mt: 0.5, fontSize: 24, letterSpacing: 0, fontWeight: 700 }}>Market audit geçmişi</Typography>
+                    </Box>
+                    <Typography sx={{ fontWeight: 700 }}>{auditQuery.data.length} kayıt</Typography>
+                </Box>
+                {auditQuery.loading ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Audit kayıtları yükleniyor...</Typography> : null}
+                {!auditQuery.loading && auditQuery.error ? <Alert severity="error" sx={{ m: 2 }}>{auditQuery.error}</Alert> : null}
+                {!auditQuery.loading && !auditQuery.error && auditQuery.data.length === 0 ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Audit kaydı bulunamadı.</Typography> : null}
                 {!auditQuery.loading && !auditQuery.error && auditQuery.data.length > 0 ? (
-                    <div className="admin-audit-list">
+                    <Box>
                         {auditQuery.data.map((item) => (
-                            <article key={item.id}>
-                                <div>
-                                    <strong>{item.action === "BACKFILL_TRIGGERED" ? "Backfill tetiklendi" : item.action}</strong>
-                                    <span>{auditDescription(item)}</span>
-                                </div>
-                                <time>{formatDateTime(item.createdAt ?? item.timestamp ?? null)}</time>
-                            </article>
+                            <Box key={item.id} component="article" sx={AUDIT_ITEM_SX}>
+                                <Box>
+                                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                        {item.action === "BACKFILL_TRIGGERED" ? "Backfill tetiklendi" : item.action}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
+                                        {auditDescription(item)}
+                                    </Typography>
+                                </Box>
+                                <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+                                    {formatDateTime(item.createdAt ?? item.timestamp ?? null)}
+                                </Typography>
+                            </Box>
                         ))}
-                    </div>
+                    </Box>
                 ) : null}
-            </div>
-        </section>
+            </Paper>
+        </Box>
     );
 }

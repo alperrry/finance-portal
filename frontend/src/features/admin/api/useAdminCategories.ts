@@ -1,43 +1,21 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ApiError } from "../../../api/client";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { AdminCategory } from "../types/admin.types";
 import { fetchAdminCategories } from "./adminApi";
-import { subscribeAdminQueryInvalidation } from "./adminQueryBus";
-
-function resolveError(error: unknown, fallback: string) {
-    if (error instanceof ApiError) return error.payload?.message || error.message || fallback;
-    if (error instanceof Error) return error.message;
-    return fallback;
-}
 
 export function useAdminCategories() {
-    const [data, setData] = useState<AdminCategory[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const hasLoadedRef = useRef(false);
+    const { data, isLoading, error, refetch } = useQuery({
+        queryKey: ["admin", "categories"],
+        queryFn: fetchAdminCategories,
+        staleTime: 2 * 60 * 1000,
+    });
 
-    const refetch = useCallback(async () => {
-        setLoading(!hasLoadedRef.current);
-        setError(null);
-        try {
-            setData(await fetchAdminCategories());
-            hasLoadedRef.current = true;
-        } catch (caughtError) {
-            setError(resolveError(caughtError, "Kategoriler yüklenemedi."));
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        void refetch();
-    }, [refetch]);
-
-    useEffect(() => subscribeAdminQueryInvalidation((detail) => {
-        if (detail.scope === "categories") void refetch();
-    }), [refetch]);
-
-    return { data, loading, error, refetch };
+    return {
+        data: data ?? [] as AdminCategory[],
+        loading: isLoading,
+        error: error ? (error instanceof Error ? error.message : "Kategoriler yüklenemedi.") : null,
+        refetch: () => void refetch(),
+    };
 }
 
 export function useFilteredAdminCategories(categories: AdminCategory[], search: string) {

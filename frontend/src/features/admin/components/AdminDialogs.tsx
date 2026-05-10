@@ -1,4 +1,18 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useState, type FormEvent } from "react";
+import {
+    Alert,
+    Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControl,
+    InputLabel,
+    NativeSelect,
+    TextField,
+    Typography,
+} from "@mui/material";
 import type { AdminUserListItem, AdminUserRole, AdminUserStatus } from "../types/admin.types";
 
 type DialogType = "role" | "status" | "reset-2fa";
@@ -31,34 +45,61 @@ export function ChangeRoleDialog({
     onSubmit: (role: AdminUserRole, reason: string) => Promise<void>;
 }) {
     const user = state?.type === "role" ? state.user : null;
+    const [role, setRole] = useState<AdminUserRole>(user?.role ?? "NORMAL_USER");
+    const [reason, setReason] = useState("");
     const [error, setError] = useState<string | null>(null);
-
-    if (!user) return null;
 
     const submit = async (event: FormEvent) => {
         event.preventDefault();
-        const form = new FormData(event.currentTarget as HTMLFormElement);
-        const role = form.get("role") as AdminUserRole;
-        const reason = String(form.get("reason") ?? "");
         const validation = validateReason(reason);
         setError(validation);
         if (validation) return;
         await onSubmit(role, reason.trim());
+        setReason("");
+        setError(null);
     };
 
     return (
-        <AdminModal title="Rol Değiştir" kicker={fullName(user)} onClose={onClose}>
-            <form key={`${user.id}-${user.role}`} className="admin-dialog-form" onSubmit={submit}>
-                <label>
-                    <span>Yeni rol</span>
-                    <select name="role" defaultValue={user.role}>
-                        {ROLE_OPTIONS.map((item) => <option key={item} value={item}>{item === "ADMIN" ? "Admin" : "Normal Kullanıcı"}</option>)}
-                    </select>
-                </label>
-                <ReasonField error={error} />
-                <DialogActions pending={pending} onClose={onClose} submitLabel="Rolü kaydet" />
-            </form>
-        </AdminModal>
+        <Dialog open={!!user} onClose={onClose} maxWidth="xs" fullWidth>
+            <DialogTitle>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>{user ? fullName(user) : ""}</Typography>
+                Rol Değiştir
+            </DialogTitle>
+            <Box component="form" onSubmit={submit}>
+                <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <FormControl fullWidth size="small">
+                        <InputLabel htmlFor="role-select">Yeni rol</InputLabel>
+                        <NativeSelect
+                            inputProps={{ id: "role-select", name: "role" }}
+                            value={role}
+                            onChange={(e) => setRole(e.target.value as AdminUserRole)}
+                        >
+                            {ROLE_OPTIONS.map((item) => (
+                                <option key={item} value={item}>{item === "ADMIN" ? "Admin" : "Normal Kullanıcı"}</option>
+                            ))}
+                        </NativeSelect>
+                    </FormControl>
+                    <TextField
+                        label="Gerekçe"
+                        value={reason}
+                        onChange={(e) => { setReason(e.target.value); setError(null); }}
+                        multiline
+                        rows={4}
+                        fullWidth
+                        size="small"
+                        error={!!error}
+                        helperText={error ?? undefined}
+                        placeholder="Bu işlem neden yapılıyor?"
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onClose} variant="outlined" size="small">Vazgeç</Button>
+                    <Button type="submit" variant="contained" color="secondary" size="small" disabled={pending}>
+                        {pending ? "İşleniyor..." : "Rolü kaydet"}
+                    </Button>
+                </DialogActions>
+            </Box>
+        </Dialog>
     );
 }
 
@@ -74,34 +115,61 @@ export function ChangeStatusDialog({
     onSubmit: (status: AdminUserStatus, reason: string) => Promise<void>;
 }) {
     const user = state?.type === "status" ? state.user : null;
+    const [status, setStatus] = useState<AdminUserStatus>(user?.status ?? "ACTIVE");
+    const [reason, setReason] = useState("");
     const [error, setError] = useState<string | null>(null);
-
-    if (!user) return null;
 
     const submit = async (event: FormEvent) => {
         event.preventDefault();
-        const form = new FormData(event.currentTarget as HTMLFormElement);
-        const status = form.get("status") as AdminUserStatus;
-        const reason = String(form.get("reason") ?? "");
         const validation = validateReason(reason);
         setError(validation);
         if (validation) return;
         await onSubmit(status, reason.trim());
+        setReason("");
+        setError(null);
     };
 
     return (
-        <AdminModal title="Durum Değiştir" kicker={fullName(user)} onClose={onClose}>
-            <form key={`${user.id}-${user.status}`} className="admin-dialog-form" onSubmit={submit}>
-                <label>
-                    <span>Yeni durum</span>
-                    <select name="status" defaultValue={user.status}>
-                        {STATUS_OPTIONS.map((item) => <option key={item} value={item}>{item === "ACTIVE" ? "Aktif" : "Pasif"}</option>)}
-                    </select>
-                </label>
-                <ReasonField error={error} />
-                <DialogActions pending={pending} onClose={onClose} submitLabel="Durumu kaydet" />
-            </form>
-        </AdminModal>
+        <Dialog open={!!user} onClose={onClose} maxWidth="xs" fullWidth>
+            <DialogTitle>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>{user ? fullName(user) : ""}</Typography>
+                Durum Değiştir
+            </DialogTitle>
+            <Box component="form" onSubmit={submit}>
+                <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <FormControl fullWidth size="small">
+                        <InputLabel htmlFor="status-select">Yeni durum</InputLabel>
+                        <NativeSelect
+                            inputProps={{ id: "status-select", name: "status" }}
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value as AdminUserStatus)}
+                        >
+                            {STATUS_OPTIONS.map((item) => (
+                                <option key={item} value={item}>{item === "ACTIVE" ? "Aktif" : "Pasif"}</option>
+                            ))}
+                        </NativeSelect>
+                    </FormControl>
+                    <TextField
+                        label="Gerekçe"
+                        value={reason}
+                        onChange={(e) => { setReason(e.target.value); setError(null); }}
+                        multiline
+                        rows={4}
+                        fullWidth
+                        size="small"
+                        error={!!error}
+                        helperText={error ?? undefined}
+                        placeholder="Bu işlem neden yapılıyor?"
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onClose} variant="outlined" size="small">Vazgeç</Button>
+                    <Button type="submit" variant="contained" color="secondary" size="small" disabled={pending}>
+                        {pending ? "İşleniyor..." : "Durumu kaydet"}
+                    </Button>
+                </DialogActions>
+            </Box>
+        </Dialog>
     );
 }
 
@@ -117,65 +185,50 @@ export function Reset2FADialog({
     onSubmit: (reason: string) => Promise<void>;
 }) {
     const user = state?.type === "reset-2fa" ? state.user : null;
+    const [reason, setReason] = useState("");
     const [error, setError] = useState<string | null>(null);
-
-    if (!user) return null;
 
     const submit = async (event: FormEvent) => {
         event.preventDefault();
-        const form = new FormData(event.currentTarget as HTMLFormElement);
-        const reason = String(form.get("reason") ?? "");
         const validation = validateReason(reason);
         setError(validation);
         if (validation) return;
         await onSubmit(reason.trim());
+        setReason("");
+        setError(null);
     };
 
     return (
-        <AdminModal title="2FA Sıfırla" kicker={fullName(user)} onClose={onClose}>
-            <form key={user.id} className="admin-dialog-form" onSubmit={submit}>
-                <p className="admin-dialog-warning">Bu işlem kullanıcının mevcut iki aşamalı doğrulama kurulumunu kaldırır.</p>
-                <ReasonField error={error} />
-                <DialogActions pending={pending} onClose={onClose} submitLabel="2FA sıfırla" danger />
-            </form>
-        </AdminModal>
-    );
-}
-
-function AdminModal({ title, kicker, onClose, children }: { title: string; kicker: string; onClose: () => void; children: ReactNode }) {
-    return (
-        <div className="admin-modal-backdrop" role="presentation" onMouseDown={onClose}>
-            <section className="admin-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
-                <div className="admin-modal-head">
-                    <div>
-                        <span>{kicker}</span>
-                        <h2>{title}</h2>
-                    </div>
-                    <button type="button" onClick={onClose} aria-label="Kapat">×</button>
-                </div>
-                {children}
-            </section>
-        </div>
-    );
-}
-
-function ReasonField({ error }: { error: string | null }) {
-    return (
-        <label>
-            <span>Gerekçe</span>
-            <textarea name="reason" placeholder="Bu işlem neden yapılıyor?" rows={4} />
-            {error ? <em className="admin-field-error">{error}</em> : null}
-        </label>
-    );
-}
-
-function DialogActions({ pending, onClose, submitLabel, danger = false }: { pending: boolean; onClose: () => void; submitLabel: string; danger?: boolean }) {
-    return (
-        <div className="admin-dialog-actions">
-            <button type="button" className="admin-secondary-btn" onClick={onClose}>Vazgeç</button>
-            <button type="submit" className={danger ? "admin-danger-btn" : "admin-primary-btn"} disabled={pending}>
-                {pending ? "İşleniyor..." : submitLabel}
-            </button>
-        </div>
+        <Dialog open={!!user} onClose={onClose} maxWidth="xs" fullWidth>
+            <DialogTitle>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>{user ? fullName(user) : ""}</Typography>
+                2FA Sıfırla
+            </DialogTitle>
+            <Box component="form" onSubmit={submit}>
+                <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <Alert severity="warning" sx={{ fontSize: "0.8rem" }}>
+                        Bu işlem kullanıcının mevcut iki aşamalı doğrulama kurulumunu kaldırır.
+                    </Alert>
+                    <TextField
+                        label="Gerekçe"
+                        value={reason}
+                        onChange={(e) => { setReason(e.target.value); setError(null); }}
+                        multiline
+                        rows={4}
+                        fullWidth
+                        size="small"
+                        error={!!error}
+                        helperText={error ?? undefined}
+                        placeholder="Bu işlem neden yapılıyor?"
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onClose} variant="outlined" size="small">Vazgeç</Button>
+                    <Button type="submit" variant="contained" color="error" size="small" disabled={pending}>
+                        {pending ? "İşleniyor..." : "2FA sıfırla"}
+                    </Button>
+                </DialogActions>
+            </Box>
+        </Dialog>
     );
 }

@@ -1,13 +1,11 @@
 import { useState } from "react";
+import { Badge, Box, Divider, IconButton, Paper, Typography } from "@mui/material";
 import type { AdminEvent } from "../../types/admin.types";
 
 function formatEventTime(value: string) {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "-";
-    return new Intl.DateTimeFormat("tr-TR", {
-        hour: "2-digit",
-        minute: "2-digit",
-    }).format(date);
+    return new Intl.DateTimeFormat("tr-TR", { hour: "2-digit", minute: "2-digit" }).format(date);
 }
 
 export function NotificationBell({
@@ -30,32 +28,81 @@ export function NotificationBell({
     };
 
     return (
-        <div className="admin-notification-wrap">
-            <button type="button" className="admin-icon-button" onClick={toggle} aria-label="Admin bildirimleri">
-                <span aria-hidden="true">●</span>
-                {unreadCount > 0 ? <em>{unreadCount > 9 ? "9+" : unreadCount}</em> : null}
-            </button>
+        <Box sx={{ position: "relative" }}>
+            <Badge badgeContent={unreadCount > 9 ? "9+" : unreadCount} color="error" overlap="circular">
+                <IconButton
+                    type="button"
+                    size="small"
+                    onClick={toggle}
+                    aria-label="Admin bildirimleri"
+                    sx={{
+                        border: "1px solid",
+                        borderColor: "divider",
+                        bgcolor: "rgba(255, 255, 255, 0.76)",
+                        borderRadius: "999px",
+                        width: 38,
+                        height: 38,
+                        color: "secondary.main",
+                    }}
+                >
+                    ●
+                </IconButton>
+            </Badge>
             {open ? (
-                <div className="admin-notification-menu">
-                    <div className="admin-notification-head">
-                        <strong>Bildirimler</strong>
-                        <a href="/admin/users">Tümünü gör</a>
-                    </div>
+                <Paper
+                    elevation={6}
+                    sx={{
+                        position: "absolute",
+                        right: 0,
+                        top: 46,
+                        width: 360,
+                        maxWidth: "calc(100vw - 32px)",
+                        borderRadius: "18px",
+                        p: 1.5,
+                        zIndex: 50,
+                        border: "1px solid",
+                        borderColor: "divider",
+                    }}
+                >
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 1.25, mb: 0.5 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 800 }}>Bildirimler</Typography>
+                        <Box component="a" href="/admin/users" sx={{ color: "secondary.main", fontWeight: 800, textDecoration: "none", fontSize: "0.75rem" }}>
+                            Tümünü gör
+                        </Box>
+                    </Box>
+                    <Divider sx={{ mb: 1 }} />
                     {events.length === 0 ? (
-                        <p className="admin-empty-small">Yeni admin olayı yok.</p>
+                        <Typography variant="body2" color="text.secondary" sx={{ p: 1.5 }}>Yeni admin olayı yok.</Typography>
                     ) : (
                         events.slice(0, 10).map((event) => (
-                            <article key={event.id} className={event.unread ? "unread" : ""}>
-                                <div>
-                                    <strong>{event.title}</strong>
-                                    <span>{event.description}</span>
-                                </div>
-                                <time>{formatEventTime(event.timestamp)}</time>
-                            </article>
+                            <Box
+                                key={event.id}
+                                component="article"
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    justifyContent: "space-between",
+                                    gap: 1.5,
+                                    py: 1.5,
+                                    px: 0.5,
+                                    borderBottom: "1px solid",
+                                    borderColor: "divider",
+                                    "&:last-child": { borderBottom: 0 },
+                                    bgcolor: event.unread ? "rgba(193, 98, 47, 0.07)" : "transparent",
+                                }}
+                            >
+                                <Box>
+                                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{event.title}</Typography>
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.375 }}>{event.description}</Typography>
+                                </Box>
+                                <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+                                    {formatEventTime(event.timestamp)}
+                                </Typography>
+                            </Box>
                         ))
                     )}
-                </div>
+                </Paper>
             ) : null}
-        </div>
+        </Box>
     );
 }
