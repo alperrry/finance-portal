@@ -1,7 +1,7 @@
 import type { CompareResponse, HistoryPoint, InstrumentType } from "../api/historyApi";
 import type { BondResponse, FundResponse, FxResponse, StockResponse } from "../../market/api/marketApi";
 import type { StockIndicator } from "../../../types/indicator";
-import type { ChartSeries } from "../components/AnalysisLineChart";
+import type { ChartSeries } from "../components/LightweightLineChart";
 import { CHART_COLORS } from "../types";
 import type { EnrichedHistoryPoint, InstrumentOption, RangeKey } from "../types";
 import { RANGE_OPTIONS } from "../types";

@@ -60,7 +60,7 @@ export function ProfileEditForm({
                             onBlur={() => onTouchField("firstName")}
                             error={Boolean(touched.firstName && errors.firstName)}
                             helperText={touched.firstName ? errors.firstName : undefined}
-                            inputProps={{ maxLength: 100 }}
+                            slotProps={{ htmlInput: { maxLength: 100 } }}
                             size="small"
                             fullWidth
                         />
@@ -72,7 +72,7 @@ export function ProfileEditForm({
                             onBlur={() => onTouchField("lastName")}
                             error={Boolean(touched.lastName && errors.lastName)}
                             helperText={touched.lastName ? errors.lastName : undefined}
-                            inputProps={{ maxLength: 100 }}
+                            slotProps={{ htmlInput: { maxLength: 100 } }}
                             size="small"
                             fullWidth
                         />
@@ -85,7 +85,7 @@ export function ProfileEditForm({
                             onBlur={() => onTouchField("email")}
                             error={Boolean(touched.email && errors.email)}
                             helperText={touched.email ? errors.email : undefined}
-                            inputProps={{ maxLength: 255 }}
+                            slotProps={{ htmlInput: { maxLength: 255 } }}
                             size="small"
                             fullWidth
                         />

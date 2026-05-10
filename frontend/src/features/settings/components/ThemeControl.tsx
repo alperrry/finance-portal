@@ -1,4 +1,4 @@
-import { Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import type { ThemePreference } from "../../../app/providers/UiPreferencesProvider";
 
 type Props = {

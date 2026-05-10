@@ -15,10 +15,10 @@ import {
 import {
     INDICATOR_COLORS,
     CHART_COLORS,
-    OVERLAY_INDICATOR_OPTIONS,
     type OverlayIndicatorKey,
 } from "../types";
 import type { InstrumentType } from "../api/historyApi";
+import type { ChartSeries } from "../components/LightweightLineChart";
 import {
     addBusinessDays,
     buildEnrichedHistory,
@@ -41,6 +41,8 @@ type HistoryHookInput = {
     rangeDates: { from: string; to: string };
     activeOverlayIndicators: OverlayIndicatorKey[];
 };
+
+const EMPTY_INDICATOR_HISTORY: StockIndicator[] = [];
 
 export function useAnalysisHistory({ resolvedType, resolvedCode, rangeDates, activeOverlayIndicators }: HistoryHookInput) {
     const enabled = Boolean(resolvedCode);
@@ -75,7 +77,7 @@ export function useAnalysisHistory({ resolvedType, resolvedCode, rangeDates, act
     });
 
     const historyData: HistoryResponse | null = historyQuery.data ?? null;
-    const indicatorHistoryData: StockIndicator[] = indicatorHistoryQuery.data ?? [];
+    const indicatorHistoryData: StockIndicator[] = indicatorHistoryQuery.data ?? EMPTY_INDICATOR_HISTORY;
     const latestIndicator: StockIndicator | null = latestIndicatorQuery.data ?? null;
 
     const isHistoryLoading = historyQuery.isLoading;
@@ -92,8 +94,8 @@ export function useAnalysisHistory({ resolvedType, resolvedCode, rangeDates, act
         [enrichedHistory],
     );
 
-    const priceSeries = useMemo(() => {
-        const series = [{ key: "close", label: "Fiyat", color: CHART_COLORS.price, values: enrichedHistory.map((p) => p.close), strokeWidth: 2.8 }];
+    const priceSeries = useMemo<ChartSeries[]>(() => {
+        const series: ChartSeries[] = [{ key: "close", label: "Fiyat", color: CHART_COLORS.price, values: enrichedHistory.map((p) => p.close), strokeWidth: 2.8 }];
         const addOverlay = (key: OverlayIndicatorKey, label: string, color: string, values: Array<number | null>, strokeWidth = 2.2, dashArray?: string) => {
             if (activeOverlayIndicators.includes(key)) series.push({ key, label, color, values, strokeWidth, dashArray });
         };

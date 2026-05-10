@@ -245,7 +245,7 @@ export function NewTradeModal({ portfolio, currentBalance, busy, serverError, on
                                 type="number"
                                 value={quantity}
                                 onChange={(event) => setQuantity(event.target.value)}
-                                inputProps={{ min: "0.000001", step: "0.000001" }}
+                                slotProps={{ htmlInput: { min: "0.000001", step: "0.000001" } }}
                                 size="small"
                                 fullWidth
                             />
@@ -254,7 +254,7 @@ export function NewTradeModal({ portfolio, currentBalance, busy, serverError, on
                                 type="number"
                                 value={targetPrice}
                                 onChange={(event) => setTargetPrice(event.target.value)}
-                                inputProps={{ min: "0.000001", step: "0.000001" }}
+                                slotProps={{ htmlInput: { min: "0.000001", step: "0.000001" } }}
                                 disabled={instrumentType === "BOND" || orderType === "MARKET"}
                                 size="small"
                                 fullWidth

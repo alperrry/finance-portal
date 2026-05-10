@@ -39,7 +39,7 @@ export function PortfolioFormModal({ state, busy, error, onClose, onSubmit }: Pr
                             value={name}
                             onChange={(event) => setName(event.target.value)}
                             placeholder="Uzun vadeli yatırım"
-                            inputProps={{ maxLength: 255 }}
+                            slotProps={{ htmlInput: { maxLength: 255 } }}
                             autoFocus
                             fullWidth
                             size="small"

@@ -46,7 +46,7 @@ export default function NewsList() {
                         categories={categories}
                         selectedCategoryId={selectedCategoryId}
                         onCategoryChange={(id) => { applyCategoryFilter(id); setPageIndex(1); }}
-                        onRefresh={() => setReloadToken((t) => t + 1)}
+                        onRefresh={() => setReloadToken()}
                     />
                 </Box>
 

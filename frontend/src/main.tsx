@@ -1,6 +1,6 @@
-import { StrictMode, type ReactNode } from "react";
+import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { CssBaseline, ThemeProvider } from "@mui/material";
+import { CssBaseline } from "@mui/material";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import "./index.css";
@@ -8,8 +8,7 @@ import App from "./app/App.tsx";
 import { AuthProvider } from "./app/auth/AuthProvider";
 import { ToastProvider } from "./components/Toast";
 import { UiPreferencesProvider } from "./app/providers/UiPreferencesProvider";
-import { useUiPreferences } from "./app/providers/UiPreferencesContext";
-import { kapitalTheme, kapitalDarkTheme } from "./theme/kapitalTheme";
+import { ThemeSelector } from "./app/providers/ThemeSelector";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -19,15 +18,6 @@ const queryClient = new QueryClient({
         },
     },
 });
-
-function ThemeSelector({ children }: { children: ReactNode }) {
-    const { resolvedTheme } = useUiPreferences();
-    return (
-        <ThemeProvider theme={resolvedTheme === "dark" ? kapitalDarkTheme : kapitalTheme}>
-            {children}
-        </ThemeProvider>
-    );
-}
 
 createRoot(document.getElementById("root")!).render(
     <StrictMode>

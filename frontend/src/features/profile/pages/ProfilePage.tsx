@@ -96,7 +96,7 @@ export default function ProfilePage() {
                 ) : null}
 
                 {userLoading && !currentUser ? (
-                    <Stack direction={{ xs: "column", md: "row" }} gap={3}>
+                    <Stack direction={{ xs: "column", md: "row" }} sx={{ gap: 3 }}>
                         <Card sx={{ flex: 1 }}>
                             <CardContent>
                                 <Skeleton variant="text" width="40%" sx={{ mb: 1 }} />
@@ -119,7 +119,7 @@ export default function ProfilePage() {
                 ) : null}
 
                 {currentUser ? (
-                    <Stack direction={{ xs: "column", md: "row" }} gap={3} alignItems="flex-start">
+                    <Stack direction={{ xs: "column", md: "row" }} sx={{ gap: 3, alignItems: "flex-start" }}>
                         <ProfileInfoPanel currentUser={currentUser} onFocusField={focusField} />
                         <ProfileEditForm
                             currentUser={currentUser}

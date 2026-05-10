@@ -13,8 +13,7 @@ type Props = {
     currentBalance: number | null;
 };
 
-const toMetricTone = (tone: "up" | "down" | "flat"): "up" | "down" | "neutral" =>
-    tone === "flat" ? "neutral" : tone;
+const toMetricTone = (tone: "up" | "down" | "neutral"): "up" | "down" | "neutral" => tone;
 
 export function PortfolioMetrics({ portfolio, currentBalance }: Props) {
     const balanceLabel = portfolio.displayCurrency === "TRY" ? "Mevcut Bakiye" : "Mevcut Bakiye (TRY)";

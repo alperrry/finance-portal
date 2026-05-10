@@ -20,8 +20,8 @@ function AllocationTooltip({ active, payload, total, currency }: TooltipProps) {
     return (
         <Paper sx={{ p: 1.5, fontSize: "0.8rem" }}>
             <Typography variant="body2" sx={{ fontWeight: 800 }}>{item.name}</Typography>
-            <Typography variant="caption" display="block">Miktar: {formatQuantity(item.payload?.quantity)}</Typography>
-            <Typography variant="caption" display="block">{formatMoney(value, currency)}</Typography>
+            <Typography variant="caption" sx={{ display: "block" }}>Miktar: {formatQuantity(item.payload?.quantity)}</Typography>
+            <Typography variant="caption" sx={{ display: "block" }}>{formatMoney(value, currency)}</Typography>
             <Typography variant="caption" color="text.secondary">{formatPercent(pct)}</Typography>
         </Paper>
     );

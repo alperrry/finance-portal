@@ -33,7 +33,7 @@ export function useNewsList() {
         staleTime: 10 * 60 * 1000,
     });
 
-    const categories = categoriesQuery.data ?? [];
+    const categories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data]);
     const pageData = newsQuery.data ?? null;
     const cards = pageData?.content ?? [];
     const totalPages = pageData?.totalPages ?? 0;

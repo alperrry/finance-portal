@@ -82,7 +82,7 @@ export function TradeHistoryTable({
                     label="Başlangıç"
                     value={filters.from}
                     onChange={(event) => onFiltersChange({ ...filters, from: event.target.value })}
-                    InputLabelProps={{ shrink: true }}
+                    slotProps={{ inputLabel: { shrink: true } }}
                     sx={{ minWidth: 150 }}
                 />
                 <TextField
@@ -91,7 +91,7 @@ export function TradeHistoryTable({
                     label="Bitiş"
                     value={filters.to}
                     onChange={(event) => onFiltersChange({ ...filters, to: event.target.value })}
-                    InputLabelProps={{ shrink: true }}
+                    slotProps={{ inputLabel: { shrink: true } }}
                     sx={{ minWidth: 150 }}
                 />
                 <FormControl size="small" sx={{ minWidth: 160 }}>

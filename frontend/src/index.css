@@ -1,1 +1,198 @@
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,500;1,600;1,700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+.analysis-chart-frame {
+  position: relative;
+  margin-top: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  overflow: hidden;
+}
+
+.analysis-line-chart-frame,
+.analysis-candlestick-frame {
+  padding: 10px;
+}
+
+.analysis-line-chart-container,
+.analysis-candlestick-chart {
+  position: relative;
+  width: 100%;
+  height: var(--analysis-candlestick-height, 340px);
+  min-height: var(--analysis-candlestick-height, 340px);
+}
+
+.analysis-candlestick-container,
+.analysis-candlestick-container canvas {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+.analysis-candlestick-container {
+  contain: layout paint;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.analysis-candlestick-chart.drawing-crosshair .analysis-candlestick-container,
+.analysis-candlestick-chart.drawing-crosshair .analysis-candlestick-container * {
+  cursor: crosshair;
+}
+
+.analysis-candlestick-chart.drawing-horizontal .analysis-candlestick-container,
+.analysis-candlestick-chart.drawing-horizontal .analysis-candlestick-container * {
+  cursor: ns-resize;
+}
+
+.analysis-drawing-overlay,
+.analysis-indicator-cloud-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.analysis-drawing-overlay {
+  z-index: 5;
+}
+
+.analysis-indicator-cloud-overlay {
+  z-index: 4;
+}
+
+.analysis-candlestick-tooltip,
+.analysis-line-tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 8;
+  width: 232px;
+  border: 1px solid rgba(17, 17, 17, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 40px rgba(17, 17, 17, 0.14);
+  padding: 12px;
+  pointer-events: none;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.analysis-candlestick-tooltip strong,
+.analysis-line-tooltip strong {
+  display: block;
+  margin-bottom: 10px;
+  color: rgba(17, 17, 17, 0.9);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.analysis-candlestick-tooltip span,
+.analysis-line-tooltip span {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.analysis-candlestick-tooltip b,
+.analysis-line-tooltip b {
+  color: rgba(17, 17, 17, 0.52);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.analysis-candlestick-tooltip b i,
+.analysis-line-tooltip b i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.analysis-candlestick-tooltip em,
+.analysis-line-tooltip em {
+  color: rgba(17, 17, 17, 0.84);
+  font-style: normal;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  text-align: right;
+}
+
+.analysis-candlestick-tooltip em.up,
+.analysis-line-tooltip em.up {
+  color: #2f8f58;
+}
+
+.analysis-candlestick-tooltip em.down,
+.analysis-line-tooltip em.down {
+  color: #c84b4b;
+}
+
+.analysis-tooltip-divider {
+  display: block;
+  height: 1px;
+  margin: 8px 0;
+  background: rgba(17, 17, 17, 0.08);
+}
+
+.analysis-chart-empty {
+  margin-top: 18px;
+  border-radius: 18px;
+  border: 1px dashed rgba(17, 17, 17, 0.14);
+  background: rgba(255, 255, 255, 0.68);
+  padding: 24px;
+}
+
+.analysis-chart-empty strong {
+  display: block;
+  font-size: 14px;
+}
+
+.analysis-chart-empty span {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(17, 17, 17, 0.58);
+}
+
+section:fullscreen .analysis-line-chart-container,
+section:fullscreen .analysis-candlestick-chart {
+  height: calc(100vh - 156px);
+  min-height: 340px;
+}
+
+@media (max-width: 900px) {
+  .analysis-line-chart-container,
+  .analysis-candlestick-chart {
+    height: var(--analysis-candlestick-height, 300px);
+    min-height: var(--analysis-candlestick-height, 300px);
+  }
+}
+
+@media (max-width: 600px) {
+  .analysis-chart-frame {
+    padding: 8px;
+  }
+
+  .analysis-line-chart-container,
+  .analysis-candlestick-chart {
+    height: var(--analysis-candlestick-height, 260px);
+    min-height: var(--analysis-candlestick-height, 260px);
+  }
+
+  .analysis-candlestick-tooltip,
+  .analysis-line-tooltip {
+    width: 218px;
+    padding: 10px;
+  }
+}

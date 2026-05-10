@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -297,8 +297,8 @@ export function AdminNewsManagementPage() {
             </Paper>
 
             <AuditPanel loading={auditQuery.loading} error={auditQuery.error} items={auditQuery.data} />
-            <StatusDialog state={dialog} pending={pending} onClose={() => setDialog(null)} onSubmit={submitStatus} />
-            <CategoryOverrideDialog state={dialog} categories={categoriesQuery.data} pending={pending} onClose={() => setDialog(null)} onSubmit={submitCategories} />
+            <StatusDialog key={dialog?.type === "status" ? `status-${dialog.news.id}` : "status-empty"} state={dialog} pending={pending} onClose={() => setDialog(null)} onSubmit={submitStatus} />
+            <CategoryOverrideDialog key={dialog?.type === "categories" ? `categories-${dialog.news.id}` : "categories-empty"} state={dialog} categories={categoriesQuery.data} pending={pending} onClose={() => setDialog(null)} onSubmit={submitCategories} />
         </Box>
     );
 }
@@ -320,9 +320,6 @@ function StatusDialog({ state, pending, onClose, onSubmit }: {
     onSubmit: (news: AdminNewsSummary, status: AdminNewsStatus) => Promise<void>;
 }) {
     const [status, setStatus] = useState<AdminNewsStatus>(state?.type === "status" ? state.news.status : "published");
-    useEffect(() => {
-        setStatus(state?.type === "status" ? state.news.status : "published");
-    }, [state]);
     if (state?.type !== "status") return null;
     return (
         <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
@@ -358,9 +355,6 @@ function CategoryOverrideDialog({ state, categories, pending, onClose, onSubmit 
 }) {
     const initialIds = state?.type === "categories" ? state.news.categories.map((category) => category.id) : [];
     const [selectedIds, setSelectedIds] = useState<number[]>(initialIds);
-    useEffect(() => {
-        setSelectedIds(initialIds);
-    }, [state]);
     if (state?.type !== "categories") return null;
     const toggle = (categoryId: number) => {
         setSelectedIds((current) => current.includes(categoryId)

@@ -29,7 +29,7 @@ export default function SettingsPage() {
                     <PageHeader kicker={meta.kicker} title={meta.title} subtitle={meta.subtitle} />
                 </SectionPanel>
 
-                <Stack direction={{ xs: "column", md: "row" }} gap={3} alignItems="flex-start">
+                <Stack direction={{ xs: "column", md: "row" }} sx={{ gap: 3, alignItems: "flex-start" }}>
                     <SettingsTabs activeSection={section} />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                         {section === "profile" ? <ProfileSection /> : null}

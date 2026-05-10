@@ -167,7 +167,7 @@ export function SecuritySection() {
     const isOtpFlowActive = otpStep === "qr" || otpStep === "verify";
 
     return (
-        <Stack direction={{ xs: "column", md: "row" }} gap={2} id="settings-panel-security" role="tabpanel" aria-labelledby="settings-tab-security">
+        <Stack direction={{ xs: "column", md: "row" }} sx={{ gap: 2 }} id="settings-panel-security" role="tabpanel" aria-labelledby="settings-tab-security">
             <Card sx={{ flex: 1 }}>
                 <CardContent>
                     <Box sx={{ mb: 2 }}>
@@ -259,8 +259,10 @@ export function SecuritySection() {
                                         <ListItemText
                                             primary={credential.label || "Authenticator"}
                                             secondary={credential.createdAt ? formatDate(new Date(credential.createdAt).toISOString()) : "Kayıt tarihi yok"}
-                                            primaryTypographyProps={{ variant: "body2", fontWeight: 700 }}
-                                            secondaryTypographyProps={{ variant: "caption" }}
+                                            slotProps={{
+                                                primary: { variant: "body2", sx: { fontWeight: 700 } },
+                                                secondary: { variant: "caption" },
+                                            }}
                                         />
                                         <ListItemSecondaryAction>
                                             <Button

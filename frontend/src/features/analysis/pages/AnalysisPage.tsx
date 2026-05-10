@@ -9,7 +9,7 @@ import {
 import { KapitalShell } from "../../../components/layout";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { SectionPanel } from "../../../components/ui/SectionPanel";
-import { AnalysisLineChart as LineChart } from "../components/AnalysisLineChart";
+import { AnalysisLineChart as LineChart } from "../components/LightweightLineChart";
 import { MaximizeIcon, MinimizeIcon } from "../components/ChartFullscreenIcons";
 import { DrawingToolbar } from "../components/DrawingToolbar";
 import { useDrawings } from "../../../hooks/useDrawings";
@@ -189,10 +189,6 @@ export default function AnalysisPage() {
         try { await clearAllInstrumentDrawings(); setDrawingTool("select"); } catch { /* Toast is emitted by useDrawings. */ }
     };
 
-    const toggleOverlayIndicator = (key: OverlayIndicatorKey) => {
-        setActiveOverlayIndicators((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
-    };
-
     const latestDate = latestPoint?.date ?? historyData?.to ?? null;
     const selectedTypeMeta = TYPE_META[resolvedType];
     const selectedOption = useMemo(() => instrumentOptions.find((option) => option.code === resolvedCode) ?? null, [instrumentOptions, resolvedCode]);
@@ -218,7 +214,7 @@ export default function AnalysisPage() {
         <KapitalShell activePage="analysis" showCategories={false}>
             <Box sx={{ p: { xs: 2, md: 3 } }}>
                 <SectionPanel sx={{ mb: 3 }}>
-                    <Stack direction={{ xs: "column", lg: "row" }} gap={3}>
+                    <Stack direction={{ xs: "column", lg: "row" }} sx={{ gap: 3 }}>
                         <Box sx={{ flex: 1 }}>
                             <PageHeader
                                 kicker="Tarihsel Veri ve Teknik Analiz"

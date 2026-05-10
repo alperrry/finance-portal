@@ -68,7 +68,7 @@ export function ProfileSection() {
 
     if (userLoading && !currentUser) {
         return (
-            <Stack direction={{ xs: "column", md: "row" }} gap={2}>
+            <Stack direction={{ xs: "column", md: "row" }} sx={{ gap: 2 }}>
                 <Card sx={{ flex: 1 }}>
                     <CardContent>
                         <Skeleton variant="text" width="40%" sx={{ mb: 1 }} />
@@ -100,7 +100,7 @@ export function ProfileSection() {
     if (!currentUser) return null;
 
     return (
-        <Stack direction={{ xs: "column", md: "row" }} gap={2} id="settings-panel-profile" role="tabpanel" aria-labelledby="settings-tab-profile">
+        <Stack direction={{ xs: "column", md: "row" }} sx={{ gap: 2 }} id="settings-panel-profile" role="tabpanel" aria-labelledby="settings-tab-profile">
             <Card sx={{ flex: 1 }}>
                 <CardContent>
                     <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mb: 2 }}>
@@ -161,7 +161,7 @@ export function ProfileSection() {
                                 onBlur={() => setTouched((c) => ({ ...c, firstName: true }))}
                                 error={Boolean(touched.firstName && errors.firstName)}
                                 helperText={touched.firstName ? errors.firstName : undefined}
-                                inputProps={{ maxLength: 100 }}
+                                slotProps={{ htmlInput: { maxLength: 100 } }}
                                 size="small"
                                 fullWidth
                             />
@@ -172,7 +172,7 @@ export function ProfileSection() {
                                 onBlur={() => setTouched((c) => ({ ...c, lastName: true }))}
                                 error={Boolean(touched.lastName && errors.lastName)}
                                 helperText={touched.lastName ? errors.lastName : undefined}
-                                inputProps={{ maxLength: 100 }}
+                                slotProps={{ htmlInput: { maxLength: 100 } }}
                                 size="small"
                                 fullWidth
                             />

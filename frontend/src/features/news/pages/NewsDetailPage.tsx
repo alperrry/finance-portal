@@ -23,7 +23,7 @@ export default function NewsDetail() {
                 {invalidId && <Alert severity="error">Geçersiz haber kimliği.</Alert>}
 
                 {loading && !invalidId && (
-                    <Stack direction={{ xs: "column", md: "row" }} gap={3} alignItems="flex-start">
+                    <Stack direction={{ xs: "column", md: "row" }} sx={{ gap: 3, alignItems: "flex-start" }}>
                         <Card sx={{ flex: 1 }}>
                             <CardContent>
                                 <Skeleton variant="text" width="35%" sx={{ mb: 1 }} />
@@ -49,7 +49,7 @@ export default function NewsDetail() {
                 {!loading && !invalidId && error && <Alert severity="error">{error}</Alert>}
 
                 {!loading && !invalidId && !error && news && (
-                    <Stack direction={{ xs: "column", md: "row" }} gap={3} alignItems="flex-start">
+                    <Stack direction={{ xs: "column", md: "row" }} sx={{ gap: 3, alignItems: "flex-start" }}>
                         <Card sx={{ flex: 1 }}>
                             <CardContent>
                                 <Stack direction="row" sx={{ gap: 1, mb: 2, flexWrap: "wrap" }}>
