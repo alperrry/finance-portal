@@ -1,8 +1,8 @@
 import { Avatar, Box, Button, Chip, Stack, Typography } from "@mui/material";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../app/auth/AuthContext";
-import { LiveBadge } from "./components/LiveBadge/LiveBadge";
-import { NotificationBell } from "./components/NotificationBell/NotificationBell";
+import { LiveBadge } from "./components/LiveBadge";
+import { NotificationBell } from "./components/NotificationBell";
 import { useAdminWebSocket } from "./websocket/useAdminWebSocket";
 import { useAuditFeed } from "./websocket/useAuditFeed";
 
