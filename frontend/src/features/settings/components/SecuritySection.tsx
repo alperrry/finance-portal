@@ -1,170 +1,24 @@
 import { Alert, Box, Button, Card, CardContent, Chip, CircularProgress, Divider, List, ListItem, ListItemSecondaryAction, ListItemText, Skeleton, Stack, TextField, Typography } from "@mui/material";
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
-import { ApiError } from "../../../services/api/client";
-import { useToast } from "../../../components/ToastContext";
-import {
-    changeCurrentUserPassword,
-    deleteOtpCredential,
-    fetchSecurityStatus,
-    setupOtp,
-    verifyOtp,
-    type OtpSetupResponse,
-    type SecurityStatusResponse,
-} from "../../profile/api/userApi";
-import type { OtpStep, PasswordForm } from "../types";
-import { EMPTY_PASSWORD_FORM, formatDate, resolveProfileError, validatePasswordForm } from "../utils/settingsFormatters";
+import { usePasswordForm } from "../hooks/usePasswordForm";
+import { useSecurityStatus } from "../hooks/useSecurityStatus";
+import { useOtpSetup } from "../hooks/useOtpSetup";
+import { formatDate } from "../utils/settingsFormatters";
 import { OtpSetupFlow } from "./OtpSetupFlow";
 
 export function SecuritySection() {
-    const { showToast } = useToast();
-    const [passwordForm, setPasswordForm] = useState<PasswordForm>(EMPTY_PASSWORD_FORM);
-    const [passwordTouched, setPasswordTouched] = useState<Partial<Record<keyof PasswordForm, boolean>>>({});
-    const [passwordError, setPasswordError] = useState<string | null>(null);
-    const [passwordSaving, setPasswordSaving] = useState(false);
-    const [securityStatus, setSecurityStatus] = useState<SecurityStatusResponse | null>(null);
-    const [securityLoading, setSecurityLoading] = useState(true);
-    const [securityError, setSecurityError] = useState<string | null>(null);
-    const [otpBusyId, setOtpBusyId] = useState<string | null>(null);
-
-    const [otpStep, setOtpStep] = useState<OtpStep>("idle");
-    const [otpSetupData, setOtpSetupData] = useState<OtpSetupResponse | null>(null);
-    const [otpCode, setOtpCode] = useState<string[]>(["", "", "", "", "", ""]);
-    const [otpVerifying, setOtpVerifying] = useState(false);
-    const [otpError, setOtpError] = useState<string | null>(null);
-    const otpInputRefs = useRef<Array<HTMLInputElement | null>>([]);
-
-    const passwordErrors = useMemo(() => validatePasswordForm(passwordForm), [passwordForm]);
-    const passwordCanSubmit =
-        passwordForm.newPassword.length > 0 &&
-        passwordForm.confirmPassword.length > 0 &&
-        Object.keys(passwordErrors).length === 0 &&
-        !passwordSaving;
-
-    const loadSecurityStatus = async () => {
-        setSecurityLoading(true);
-        setSecurityError(null);
-        try {
-            setSecurityStatus(await fetchSecurityStatus());
-        } catch (caughtError) {
-            setSecurityError(resolveProfileError(caughtError));
-        } finally {
-            setSecurityLoading(false);
-        }
-    };
-
-    useEffect(() => { void loadSecurityStatus(); }, []);
-
-    const updatePasswordField = (field: keyof PasswordForm) => (event: ChangeEvent<HTMLInputElement>) => {
-        setPasswordForm((current) => ({ ...current, [field]: event.target.value }));
-        setPasswordTouched((current) => ({ ...current, [field]: true }));
-        setPasswordError(null);
-    };
-
-    const handlePasswordSubmit = async (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        setPasswordTouched({ newPassword: true, confirmPassword: true });
-        if (!passwordCanSubmit) return;
-        setPasswordSaving(true);
-        setPasswordError(null);
-        try {
-            await changeCurrentUserPassword(passwordForm.newPassword);
-            setPasswordForm(EMPTY_PASSWORD_FORM);
-            setPasswordTouched({});
-            showToast("Şifre güncellendi", "success");
-        } catch (caughtError) {
-            setPasswordError(resolveProfileError(caughtError));
-        } finally {
-            setPasswordSaving(false);
-        }
-    };
-
-    const handleDeleteOtp = async (credentialId: string) => {
-        if (!window.confirm("İki aşamalı doğrulama bu cihaz için kaldırılsın mı?")) return;
-        setOtpBusyId(credentialId);
-        setSecurityError(null);
-        try {
-            const nextStatus = await deleteOtpCredential(credentialId);
-            setSecurityStatus(nextStatus);
-            showToast("İki aşamalı doğrulama kaldırıldı", "success");
-        } catch (caughtError) {
-            setSecurityError(resolveProfileError(caughtError));
-        } finally {
-            setOtpBusyId(null);
-        }
-    };
-
-    const handleStartOtpSetup = async () => {
-        setOtpStep("starting");
-        setOtpError(null);
-        try {
-            const data = await setupOtp();
-            setOtpSetupData(data);
-            setOtpStep("qr");
-        } catch (err) {
-            setOtpStep("idle");
-            setOtpError(resolveProfileError(err));
-        }
-    };
-
-    const handleOtpSubmit = async (code: string) => {
-        if (code.length !== 6 || otpVerifying) return;
-        setOtpVerifying(true);
-        setOtpError(null);
-        try {
-            const status = await verifyOtp(code);
-            setSecurityStatus(status);
-            setOtpStep("idle");
-            setOtpSetupData(null);
-            setOtpCode(["", "", "", "", "", ""]);
-            showToast("İki aşamalı doğrulama aktive edildi", "success");
-        } catch (err) {
-            if (err instanceof ApiError && err.status === 410) {
-                setOtpStep("idle");
-                setOtpSetupData(null);
-                setOtpError("Setup süresi doldu, yeniden başlatın.");
-            } else {
-                setOtpError(resolveProfileError(err));
-            }
-            setOtpCode(["", "", "", "", "", ""]);
-            window.requestAnimationFrame(() => otpInputRefs.current[0]?.focus());
-        } finally {
-            setOtpVerifying(false);
-        }
-    };
-
-    const handleOtpCodeChange = (index: number, rawValue: string) => {
-        const digit = rawValue.replace(/\D/g, "").slice(-1);
-        const next = otpCode.map((d, i) => (i === index ? digit : d));
-        setOtpCode(next);
-        setOtpError(null);
-        if (digit && index < 5) otpInputRefs.current[index + 1]?.focus();
-        if (digit && index === 5 && next.join("").length === 6) void handleOtpSubmit(next.join(""));
-    };
-
-    const handleOtpKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Backspace" && !otpCode[index] && index > 0) otpInputRefs.current[index - 1]?.focus();
-    };
-
-    const handleOtpPaste = (e: ClipboardEvent<HTMLInputElement>) => {
-        e.preventDefault();
-        const digits = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-        if (!digits) return;
-        const next = ["", "", "", "", "", ""];
-        for (let i = 0; i < digits.length; i++) next[i] = digits[i];
-        setOtpCode(next);
-        const focusIdx = Math.min(digits.length, 5);
-        otpInputRefs.current[focusIdx]?.focus();
-        if (digits.length === 6) void handleOtpSubmit(digits);
-    };
-
-    const resetOtpFlow = () => {
-        setOtpStep("idle");
-        setOtpSetupData(null);
-        setOtpCode(["", "", "", "", "", ""]);
-        setOtpError(null);
-    };
-
-    const isOtpFlowActive = otpStep === "qr" || otpStep === "verify";
+    const { securityStatus, setSecurityStatus, securityLoading, securityError, loadSecurityStatus } = useSecurityStatus();
+    const {
+        passwordForm, passwordTouched, passwordErrors, passwordError,
+        passwordSaving, passwordCanSubmit,
+        updatePasswordField, touchPasswordField, handlePasswordSubmit,
+    } = usePasswordForm();
+    const {
+        otpStep, otpSetupData, otpCode, otpVerifying, otpError, otpBusyId,
+        otpInputRefs, isOtpFlowActive,
+        resetOtpFlow, handleStartOtpSetup, handleOtpCodeChange,
+        handleOtpKeyDown, handleOtpPaste, handleDeleteOtp,
+        handleContinueToVerify, handleBackToQr, handleOtpSubmit,
+    } = useOtpSetup(setSecurityStatus);
 
     return (
         <Stack direction={{ xs: "column", md: "row" }} sx={{ gap: 2 }} id="settings-panel-security" role="tabpanel" aria-labelledby="settings-tab-security">
@@ -184,7 +38,7 @@ export function SecuritySection() {
                                 type="password"
                                 value={passwordForm.newPassword}
                                 onChange={updatePasswordField("newPassword")}
-                                onBlur={() => setPasswordTouched((c) => ({ ...c, newPassword: true }))}
+                                onBlur={() => touchPasswordField("newPassword")}
                                 error={Boolean(passwordTouched.newPassword && passwordErrors.newPassword)}
                                 helperText={passwordTouched.newPassword ? passwordErrors.newPassword : undefined}
                                 autoComplete="new-password"
@@ -196,14 +50,14 @@ export function SecuritySection() {
                                 type="password"
                                 value={passwordForm.confirmPassword}
                                 onChange={updatePasswordField("confirmPassword")}
-                                onBlur={() => setPasswordTouched((c) => ({ ...c, confirmPassword: true }))}
+                                onBlur={() => touchPasswordField("confirmPassword")}
                                 error={Boolean(passwordTouched.confirmPassword && passwordErrors.confirmPassword)}
                                 helperText={passwordTouched.confirmPassword ? passwordErrors.confirmPassword : undefined}
                                 autoComplete="new-password"
                                 size="small"
                                 fullWidth
                             />
-                            {passwordError ? <Alert severity="error">{passwordError}</Alert> : null}
+                            {passwordError && <Alert severity="error">{passwordError}</Alert>}
                             <Button
                                 type="submit"
                                 variant="contained"
@@ -292,11 +146,8 @@ export function SecuritySection() {
                             onKeyDown={handleOtpKeyDown}
                             onPaste={handleOtpPaste}
                             onReset={resetOtpFlow}
-                            onContinue={() => {
-                                setOtpStep("verify");
-                                window.requestAnimationFrame(() => otpInputRefs.current[0]?.focus());
-                            }}
-                            onBack={() => { setOtpStep("qr"); setOtpError(null); setOtpCode(["", "", "", "", "", ""]); }}
+                            onContinue={handleContinueToVerify}
+                            onBack={handleBackToQr}
                             onSubmit={() => void handleOtpSubmit(otpCode.join(""))}
                         />
                     ) : (
@@ -304,7 +155,7 @@ export function SecuritySection() {
                             <Alert severity="info" sx={{ alignItems: "center" }}>
                                 2FA henüz aktif değil. Google Authenticator veya benzeri bir uygulama ile hesabınızı koruyun.
                             </Alert>
-                            {otpError ? <Alert severity="error">{otpError}</Alert> : null}
+                            {otpError && <Alert severity="error">{otpError}</Alert>}
                             <Button
                                 variant="contained"
                                 color="secondary"

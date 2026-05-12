@@ -1,70 +1,25 @@
 import { Alert, Avatar, Box, Button, Card, CardContent, Chip, CircularProgress, Divider, Skeleton, Stack, TextField, Typography } from "@mui/material";
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { useAuth } from "../../../app/auth/AuthContext";
-import { useToast } from "../../../components/ToastContext";
-import { updateCurrentUser } from "../../profile/api/userApi";
-import type { FieldTouched, ProfileField, ProfileForm } from "../types";
 import {
     KEYCLOAK_ACCOUNT_URL,
-    buildForm,
-    buildUpdatePayload,
     formatDate,
     getInitials,
     getRoleLabel,
-    isPayloadEmpty,
     openExternal,
-    resolveProfileError,
-    validateProfileForm,
 } from "../utils/settingsFormatters";
+import {useProfileSectionForm} from "../hooks/useProfileSectionForm.ts";
+
+
 
 export function ProfileSection() {
-    const { currentUser, userLoading, userError, refreshCurrentUser, setCurrentUser } = useAuth();
-    const { showToast } = useToast();
-    const [form, setForm] = useState<ProfileForm>({ firstName: "", lastName: "" });
-    const [touched, setTouched] = useState<FieldTouched>({});
-    const [serverError, setServerError] = useState<string | null>(null);
-    const [saving, setSaving] = useState(false);
+    const { currentUser, userLoading, userError, refreshCurrentUser } = useAuth();
+    const {
+        form, touched, errors, saving, serverError,
+        hasChanges, canSubmit,
+        updateField, resetForm, handleSubmit,
+    } = useProfileSectionForm();
 
-    useEffect(() => {
-        if (!currentUser) return;
-        setForm(buildForm(currentUser));
-        setTouched({});
-        setServerError(null);
-    }, [currentUser]);
-
-    const errors = useMemo(() => validateProfileForm(form), [form]);
-    const payload = useMemo(() => (currentUser ? buildUpdatePayload(form, currentUser) : {}), [form, currentUser]);
-    const hasChanges = currentUser ? !isPayloadEmpty(payload) : false;
-    const canSubmit = Boolean(currentUser && hasChanges && Object.keys(errors).length === 0 && !saving);
-
-    const updateField = (field: ProfileField) => (event: ChangeEvent<HTMLInputElement>) => {
-        setForm((current) => ({ ...current, [field]: event.target.value }));
-        setTouched((current) => ({ ...current, [field]: true }));
-        setServerError(null);
-    };
-
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        setTouched({ firstName: true, lastName: true });
-        if (!currentUser || !canSubmit) return;
-        setSaving(true);
-        setServerError(null);
-        try {
-            const updatedUser = await updateCurrentUser(payload);
-            setCurrentUser(updatedUser);
-            setForm(buildForm(updatedUser));
-            setTouched({});
-            showToast("Profil güncellendi", "success");
-        } catch (caughtError) {
-            const message = resolveProfileError(caughtError);
-            setServerError(message);
-            showToast(message, "error");
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const resetForm = () => { setForm(buildForm(currentUser)); setTouched({}); setServerError(null); };
+    // geri kalan JSX aynı kalıyor
 
     if (userLoading && !currentUser) {
         return (
@@ -158,7 +113,6 @@ export function ProfileSection() {
                                 label="Ad"
                                 value={form.firstName}
                                 onChange={updateField("firstName")}
-                                onBlur={() => setTouched((c) => ({ ...c, firstName: true }))}
                                 error={Boolean(touched.firstName && errors.firstName)}
                                 helperText={touched.firstName ? errors.firstName : undefined}
                                 slotProps={{ htmlInput: { maxLength: 100 } }}
@@ -169,7 +123,6 @@ export function ProfileSection() {
                                 label="Soyad"
                                 value={form.lastName}
                                 onChange={updateField("lastName")}
-                                onBlur={() => setTouched((c) => ({ ...c, lastName: true }))}
                                 error={Boolean(touched.lastName && errors.lastName)}
                                 helperText={touched.lastName ? errors.lastName : undefined}
                                 slotProps={{ htmlInput: { maxLength: 100 } }}
