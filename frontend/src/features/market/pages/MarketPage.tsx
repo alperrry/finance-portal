@@ -1,61 +1,30 @@
-import { useMemo, useState } from "react";
 import { Alert, Box, Button, Chip, Skeleton, Stack, ToggleButton, ToggleButtonGroup } from "@mui/material";
-import { useNavigate } from "react-router-dom";
 import { KapitalShell } from "../../../components/layout";
 import { PageHeader, SectionPanel } from "../../../components/ui";
-import { useMarketData } from "../hooks/useMarketData";
-import { useMarketSort } from "../hooks/useMarketSort";
-import { sortFxRows, sortBondRows, sortFundRows, sortStockRows, getSummaryCards, getLatestDatasetDate, matchesSearch, dedupeStocksByLatestSnapshot } from "../utils/marketSorters";
 import { formatLocalDateTime } from "../utils/marketFormatters";
 import { MARKET_TABS } from "../types";
-import type { MarketTab } from "../types";
 import { MarketSummaryCards } from "../components/MarketSummaryCards";
 import { MarketSearchBar } from "../components/MarketSearchBar";
 import { FxTable } from "../components/FxTable";
 import { BondsTable } from "../components/BondsTable";
 import { FundsTable } from "../components/FundsTable";
 import { StocksTable } from "../components/StocksTable";
+import { useMarketPage } from "../hooks/useMarketPage";
+
 export default function MarketPage() {
-    const navigate = useNavigate();
-    const { data, loading, error, lastSyncedAt, reload } = useMarketData();
-    const { sortState, toggleSort } = useMarketSort();
-    const [activeTab, setActiveTab] = useState<MarketTab>("fx");
-    const [query, setQuery] = useState("");
-
-    const activeMeta = MARKET_TABS.find((tab) => tab.key === activeTab) ?? MARKET_TABS[0];
-    const isInitialLoading = loading && data === null;
-    const isRefreshing = loading && data !== null;
-
-    const dedupedStocks = useMemo(() => (data ? dedupeStocksByLatestSnapshot(data.stocks) : []), [data]);
-
-    const fxRows = useMemo(
-        () => data ? sortFxRows(data.fx.filter((r) => matchesSearch(query, r.currencyCode, r.currencyName)), sortState.fx) : [],
-        [data, query, sortState.fx],
-    );
-    const bondRows = useMemo(
-        () => data ? sortBondRows(data.bonds.filter((r) => matchesSearch(query, r.name, r.currency, r.bondType, r.evdsSeriesCode)), sortState.bonds) : [],
-        [data, query, sortState.bonds],
-    );
-    const fundRows = useMemo(
-        () => data ? sortFundRows(data.funds.filter((r) => matchesSearch(query, r.code, r.name, r.fundType)), sortState.funds) : [],
-        [data, query, sortState.funds],
-    );
-    const stockRows = useMemo(
-        () => data ? sortStockRows(dedupedStocks.filter((r) => matchesSearch(query, r.symbol, r.shortName, r.longName, r.sector, r.indexName)), sortState.stocks) : [],
-        [data, dedupedStocks, query, sortState.stocks],
-    );
-
-    const summaryCards = useMemo(
-        () => data ? getSummaryCards(activeTab, { ...data, stocks: dedupedStocks }) : [],
-        [activeTab, data, dedupedStocks],
-    );
-    const activeDatasetDate = useMemo(() => (data ? getLatestDatasetDate(activeTab, data) : "-"), [activeTab, data]);
-
-    const visibleCount = activeTab === "fx" ? fxRows.length : activeTab === "bonds" ? bondRows.length : activeTab === "funds" ? fundRows.length : stockRows.length;
-    const totalCount = data ? (activeTab === "stocks" ? dedupedStocks.length : data[activeTab].length) : 0;
-    const stockDatasetIsEmpty = Boolean(data && dedupedStocks.length === 0);
-
-    const openDetail = (type: MarketTab, code: string) => navigate(`/portfolio/${type}/${encodeURIComponent(code)}`);
+    const {
+        data, loading, error, lastSyncedAt, reload,
+        sortState, toggleSort,
+        activeTab, handleTabChange,
+        query, setQuery,
+        activeMeta,
+        isInitialLoading, isRefreshing,
+        fxRows, bondRows, fundRows, stockRows,
+        summaryCards, activeDatasetDate,
+        visibleCount, totalCount,
+        stockDatasetIsEmpty,
+        openDetail,
+    } = useMarketPage();
 
     return (
         <KapitalShell activePage="portfolio" showCategories={false}>
@@ -84,15 +53,10 @@ export default function MarketPage() {
                                 </>
                             }
                         />
-
                         <ToggleButtonGroup
                             exclusive
                             value={activeTab}
-                            onChange={(_, nextTab: MarketTab | null) => {
-                                if (!nextTab) return;
-                                setActiveTab(nextTab);
-                                setQuery("");
-                            }}
+                            onChange={handleTabChange}
                             aria-label="Enstrüman kategorileri"
                             sx={{ mt: 3, flexWrap: "wrap", gap: 1 }}
                         >
@@ -104,30 +68,29 @@ export default function MarketPage() {
                         </ToggleButtonGroup>
                     </SectionPanel>
 
-                    {error ? (
+                    {error && (
                         <Alert severity="error" action={<Button color="inherit" size="small" type="button" onClick={reload}>Tekrar dene</Button>}>
                             <strong>Veri akışı kesildi.</strong> {error}
                         </Alert>
-                    ) : null}
+                    )}
 
-                    {isInitialLoading ? (
+                    {isInitialLoading && (
                         <>
                             <MarketSummaryCards summaryCards={[]} loading={true} />
                             <SectionPanel component="section">
                                 <PageHeader kicker="Yükleniyor" title="Piyasa verileri hazırlanıyor" />
                                 <Stack sx={{ mt: 2, gap: 1 }}>
-                                    {Array.from({ length: 7 }).map((_, index) => (
-                                        <Skeleton key={`row-skeleton-${index}`} height={34} />
+                                    {Array.from({ length: 7 }).map((_, i) => (
+                                        <Skeleton key={i} height={34} />
                                     ))}
                                 </Stack>
                             </SectionPanel>
                         </>
-                    ) : null}
+                    )}
 
-                    {data ? (
+                    {data && (
                         <>
                             <MarketSummaryCards summaryCards={summaryCards} loading={false} />
-
                             <SectionPanel component="section">
                                 <Stack
                                     direction={{ xs: "column", md: "row" }}
@@ -179,7 +142,7 @@ export default function MarketPage() {
                                 )}
                             </SectionPanel>
                         </>
-                    ) : null}
+                    )}
                 </Stack>
             </Box>
         </KapitalShell>
