@@ -1,5 +1,5 @@
 import { Box, Typography } from "@mui/material";
-import type { AdminConnectionState } from "../../websocket/useAdminWebSocket";
+import type { AdminConnectionState } from "../websocket/useAdminWebSocket";
 
 const LABELS: Record<AdminConnectionState, string> = {
     connecting: "Bağlanıyor",

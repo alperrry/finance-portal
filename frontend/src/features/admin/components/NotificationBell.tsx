@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Badge, Box, Divider, IconButton, Paper, Typography } from "@mui/material";
-import type { AdminEvent } from "../../types/admin.types";
+import type { AdminEvent } from "../types/admin.types";
 
 function formatEventTime(value: string) {
     const date = new Date(value);
