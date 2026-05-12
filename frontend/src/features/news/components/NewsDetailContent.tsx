@@ -1,0 +1,74 @@
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import { Box, Button, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
+import type { SyntheticEvent } from "react";
+import { Link as RouterLink } from "react-router-dom";
+import type { NewsItem } from "../api/newsApi";
+
+import { formatDate } from "../utils/newsFormatters";
+
+type Props = {
+    news: NewsItem;
+};
+
+export function NewsDetailContent({ news }: Props) {
+    return (
+        <Card sx={{ flex: 1 }}>
+            <CardContent>
+                <Stack direction="row" sx={{ gap: 1, mb: 2, flexWrap: "wrap" }}>
+                    <Chip label={news.source?.name ?? "Bilinmeyen Kaynak"} size="small" color="secondary" />
+                    <Chip label={formatDate(news.publishedAt, "full")} size="small" variant="outlined" />
+                </Stack>
+
+                <Typography variant="h5" component="h1" sx={{ fontWeight: 800, mb: 2, lineHeight: 1.35 }}>
+                    {news.title}
+                </Typography>
+
+                {news.imageUrl && (
+                    <Box
+                        component="img"
+                        src={news.imageUrl}
+                        alt=""
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        onError={(e: SyntheticEvent<HTMLImageElement>) => { e.currentTarget.hidden = true; }}
+                        sx={{ width: "100%", maxHeight: 400, objectFit: "cover", borderRadius: 1, mb: 2, display: "block" }}
+                    />
+                )}
+
+                <Box>
+                    {news.context ? (
+                        news.context.split("\n").map((paragraph: string, index: number) => (
+                            <Typography key={`${news.id}-p-${index}`} variant="body1" sx={{ mb: 1.5 }}>
+                                {paragraph}
+                            </Typography>
+                        ))
+                    ) : (
+                        <Typography variant="body1" color="text.secondary">
+                            Bu haber için içerik bilgisi bulunamadı.
+                        </Typography>
+                    )}
+                </Box>
+
+                <Stack direction="row" sx={{ gap: 1, mt: 3, flexWrap: "wrap" }}>
+                    <Button component={RouterLink} to="/news" variant="outlined" size="small" startIcon={<ArrowBackIcon />}>
+                        Listeye Dön
+                    </Button>
+                    {news.canonicalUrl && (
+                        <Button
+                            href={news.canonicalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="contained"
+                            color="secondary"
+                            size="small"
+                            endIcon={<OpenInNewIcon />}
+                        >
+                            Kaynağı Aç
+                        </Button>
+                    )}
+                </Stack>
+            </CardContent>
+        </Card>
+    );
+}

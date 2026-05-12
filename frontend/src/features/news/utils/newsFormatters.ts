@@ -2,6 +2,8 @@ import type { NewsItem } from "../api/newsApi";
 
 export const PAGE_SIZE = 9;
 
+export type NewsTag = { key: string; label: string };
+
 export const TOPIC_TAG_RULES: Array<{ label: string; pattern: RegExp }> = [
     { label: "Doviz", pattern: /\b(dolar|euro|sterlin|usd|eur|kur|doviz)\b/i },
     { label: "Altin", pattern: /\b(altin|ons|gram altin|ceyrek)\b/i },
