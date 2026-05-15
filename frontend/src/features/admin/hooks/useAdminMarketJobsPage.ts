@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useToast } from "../../../components/ToastContext";
-import { triggerAdminMarketBackfill } from "../api/adminApi";
+import { clearAdminMarketData, triggerAdminMarketBackfill } from "../api/adminApi";
 import { invalidateAdminQuery } from "../api/adminQueryBus";
 import { useAdminAuditLogs } from "../api/useAdminAuditLogs";
 import type { AdminMarketBackfillModule, AuditLogItem } from "../types/admin.types";
@@ -20,6 +20,7 @@ export function marketAuditDescription(item: AuditLogItem) {
 export function useAdminMarketJobsPage() {
     const { showToast } = useToast();
     const [pendingModule, setPendingModule] = useState<AdminMarketBackfillModule | null>(null);
+    const [clearingModule, setClearingModule] = useState<AdminMarketBackfillModule | null>(null);
     const auditTrail = useAdminAuditLogs(MARKET_AUDIT_TARGETS);
 
     const triggerBackfill = async (module: AdminMarketBackfillModule) => {
@@ -35,13 +36,28 @@ export function useAdminMarketJobsPage() {
         }
     };
 
+    const clearModule = async (module: AdminMarketBackfillModule) => {
+        setClearingModule(module);
+        try {
+            const deleted = await clearAdminMarketData(module);
+            showToast(`${module.toUpperCase()} verileri temizlendi (${deleted} kayıt silindi).`, "success");
+            invalidateAdminQuery({ scope: "market-audit" });
+        } catch (caughtError) {
+            showToast(resolveAdminError(caughtError, "Veri temizleme başarısız."), "error");
+        } finally {
+            setClearingModule(null);
+        }
+    };
+
     return {
         auditTrail,
         pending: {
             module: pendingModule,
+            clearingModule,
         },
         handlers: {
             triggerBackfill,
+            clearModule,
         },
     };
 }

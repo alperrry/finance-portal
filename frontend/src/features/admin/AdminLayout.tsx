@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../app/auth/AuthContext";
 import { LiveBadge } from "./components/LiveBadge";
 import { NotificationBell } from "./components/NotificationBell";
+import { useAdminQueryInvalidation } from "./api/useAdminQueryInvalidation";
 import { useAdminWebSocket } from "./websocket/useAdminWebSocket";
 import { useAuditFeed } from "./websocket/useAuditFeed";
 
@@ -48,6 +49,7 @@ export function AdminLayout() {
     const detailMatch = location.pathname.match(/^\/admin\/users\/(\d+)/);
     const watchedUserId = detailMatch ? Number(detailMatch[1]) : null;
     const { state } = useAdminWebSocket({ onEvent: auditFeed.addEvent, watchedUserId });
+    useAdminQueryInvalidation();
 
     return (
         <Box

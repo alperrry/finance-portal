@@ -68,7 +68,7 @@ export type AdminFetchResponse = {
     triggeredAt: string | null;
 };
 
-export type AdminMarketBackfillModule = "fx" | "stocks" | "bonds" | "funds";
+export type AdminMarketBackfillModule = "fx" | "stocks" | "bonds" | "funds" | "macro" | "viop";
 
 export type AdminBackfillResponse = {
     module: AdminMarketBackfillModule | string;

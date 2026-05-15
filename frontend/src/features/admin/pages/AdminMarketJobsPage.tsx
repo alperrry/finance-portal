@@ -14,7 +14,9 @@ export function AdminMarketJobsPage() {
         <Box sx={{ display: "grid", gap: 2.25 }}>
             <AdminMarketJobsPanel
                 pendingModule={pending.module}
+                clearingModule={pending.clearingModule}
                 onTrigger={(module) => void handlers.triggerBackfill(module)}
+                onClear={(module) => void handlers.clearModule(module)}
             />
 
             <AdminAuditPanel

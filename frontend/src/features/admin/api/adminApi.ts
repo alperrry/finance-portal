@@ -417,6 +417,15 @@ export async function triggerAdminMarketBackfill(module: AdminMarketBackfillModu
     return readActionResponse<AdminBackfillResponse>(response, "Backfill başlatılamadı.");
 }
 
+export async function clearAdminMarketData(module: AdminMarketBackfillModule): Promise<number> {
+    const response = await apiFetch(`/api/v1/admin/market/clear/${module}`, {
+        method: "DELETE",
+        errorMessage: "Market verisi temizlenemedi.",
+    });
+    const data = await readData<number>(response, "Market verisi temizlenemedi.");
+    return typeof data === "number" ? data : 0;
+}
+
 export async function fetchAdminAuditLogs(targetTypes: string[]): Promise<AuditLogItem[]> {
     const params = new URLSearchParams();
     targetTypes.forEach((targetType) => params.append("targetType", targetType));
