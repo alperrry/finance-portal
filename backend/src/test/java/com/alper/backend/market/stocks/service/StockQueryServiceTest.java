@@ -1,8 +1,9 @@
 package com.alper.backend.market.stocks.service;
 
 import com.alper.backend.market.stocks.model.Stock;
-import com.alper.backend.market.stocks.model.StockPriceSnapshot;
-import com.alper.backend.market.stocks.repository.StockPriceSnapshotRepository;
+import com.alper.backend.market.stocks.model.InstrumentType;
+import com.alper.backend.market.stocks.model.StockPriceHistory;
+import com.alper.backend.market.stocks.repository.StockPriceHistoryRepository;
 import com.alper.backend.market.stocks.dto.StockResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,7 +25,7 @@ import static org.mockito.Mockito.when;
 @DisplayName("StockQueryService")
 class StockQueryServiceTest {
 
-    @Mock private StockPriceSnapshotRepository repository;
+    @Mock private StockPriceHistoryRepository repository;
     private StockQueryService service;
 
     @BeforeEach
@@ -40,27 +41,22 @@ class StockQueryServiceTest {
                 .longName(longName)
                 .sector(sector)
                 .indexName(index)
+                .instrumentType(InstrumentType.STOCK)
                 .currency("TRY")
                 .isActive(true)
                 .build();
     }
 
-    private StockPriceSnapshot snapshot(Stock s, String price) {
-        return StockPriceSnapshot.builder()
+    private StockPriceHistory history(Stock s, String price) {
+        return StockPriceHistory.builder()
                 .stock(s)
-                .price(new BigDecimal(price))
-                .change(new BigDecimal("0.45"))
-                .changePercent(new BigDecimal("0.58"))
-                .open(new BigDecimal("78.70"))
-                .dayHigh(new BigDecimal("79.15"))
-                .dayLow(new BigDecimal("77.60"))
-                .previousClose(new BigDecimal("77.45"))
+                .openPrice(new BigDecimal("78.70"))
+                .highPrice(new BigDecimal("79.15"))
+                .lowPrice(new BigDecimal("77.60"))
+                .closePrice(new BigDecimal(price))
                 .volume(92_700_000L)
-                .marketCap(450_000_000_000L)
-                .fiftyTwoWeekHigh(new BigDecimal("85.20"))
-                .fiftyTwoWeekLow(new BigDecimal("45.10"))
                 .tradeDate(LocalDate.of(2026, 4, 24))
-                .fetchedAt(LocalDateTime.of(2026, 4, 24, 14, 30))
+                .createdAt(LocalDateTime.of(2026, 4, 24, 2, 0))
                 .build();
     }
 
@@ -70,9 +66,9 @@ class StockQueryServiceTest {
         Stock akbnk = stock("AKBNK.IS", "AKBNK", "Akbank T.A.S.", "Banking", "BIST30");
         Stock thyao = stock("THYAO.IS", "THYAO", "Türk Hava Yolları", "Airlines", "BIST30");
 
-        when(repository.findTodaySnapshots()).thenReturn(List.of(
-                snapshot(akbnk, "77.90"),
-                snapshot(thyao, "244.20")
+        when(repository.findLatestPerActiveInstrumentType(InstrumentType.STOCK)).thenReturn(List.of(
+                history(akbnk, "77.90"),
+                history(thyao, "244.20")
         ));
 
         List<StockResponse> result = service.getAll();
@@ -84,22 +80,21 @@ class StockQueryServiceTest {
         assertThat(first.getLongName()).isEqualTo("Akbank T.A.S.");
         assertThat(first.getSector()).isEqualTo("Banking");
         assertThat(first.getIndexName()).isEqualTo("BIST30");
+        assertThat(first.getInstrumentType()).isEqualTo("STOCK");
         assertThat(first.getCurrency()).isEqualTo("TRY");
         assertThat(first.getPrice()).isEqualByComparingTo("77.90");
-        assertThat(first.getChange()).isEqualByComparingTo("0.45");
-        assertThat(first.getChangePercent()).isEqualByComparingTo("0.58");
+        assertThat(first.getChange()).isEqualByComparingTo("-0.80");
         assertThat(first.getDayHigh()).isEqualByComparingTo("79.15");
         assertThat(first.getDayLow()).isEqualByComparingTo("77.60");
         assertThat(first.getVolume()).isEqualTo(92_700_000L);
-        assertThat(first.getMarketCap()).isEqualTo(450_000_000_000L);
         assertThat(first.getTradeDate()).isEqualTo(LocalDate.of(2026, 4, 24));
-        assertThat(first.getFetchedAt()).isEqualTo(LocalDateTime.of(2026, 4, 24, 14, 30));
+        assertThat(first.getFetchedAt()).isEqualTo(LocalDateTime.of(2026, 4, 24, 2, 0));
     }
 
     @Test
     @DisplayName("Boş repository sonucu için boş liste döner")
     void emptyRepositoryReturnsEmptyList() {
-        when(repository.findTodaySnapshots()).thenReturn(Collections.emptyList());
+        when(repository.findLatestPerActiveInstrumentType(InstrumentType.STOCK)).thenReturn(Collections.emptyList());
 
         List<StockResponse> result = service.getAll();
 
@@ -116,20 +111,20 @@ class StockQueryServiceTest {
                 .longName("Test Stock")
                 .sector(null)            // optional
                 .indexName("BIST30")
+                .instrumentType(InstrumentType.STOCK)
                 .currency("TRY")
                 .isActive(true)
                 .build();
 
-        StockPriceSnapshot snap = StockPriceSnapshot.builder()
+        StockPriceHistory row = StockPriceHistory.builder()
                 .stock(s)
-                .price(new BigDecimal("10.0"))
-                .marketCap(null)         // optional
+                .closePrice(new BigDecimal("10.0"))
                 .volume(null)            // optional
                 .tradeDate(LocalDate.of(2026, 4, 24))
-                .fetchedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now())
                 .build();
 
-        when(repository.findTodaySnapshots()).thenReturn(List.of(snap));
+        when(repository.findLatestPerActiveInstrumentType(InstrumentType.STOCK)).thenReturn(List.of(row));
 
         List<StockResponse> result = service.getAll();
 
@@ -146,10 +141,10 @@ class StockQueryServiceTest {
         Stock s2 = stock("BBB.IS", "BBB", "BBB Corp", "Bank",  "BIST30");
         Stock s3 = stock("CCC.IS", "CCC", "CCC Corp", "Retail", "BIST30");
 
-        when(repository.findTodaySnapshots()).thenReturn(List.of(
-                snapshot(s2, "100.00"),
-                snapshot(s3, "50.00"),
-                snapshot(s1, "75.00")
+        when(repository.findLatestPerActiveInstrumentType(InstrumentType.STOCK)).thenReturn(List.of(
+                history(s2, "100.00"),
+                history(s3, "50.00"),
+                history(s1, "75.00")
         ));
 
         List<StockResponse> result = service.getAll();
@@ -162,7 +157,7 @@ class StockQueryServiceTest {
     @DisplayName("Tek snapshot başarıyla dönüşür")
     void singleSnapshotMapsCorrectly() {
         Stock s = stock("AKBNK.IS", "AKBNK", "Akbank T.A.S.", "Banking", "BIST30");
-        when(repository.findTodaySnapshots()).thenReturn(List.of(snapshot(s, "77.90")));
+        when(repository.findLatestPerActiveInstrumentType(InstrumentType.STOCK)).thenReturn(List.of(history(s, "77.90")));
 
         List<StockResponse> result = service.getAll();
 

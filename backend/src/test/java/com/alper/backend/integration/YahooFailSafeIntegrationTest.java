@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class YahooFailSafeIntegrationTest extends AbstractIntegrationTest {
 
     @Test
-    @DisplayName("Yahoo timeout olsa da mevcut snapshot verisi kullanıcıya sunulmaya devam eder")
+    @DisplayName("Yahoo timeout olsa da mevcut history verisi kullanıcıya sunulmaya devam eder")
     void timeoutKeepsExistingSnapshotQueryable() throws Exception {
         activateOnlySymbol("AKBNK.IS");
         insertHistorySeries("AKBNK.IS", LocalDate.now().minusDays(5), 3, new BigDecimal("78.00"));
@@ -46,7 +46,7 @@ class YahooFailSafeIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.length()").value(1))
                 .andExpect(jsonPath("$.data[0].symbol").value("AKBNK.IS"))
-                .andExpect(jsonPath("$.data[0].price").value(82.45));
+                .andExpect(jsonPath("$.data[0].price").value(80.00));
     }
 
     @Test
@@ -79,11 +79,11 @@ class YahooFailSafeIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.length()").value(1))
                 .andExpect(jsonPath("$.data[0].symbol").value("AKBNK.IS"))
-                .andExpect(jsonPath("$.data[0].price").value(83.10));
+                .andExpect(jsonPath("$.data[0].price").value(81.00));
     }
 
     @Test
-    @DisplayName("Yahoo bağlantısı reddedilse de sistem ayakta kalır ve mevcut snapshot verisi döner")
+    @DisplayName("Yahoo bağlantısı reddedilse de sistem ayakta kalır ve mevcut history verisi döner")
     void connectionRefusedStillLeavesApiOperational() throws Exception {
         activateOnlySymbol("AKBNK.IS");
         insertHistorySeries("AKBNK.IS", LocalDate.now().minusDays(4), 2, new BigDecimal("81.00"));
@@ -101,6 +101,6 @@ class YahooFailSafeIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.length()").value(1))
                 .andExpect(jsonPath("$.data[0].symbol").value("AKBNK.IS"))
-                .andExpect(jsonPath("$.data[0].price").value(84.20));
+                .andExpect(jsonPath("$.data[0].price").value(82.00));
     }
 }

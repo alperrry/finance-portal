@@ -17,6 +17,7 @@ public class StockResponse {
     private String longName;
     private String sector;
     private String indexName;
+    private String instrumentType;
     private String currency;
     private BigDecimal price;
     private BigDecimal change;

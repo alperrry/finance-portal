@@ -1,5 +1,6 @@
 package com.alper.backend.market.stocks.service;
 
+import com.alper.backend.market.stocks.model.InstrumentType;
 import com.alper.backend.market.stocks.model.Stock;
 import com.alper.backend.market.stocks.model.StockPriceHistory;
 import com.alper.backend.market.stocks.model.StockTechnicalIndicator;
@@ -34,7 +35,7 @@ public class StockIndicatorService {
      * Her hisse ayrı transaction — biri patlarsa diğerleri etkilenmez.
      */
     public void recalculateAll() {
-        List<Stock> stocks = stockRepository.findByIsActiveTrue();
+        List<Stock> stocks = stockRepository.findByIsActiveTrueAndInstrumentType(InstrumentType.STOCK);
         log.info("Indikatör hesaplama başladı | hisse sayısı={}", stocks.size());
 
         int success = 0;

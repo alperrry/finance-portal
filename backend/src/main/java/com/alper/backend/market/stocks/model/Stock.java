@@ -44,6 +44,10 @@ public class Stock {
     @Column(name = "index_name", length = 50)
     private String indexName;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "instrument_type", nullable = false, length = 20)
+    private InstrumentType instrumentType;
+
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 
@@ -57,6 +61,9 @@ public class Stock {
     protected void prePersist() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        if (this.instrumentType == null) {
+            this.instrumentType = InstrumentType.STOCK;
+        }
     }
 
     @PreUpdate

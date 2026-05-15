@@ -48,10 +48,10 @@ class StockPipelineIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("Yahoo quote fixture snapshot tablosuna yazılır ve Stock API üzerinden okunur")
+    @DisplayName("Yahoo chart fixture history tablosuna yazılır ve Stock API üzerinden okunur")
     void quoteWritesSnapshotAndServesItFromStockApi() throws Exception {
         activateOnlySymbol("AKBNK.IS");
-        String quoteFixture = fixture("fixtures/yahoo/quote-akbnk.json");
+        String chartFixture = fixture("fixtures/yahoo/chart-akbnk-30d.json");
 
         useDispatcher(new Dispatcher() {
             @Override
@@ -60,16 +60,8 @@ class StockPipelineIntegrationTest extends AbstractIntegrationTest {
                 if (path == null) {
                     return new MockResponse().setResponseCode(404);
                 }
-                if (path.startsWith("/fc")) {
-                    return new MockResponse()
-                            .setResponseCode(200)
-                            .addHeader("Set-Cookie", "A1=test-cookie; Path=/; HttpOnly");
-                }
-                if (path.startsWith("/v1/test/getcrumb")) {
-                    return textResponse("test-crumb");
-                }
-                if (path.startsWith("/v7/finance/quote?symbols=AKBNK.IS&crumb=test-crumb")) {
-                    return jsonResponse(quoteFixture);
+                if (path.startsWith("/v8/finance/chart/AKBNK.IS")) {
+                    return jsonResponse(chartFixture);
                 }
                 return new MockResponse().setResponseCode(404);
             }
@@ -77,15 +69,15 @@ class StockPipelineIntegrationTest extends AbstractIntegrationTest {
 
         yahooService.fetchAndSaveSnapshot();
 
-        assertThat(snapshotRepository.count()).isEqualTo(1);
+        assertThat(snapshotRepository.count()).isZero();
+        assertThat(historyRepository.count()).isEqualTo(30);
 
         mockMvc.perform(get("/api/v1/stocks"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.length()").value(1))
                 .andExpect(jsonPath("$.data[0].symbol").value("AKBNK.IS"))
-                .andExpect(jsonPath("$.data[0].price").value(82.45))
-                .andExpect(jsonPath("$.data[0].changePercent").value(1.52));
+                .andExpect(jsonPath("$.data[0].price").value(99.10));
     }
 
     @Test

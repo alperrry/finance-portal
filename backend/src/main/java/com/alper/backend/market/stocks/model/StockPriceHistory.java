@@ -12,7 +12,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "stock_price_history")
+@Table(name = "stock_price_history", indexes = {
+        @Index(name = "idx_sph_stock_date", columnList = "stock_id, trade_date")
+})
 @Getter
 @Setter
 @Builder

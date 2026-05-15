@@ -21,40 +21,21 @@ public class StockJob {
     private boolean startupTasksEnabled = true;
 
     @EventListener(ApplicationReadyEvent.class)
-    @Scheduled(cron = "${stock.snapshot.cron}")
-    public void fetchSnapshot() {
+    @Scheduled(cron = "${market.daily.stocks.cron}")
+    public void fetchDailyHistory() {
         if (!startupTasksEnabled) {
-            log.info("Startup stock snapshot kapalı, atlandı.");
+            log.info("Startup stock daily history kapalı, atlandı.");
             return;
         }
 
-        log.info("StockJob snapshot başladı.");
+        log.info("StockJob günlük history başladı.");
         try {
-            yahooService.fetchAndSaveSnapshot();
-            log.info("StockJob snapshot tamamlandı.");
+            yahooService.fetchAndSaveDailyHistory();
+            log.info("StockJob günlük history tamamlandı.");
         } catch (ExternalApiException ex) {
-            log.error("[STOCK_FETCH_ERROR] Snapshot alınamadı | cause={}", ex.getMessage(), ex);
+            log.error("[STOCK_FETCH_ERROR] Günlük history alınamadı | cause={}", ex.getMessage(), ex);
         } catch (Exception ex) {
-            log.error("[UNEXPECTED_ERROR] Snapshot job beklenmedik hata | cause={}", ex.getMessage(), ex);
-        }
-    }
-
-    @Scheduled(cron = "${stock.closing.cron}")
-    public void fetchClosingAndClean() {
-        if (!startupTasksEnabled) {
-            log.info("Startup stock closing job kapalı, atlandı.");
-            return;
-        }
-
-        log.info("StockJob kapanış başladı.");
-        try {
-            yahooService.fetchAndSaveHistory();
-            yahooService.cleanSnapshots();
-            log.info("StockJob kapanış tamamlandı.");
-        } catch (ExternalApiException ex) {
-            log.error("[STOCK_FETCH_ERROR] Kapanış verisi alınamadı | cause={}", ex.getMessage(), ex);
-        } catch (Exception ex) {
-            log.error("[UNEXPECTED_ERROR] Kapanış job beklenmedik hata | cause={}", ex.getMessage(), ex);
+            log.error("[UNEXPECTED_ERROR] Günlük history job beklenmedik hata | cause={}", ex.getMessage(), ex);
         }
     }
 }

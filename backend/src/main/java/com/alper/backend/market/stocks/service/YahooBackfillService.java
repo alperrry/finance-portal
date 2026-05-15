@@ -22,7 +22,6 @@ public class YahooBackfillService extends AbstractBackfillService<Stock> {
 
     @Override
     protected List<Stock> getAllItems() {
-        // Sadece aktif hisseleri getiriyoruz
         return stockRepository.findByIsActiveTrue();
     }
 

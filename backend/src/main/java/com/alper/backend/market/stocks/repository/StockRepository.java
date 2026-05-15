@@ -1,6 +1,7 @@
 package com.alper.backend.market.stocks.repository;
 
 import com.alper.backend.market.stocks.model.Stock;
+import com.alper.backend.market.stocks.model.InstrumentType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,4 +16,6 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
 
     // Aktif hisseleri getir — scheduled job için tüm hisseleri çekmek
     List<Stock> findByIsActiveTrue();
+
+    List<Stock> findByIsActiveTrueAndInstrumentType(InstrumentType instrumentType);
 }

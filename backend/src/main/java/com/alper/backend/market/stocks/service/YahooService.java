@@ -2,12 +2,10 @@ package com.alper.backend.market.stocks.service;
 
 import com.alper.backend.common.exception.ExternalApiException;
 import com.alper.backend.common.exception.ServiceType;
-import com.alper.backend.market.stocks.event.StockPricesUpdatedEvent;
+import com.alper.backend.market.common.TurkishHolidayUtil;
 import com.alper.backend.market.stocks.model.Stock;
 import com.alper.backend.market.stocks.model.StockPriceHistory;
-import com.alper.backend.market.stocks.model.StockPriceSnapshot;
 import com.alper.backend.market.stocks.repository.StockPriceHistoryRepository;
-import com.alper.backend.market.stocks.repository.StockPriceSnapshotRepository;
 import com.alper.backend.market.stocks.repository.StockRepository;
 import com.alper.backend.market.stocks.client.YahooHttpClient;
 import com.alper.backend.market.stocks.dto.YahooQuoteResponse;
@@ -17,7 +15,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,9 +22,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Log4j2
 @Service
@@ -38,62 +33,39 @@ public class YahooService {
     private final ObjectMapper objectMapper;
     private final YahooMapper yahooMapper;
     private final StockRepository stockRepository;
-    private final StockPriceSnapshotRepository snapshotRepository;
     private final StockPriceHistoryRepository historyRepository;
-    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public void fetchAndSaveSnapshot() {
-        log.info("Yahoo Finance anlık fiyatlar çekiliyor...");
+    public void fetchAndSaveDailyHistory() {
+        log.info("Yahoo Finance günlük history verileri çekiliyor...");
         List<Stock> stocks = stockRepository.findByIsActiveTrue();
-        String symbols = buildSymbols(stocks);
-
-        List<YahooQuoteResult> results = parseQuote(yahooHttpClient.fetchQuote(symbols));
-        List<StockPriceSnapshot> savedSnapshots = new ArrayList<>();
-        int saved = 0, skipped = 0;
-
-        for (YahooQuoteResult result : results) {
-            Stock stock = findStock(stocks, result.getSymbol());
-            if (stock == null) { skipped++; continue; }
-            StockPriceSnapshot savedSnapshot = snapshotRepository.save(yahooMapper.toSnapshotEntity(result, stock));
-            savedSnapshots.add(savedSnapshot);
-            saved++;
+        int processed = 0;
+        for (Stock stock : stocks) {
+            try {
+                LocalDate lastCompleted = TurkishHolidayUtil.lastCompletedTradingDay(LocalDate.now());
+                LocalDate latest = historyRepository.findFirstByStockIdOrderByTradeDateDesc(stock.getId())
+                        .map(StockPriceHistory::getTradeDate)
+                        .orElse(null);
+                if (latest == null || latest.isBefore(lastCompleted)) {
+                    fetchAndSaveHistoryForBackfill(stock);
+                    processed++;
+                }
+            } catch (Exception e) {
+                log.error("Yahoo günlük history çekme hatası. Sembol: {}, Hata: {}", stock.getSymbol(), e.getMessage(), e);
+            }
         }
-        if (!savedSnapshots.isEmpty()) {
-            eventPublisher.publishEvent(StockPricesUpdatedEvent.of(savedSnapshots));
-        }
-        log.info("Snapshot kaydedildi: {}, Atlandı: {}", saved, skipped);
+        log.info("Yahoo Finance günlük history tamamlandı. Eksik olduğu için işlenen enstrüman: {}", processed);
+    }
+
+    @Transactional
+    @Deprecated
+    public void fetchAndSaveSnapshot() {
+        fetchAndSaveDailyHistory();
     }
 
     @Transactional
     public void fetchAndSaveHistory() {
-        log.info("Stock günlük history verisi gün içi snapshot'lardan oluşturuluyor...");
-        List<Stock> stocks = stockRepository.findByIsActiveTrue();
-        LocalDate tradeDate = LocalDate.now();
-        int saved = 0, updated = 0, missingSnapshot = 0;
-
-        for (Stock stock : stocks) {
-            Optional<StockPriceSnapshot> latestSnapshot = snapshotRepository
-                    .findTopByStockIdAndTradeDateOrderByFetchedAtDesc(stock.getId(), tradeDate);
-
-            if (latestSnapshot.isEmpty()) {
-                missingSnapshot++;
-                log.warn("History oluşturulamadı, gün içi snapshot bulunamadı: {}", stock.getSymbol());
-                continue;
-            }
-
-            Optional<StockPriceHistory> existingHistory = historyRepository
-                    .findByStockIdAndTradeDate(stock.getId(), tradeDate);
-            if (existingHistory.isPresent()) {
-                applySnapshotToHistory(existingHistory.get(), latestSnapshot.get());
-                historyRepository.save(existingHistory.get());
-                updated++;
-            } else {
-                historyRepository.save(yahooMapper.toHistoryEntity(latestSnapshot.get()));
-                saved++;
-            }
-        }
-        log.info("History kaydedildi: {}, Güncellendi: {}, Snapshot bulunamadı: {}", saved, updated, missingSnapshot);
+        fetchAndSaveDailyHistory();
     }
 
     @Transactional
@@ -103,10 +75,9 @@ public class YahooService {
     }
 
     @Transactional
+    @Deprecated
     public void cleanSnapshots() {
-        log.info("Snapshot tablosu temizleniyor...");
-        snapshotRepository.deleteByTradeDateBefore(LocalDate.now());
-        log.info("Snapshot tablosu temizlendi.");
+        log.debug("Snapshot temizleme günlük veri modelinde devre dışı.");
     }
 
     private void parseAndSaveHistory(String json, Stock stock) {
@@ -190,14 +161,6 @@ public class YahooService {
                 .filter(s -> s.getSymbol().equals(symbol))
                 .findFirst()
                 .orElse(null);
-    }
-
-    private void applySnapshotToHistory(StockPriceHistory history, StockPriceSnapshot snapshot) {
-        history.setOpenPrice(snapshot.getOpen());
-        history.setHighPrice(snapshot.getDayHigh());
-        history.setLowPrice(snapshot.getDayLow());
-        history.setClosePrice(snapshot.getPrice());
-        history.setVolume(snapshot.getVolume());
     }
 
     private BigDecimal toDecimal(JsonNode node) {
