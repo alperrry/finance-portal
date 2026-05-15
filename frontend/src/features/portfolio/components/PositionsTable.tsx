@@ -1,6 +1,8 @@
-import { Box, Chip, Dialog, DialogContent, DialogTitle, Divider, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
+import { Box, Chip, Dialog, DialogContent, DialogTitle, Divider, Stack, Typography } from "@mui/material";
+import type { GridColDef } from "@mui/x-data-grid";
 import { useMemo, useState } from "react";
 import { Line, LineChart, ResponsiveContainer } from "recharts";
+import { AppDataGrid } from "../../../components/ui/AppDataGrid";
 import type { PortfolioItemResponse } from "../api/portfolioApi";
 import { INSTRUMENT_LABELS } from "../types";
 import { formatMoney, formatPercent, formatQuantity, formatSignedMoney, getProfitTone, toNumber } from "../utils/portfolioFormatters";
@@ -63,10 +65,121 @@ type Props = {
 
 export function PositionsTable({ items, displayCurrency }: Props) {
     const [selectedPosition, setSelectedPosition] = useState<PortfolioItemResponse | null>(null);
+
     const sortedItems = useMemo(
         () => [...items].sort((left, right) => (toNumber(right.currentValue) ?? 0) - (toNumber(left.currentValue) ?? 0)),
         [items],
     );
+
+    const columns: GridColDef<PortfolioItemResponse>[] = useMemo(() => [
+        {
+            field: "instrument",
+            headerName: "Enstrüman",
+            flex: 1.2,
+            minWidth: 130,
+            renderCell: ({ row }) => (
+                <Box sx={{ py: 0.5 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.3 }}>{row.instrumentSymbol ?? "-"}</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>
+                        {row.instrumentName ?? "Enstrüman"}
+                    </Typography>
+                </Box>
+            ),
+        },
+        {
+            field: "type",
+            headerName: "Tip",
+            flex: 0.8,
+            minWidth: 90,
+            renderCell: ({ row }) => (
+                <Chip label={INSTRUMENT_LABELS[row.instrumentType]} size="small" variant="outlined" />
+            ),
+        },
+        {
+            field: "trend",
+            headerName: "Trend",
+            flex: 1,
+            minWidth: 120,
+            sortable: false,
+            renderCell: ({ row }) => <PositionSparkline item={row} />,
+        },
+        {
+            field: "quantity",
+            headerName: "Miktar",
+            flex: 0.7,
+            minWidth: 80,
+            align: "right",
+            headerAlign: "right",
+            renderCell: ({ row }) => formatQuantity(row.quantity),
+        },
+        {
+            field: "avgCost",
+            headerName: "Ort. Maliyet",
+            flex: 0.9,
+            minWidth: 100,
+            align: "right",
+            headerAlign: "right",
+            renderCell: ({ row }) => formatMoney(row.avgCost, row.nativeCurrency ?? "TRY", 4),
+        },
+        {
+            field: "currentPrice",
+            headerName: "Güncel Fiyat",
+            flex: 0.9,
+            minWidth: 100,
+            align: "right",
+            headerAlign: "right",
+            renderCell: ({ row }) => (
+                <Typography
+                    variant="body2"
+                    sx={{ color: toneColor(getProfitTone(row.dailyChange)) }}
+                >
+                    {formatMoney(row.currentPrice, row.nativeCurrency ?? "TRY", 4)}
+                </Typography>
+            ),
+        },
+        {
+            field: "currentValue",
+            headerName: "Güncel Değer",
+            flex: 0.9,
+            minWidth: 100,
+            align: "right",
+            headerAlign: "right",
+            renderCell: ({ row }) => formatMoney(row.currentValue, displayCurrency),
+        },
+        {
+            field: "profitLoss",
+            headerName: "K/Z",
+            flex: 1,
+            minWidth: 110,
+            align: "right",
+            headerAlign: "right",
+            renderCell: ({ row }) => {
+                const tone = getProfitTone(row.profitLoss);
+                const icon = tone === "up" ? "▲" : tone === "down" ? "▼" : "•";
+                return (
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: toneColor(tone) }}>
+                        {icon} {formatSignedMoney(row.profitLoss, displayCurrency)}
+                    </Typography>
+                );
+            },
+        },
+        {
+            field: "profitLossPct",
+            headerName: "K/Z %",
+            flex: 0.8,
+            minWidth: 90,
+            align: "right",
+            headerAlign: "right",
+            renderCell: ({ row }) => (
+                <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 700, color: toneColor(getProfitTone(row.profitLossPct)) }}
+                >
+                    {formatPercent(row.profitLossPct)}
+                </Typography>
+            ),
+        },
+    ], [displayCurrency]);
 
     if (sortedItems.length === 0) {
         return (
@@ -78,59 +191,15 @@ export function PositionsTable({ items, displayCurrency }: Props) {
 
     return (
         <>
-            <TableContainer>
-                <Table size="small">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell sx={{ fontWeight: 700 }}>Enstrüman</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Tip</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Trend</TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 700 }}>Miktar</TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 700 }}>Ort. Maliyet</TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 700 }}>Güncel Fiyat</TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 700 }}>Güncel Değer</TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 700 }}>K/Z</TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 700 }}>K/Z %</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {sortedItems.map((item) => {
-                            const profitTone = getProfitTone(item.profitLoss);
-                            const trendIcon = profitTone === "up" ? "▲" : profitTone === "down" ? "▼" : "•";
-                            return (
-                                <TableRow
-                                    key={item.id}
-                                    onClick={() => setSelectedPosition(item)}
-                                    sx={{ cursor: "pointer", "&:hover": { bgcolor: "action.hover" } }}
-                                >
-                                    <TableCell>
-                                        <Box>
-                                            <Typography variant="body2" sx={{ fontWeight: 700 }}>{item.instrumentSymbol ?? "-"}</Typography>
-                                            <Typography variant="caption" color="text.secondary">{item.instrumentName ?? "Enstrüman"}</Typography>
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Chip label={INSTRUMENT_LABELS[item.instrumentType]} size="small" variant="outlined" />
-                                    </TableCell>
-                                    <TableCell><PositionSparkline item={item} /></TableCell>
-                                    <TableCell align="right">{formatQuantity(item.quantity)}</TableCell>
-                                    <TableCell align="right">{formatMoney(item.avgCost, item.nativeCurrency ?? "TRY", 4)}</TableCell>
-                                    <TableCell align="right" sx={{ color: toneColor(getProfitTone(item.dailyChange)) }}>
-                                        {formatMoney(item.currentPrice, item.nativeCurrency ?? "TRY", 4)}
-                                    </TableCell>
-                                    <TableCell align="right">{formatMoney(item.currentValue, displayCurrency)}</TableCell>
-                                    <TableCell align="right" sx={{ color: toneColor(profitTone), fontWeight: 700 }}>
-                                        {trendIcon} {formatSignedMoney(item.profitLoss, displayCurrency)}
-                                    </TableCell>
-                                    <TableCell align="right" sx={{ color: toneColor(getProfitTone(item.profitLossPct)), fontWeight: 700 }}>
-                                        {formatPercent(item.profitLossPct)}
-                                    </TableCell>
-                                </TableRow>
-                            );
-                        })}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+            <AppDataGrid<PortfolioItemResponse>
+                rows={sortedItems}
+                columns={columns}
+                getRowId={(row) => row.id}
+                onRowClick={(row) => setSelectedPosition(row)}
+                autoHeight
+                rowHeight={56}
+                sx={{ mt: 0 }}
+            />
             {selectedPosition ? (
                 <PositionDetailModal
                     item={selectedPosition}

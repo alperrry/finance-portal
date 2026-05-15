@@ -1,6 +1,8 @@
-import { Alert, Box, Button, Chip, CircularProgress, FormControl, InputLabel, MenuItem, Pagination, Select, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, Chip, CircularProgress, FormControl, InputLabel, MenuItem, Pagination, Select, Stack, TextField, Typography } from "@mui/material";
+import type { GridColDef } from "@mui/x-data-grid";
 import type { SelectChangeEvent } from "@mui/material/Select";
 import { useMemo } from "react";
+import { AppDataGrid } from "../../../components/ui/AppDataGrid";
 import type { TradeResponse, TransactionStatus, TransactionType } from "../api/portfolioApi";
 import { INSTRUMENT_LABELS, ORDER_LABELS, STATUS_LABELS, TRANSACTION_LABELS } from "../types";
 import type { TradeFilters, TradeHistoryState } from "../types";
@@ -46,6 +48,7 @@ export function TradeHistoryTable({
 }: Props) {
     const page = state.page;
     const trades = useMemo(() => filterTrades(page?.content ?? [], filters), [filters, page?.content]);
+
     const instrumentOptions = useMemo(() => {
         const unique = new Map<string, string>();
         (page?.content ?? []).forEach((trade) => {
@@ -56,6 +59,111 @@ export function TradeHistoryTable({
         });
         return [...unique.entries()].sort((left, right) => collator.compare(left[1], right[1]));
     }, [page?.content]);
+
+    const columns: GridColDef<TradeResponse>[] = useMemo(() => [
+        {
+            field: "createdAt",
+            headerName: "Tarih",
+            flex: 1,
+            minWidth: 120,
+            renderCell: ({ row }) => (
+                <Typography variant="body2" sx={{ whiteSpace: "nowrap" }}>{formatDateTime(row.createdAt)}</Typography>
+            ),
+        },
+        {
+            field: "instrument",
+            headerName: "Enstrüman",
+            flex: 1.2,
+            minWidth: 130,
+            renderCell: ({ row }) => (
+                <Box sx={{ py: 0.5 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.3 }}>{row.instrumentSymbol || "Bilinmiyor"}</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>
+                        {row.instrumentName || INSTRUMENT_LABELS[row.instrumentType]}
+                    </Typography>
+                </Box>
+            ),
+        },
+        {
+            field: "transactionType",
+            headerName: "Tip",
+            flex: 0.8,
+            minWidth: 90,
+            renderCell: ({ row }) => (
+                <Chip
+                    label={`${row.transactionType === "BUY" ? "↘ " : "↗ "}${TRANSACTION_LABELS[row.transactionType]}`}
+                    size="small"
+                    color={row.transactionType === "BUY" ? "success" : "error"}
+                    variant="outlined"
+                />
+            ),
+        },
+        {
+            field: "orderType",
+            headerName: "Emir",
+            flex: 0.7,
+            minWidth: 80,
+            renderCell: ({ row }) => ORDER_LABELS[row.orderType ?? "LIMIT"],
+        },
+        {
+            field: "quantity",
+            headerName: "Miktar",
+            flex: 0.7,
+            minWidth: 80,
+            renderCell: ({ row }) => formatQuantity(row.quantity),
+        },
+        {
+            field: "targetPrice",
+            headerName: "Hedef",
+            flex: 0.8,
+            minWidth: 90,
+            renderCell: ({ row }) => formatNumber(row.targetPrice, 4),
+        },
+        {
+            field: "executedPrice",
+            headerName: "Gerçekleşme",
+            flex: 0.9,
+            minWidth: 100,
+            renderCell: ({ row }) => formatNumber(row.executedPrice, 4),
+        },
+        {
+            field: "totalAmount",
+            headerName: "Tutar",
+            flex: 0.9,
+            minWidth: 100,
+            renderCell: ({ row }) => formatMoney(row.totalAmount, displayCurrency),
+        },
+        {
+            field: "status",
+            headerName: "Durum",
+            flex: 0.8,
+            minWidth: 90,
+            renderCell: ({ row }) => (
+                <Chip label={STATUS_LABELS[row.status]} size="small" color={statusColor(statusTone(row.status))} />
+            ),
+        },
+        {
+            field: "actions",
+            headerName: "Aksiyon",
+            flex: 0.8,
+            minWidth: 90,
+            sortable: false,
+            renderCell: ({ row }) =>
+                row.status === "PENDING" ? (
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        color="error"
+                        disabled={cancelingTradeId === row.id}
+                        onClick={() => onCancel(row)}
+                    >
+                        {cancelingTradeId === row.id ? "İptal..." : "İptal"}
+                    </Button>
+                ) : (
+                    <Typography variant="caption" color="text.disabled">-</Typography>
+                ),
+        },
+    ], [displayCurrency, cancelingTradeId, onCancel]);
 
     return (
         <Box>
@@ -149,71 +257,21 @@ export function TradeHistoryTable({
             ) : null}
             {!state.loading && state.error ? <Alert severity="error">{state.error}</Alert> : null}
             {!state.loading && !state.error && page && trades.length === 0 ? (
-                <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>Bu filtrede işlem yok.</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                    Bu filtrede işlem yok.
+                </Typography>
             ) : null}
 
             {!state.loading && !state.error && page && trades.length > 0 ? (
                 <>
-                    <TableContainer>
-                        <Table size="small">
-                            <TableHead>
-                                <TableRow>
-                                    {["Tarih", "Enstrüman", "Tip", "Emir", "Miktar", "Hedef", "Gerçekleşme", "Tutar", "Durum", "Aksiyon"].map((header) => (
-                                        <TableCell key={header} sx={{ fontWeight: 700 }}>{header}</TableCell>
-                                    ))}
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {trades.map((trade) => {
-                                    const tone = statusTone(trade.status);
-                                    return (
-                                        <TableRow key={trade.id}>
-                                            <TableCell sx={{ whiteSpace: "nowrap" }}>{formatDateTime(trade.createdAt)}</TableCell>
-                                            <TableCell>
-                                                <Box>
-                                                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{trade.instrumentSymbol || "Bilinmiyor"}</Typography>
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        {trade.instrumentName || INSTRUMENT_LABELS[trade.instrumentType]}
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Chip
-                                                    label={`${trade.transactionType === "BUY" ? "↘ " : "↗ "}${TRANSACTION_LABELS[trade.transactionType]}`}
-                                                    size="small"
-                                                    color={trade.transactionType === "BUY" ? "success" : "error"}
-                                                    variant="outlined"
-                                                />
-                                            </TableCell>
-                                            <TableCell>{ORDER_LABELS[trade.orderType ?? "LIMIT"]}</TableCell>
-                                            <TableCell>{formatQuantity(trade.quantity)}</TableCell>
-                                            <TableCell>{formatNumber(trade.targetPrice, 4)}</TableCell>
-                                            <TableCell>{formatNumber(trade.executedPrice, 4)}</TableCell>
-                                            <TableCell>{formatMoney(trade.totalAmount, displayCurrency)}</TableCell>
-                                            <TableCell>
-                                                <Chip label={STATUS_LABELS[trade.status]} size="small" color={statusColor(tone)} />
-                                            </TableCell>
-                                            <TableCell>
-                                                {trade.status === "PENDING" ? (
-                                                    <Button
-                                                        size="small"
-                                                        variant="outlined"
-                                                        color="error"
-                                                        disabled={cancelingTradeId === trade.id}
-                                                        onClick={() => onCancel(trade)}
-                                                    >
-                                                        {cancelingTradeId === trade.id ? "İptal..." : "İptal"}
-                                                    </Button>
-                                                ) : (
-                                                    <Typography variant="caption" color="text.disabled">-</Typography>
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                    <AppDataGrid<TradeResponse>
+                        rows={trades}
+                        columns={columns}
+                        getRowId={(row) => row.id}
+                        autoHeight
+                        rowHeight={52}
+                        sx={{ mt: 0 }}
+                    />
                     <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mt: 1.5 }}>
                         <Typography variant="caption" color="text.secondary">
                             {page.totalElements} kayıt · Sayfa {page.number + 1}/{Math.max(page.totalPages, 1)}

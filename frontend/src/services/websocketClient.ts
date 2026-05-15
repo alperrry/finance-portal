@@ -8,7 +8,6 @@ export type WebSocketEventType =
     | "TRADE_CANCELLED"
     | "PORTFOLIO_UPDATED"
     | "USER_BALANCE_UPDATED"
-    | "STOCK_PRICES_UPDATED"
     | "FX_RATES_UPDATED"
     | "NEWS_PUBLISHED"
     | "ADMIN_AUDIT_LOGGED"

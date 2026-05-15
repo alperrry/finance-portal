@@ -89,12 +89,6 @@ export function useTradeNotifications({
             }
         });
 
-        const unsubscribeStocks = websocketClient.subscribe("/topic/market/stocks/prices", () => {
-            const portfolioId = activePortfolioIdRef.current;
-            if (portfolioId) {
-                onPortfolioSignalRef.current(portfolioId);
-            }
-        });
         const unsubscribeFx = websocketClient.subscribe("/topic/market/fx/rates", () => {
             const portfolioId = activePortfolioIdRef.current;
             if (portfolioId) {
@@ -130,7 +124,6 @@ export function useTradeNotifications({
             unsubscribeTrades();
             unsubscribePortfolio();
             unsubscribeBalance();
-            unsubscribeStocks();
             unsubscribeFx();
             unsubscribeNews();
             websocketClient.disconnectIfIdle();
