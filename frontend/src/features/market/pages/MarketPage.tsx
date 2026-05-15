@@ -9,6 +9,8 @@ import { FxTable } from "../components/FxTable";
 import { BondsTable } from "../components/BondsTable";
 import { FundsTable } from "../components/FundsTable";
 import { StocksTable } from "../components/StocksTable";
+import { MacroTable } from "../components/MacroTable";
+import { ViopTable } from "../components/ViopTable";
 import { useMarketPage } from "../hooks/useMarketPage";
 
 export default function MarketPage() {
@@ -19,11 +21,12 @@ export default function MarketPage() {
         query, setQuery,
         activeMeta,
         isInitialLoading, isRefreshing,
-        fxRows, bondRows, fundRows, stockRows,
+        fxRows, bondRows, fundRows, stockRows, indexRows, commodityRows, cryptoRows, macroRows, viopRows,
         summaryCards, activeDatasetDate,
         visibleCount, totalCount,
-        stockDatasetIsEmpty,
+        instrumentDatasetIsEmpty,
         openDetail,
+        stockIndexFilter, setStockIndexFilter,
     } = useMarketPage();
 
     return (
@@ -107,6 +110,22 @@ export default function MarketPage() {
                                     />
                                 </Stack>
 
+                                {activeTab === "stocks" && (
+                                    <Stack direction="row" sx={{ mt: 1.5, gap: 1 }}>
+                                        {(["ALL", "BIST30", "BIST100"] as const).map((filter) => (
+                                            <Chip
+                                                key={filter}
+                                                label={filter === "ALL" ? "Tümü" : filter}
+                                                size="small"
+                                                variant={stockIndexFilter === filter ? "filled" : "outlined"}
+                                                color={stockIndexFilter === filter ? "primary" : "default"}
+                                                onClick={() => setStockIndexFilter(filter)}
+                                                sx={{ cursor: "pointer" }}
+                                            />
+                                        ))}
+                                    </Stack>
+                                )}
+
                                 {activeTab === "fx" && (
                                     <FxTable
                                         rows={fxRows}
@@ -134,10 +153,51 @@ export default function MarketPage() {
                                 {activeTab === "stocks" && (
                                     <StocksTable
                                         rows={stockRows}
-                                        stockDatasetIsEmpty={stockDatasetIsEmpty}
+                                        stockDatasetIsEmpty={instrumentDatasetIsEmpty}
                                         sortConfig={sortState.stocks}
                                         onSort={(key) => toggleSort("stocks", key)}
                                         onRowClick={(symbol) => openDetail("stocks", symbol)}
+                                    />
+                                )}
+                                {activeTab === "indexes" && (
+                                    <StocksTable
+                                        rows={indexRows}
+                                        stockDatasetIsEmpty={instrumentDatasetIsEmpty}
+                                        sortConfig={sortState.indexes}
+                                        onSort={(key) => toggleSort("indexes", key)}
+                                        onRowClick={(symbol) => openDetail("indexes", symbol)}
+                                    />
+                                )}
+                                {activeTab === "commodities" && (
+                                    <StocksTable
+                                        rows={commodityRows}
+                                        stockDatasetIsEmpty={instrumentDatasetIsEmpty}
+                                        sortConfig={sortState.commodities}
+                                        onSort={(key) => toggleSort("commodities", key)}
+                                        onRowClick={(symbol) => openDetail("commodities", symbol)}
+                                    />
+                                )}
+                                {activeTab === "crypto" && (
+                                    <StocksTable
+                                        rows={cryptoRows}
+                                        stockDatasetIsEmpty={instrumentDatasetIsEmpty}
+                                        sortConfig={sortState.crypto}
+                                        onSort={(key) => toggleSort("crypto", key)}
+                                        onRowClick={(symbol) => openDetail("crypto", symbol)}
+                                    />
+                                )}
+                                {activeTab === "macro" && (
+                                    <MacroTable
+                                        rows={macroRows}
+                                        sortConfig={sortState.macro}
+                                        onSort={(key) => toggleSort("macro", key)}
+                                    />
+                                )}
+                                {activeTab === "viop" && (
+                                    <ViopTable
+                                        rows={viopRows}
+                                        sortConfig={sortState.viop}
+                                        onSort={(key) => toggleSort("viop", key)}
                                     />
                                 )}
                             </SectionPanel>

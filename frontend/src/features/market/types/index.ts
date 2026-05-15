@@ -1,29 +1,26 @@
-import type { BondResponse, FundResponse, FxResponse, StockResponse } from "../api/marketApi";
+import type {
+    BondResponse,
+    FundResponse,
+    FxResponse,
+    MacroObservationResponse,
+    StockResponse,
+    ViopContractPriceResponse,
+} from "../api/marketApi";
 import type { InstrumentType } from "../../analysis/api/historyApi";
 
-export type MarketTab = "fx" | "bonds" | "funds" | "stocks";
+export type MarketTab = "fx" | "bonds" | "funds" | "stocks" | "indexes" | "commodities" | "crypto" | "macro" | "viop";
 
 export type MarketData = {
     fx: FxResponse[];
     bonds: BondResponse[];
     funds: FundResponse[];
     stocks: StockResponse[];
-};
-
-export type StockPriceSnapshotPayload = {
-    stockId?: number | null;
-    price?: number | null;
-    change?: number | null;
-    changePercent?: number | null;
-    dayHigh?: number | null;
-    dayLow?: number | null;
-    volume?: number | null;
-    fetchedAt?: string | null;
-};
-
-export type StockPricesUpdatedPayload = {
-    snapshots?: StockPriceSnapshotPayload[];
-    fetchedAt?: string | null;
+    indexes: StockResponse[];
+    commodities: StockResponse[];
+    crypto: StockResponse[];
+    macroInflation: MacroObservationResponse[];
+    macroDepositRates: MacroObservationResponse[];
+    viop: ViopContractPriceResponse[];
 };
 
 export type SummaryCard = {
@@ -59,7 +56,19 @@ export type MarketSortKey =
     | "volume"
     | "marketCap"
     | "range52w"
-    | "fetchedAt";
+    | "fetchedAt"
+    | "series"
+    | "dataType"
+    | "value"
+    | "monthlyChange"
+    | "annualChange"
+    | "contract"
+    | "segment"
+    | "underlying"
+    | "maturity"
+    | "changeAmount"
+    | "volumeTry"
+    | "quantity";
 
 export type MarketSortState = Record<MarketTab, { key: MarketSortKey; direction: SortDirection }>;
 
@@ -90,8 +99,38 @@ export const MARKET_TABS: Array<{
     {
         key: "stocks",
         label: "Hisseler",
-        description: "BIST hisselerini fiyat, performans ve hacim üzerinden okuyun.",
+        description: "BIST hisselerini günlük kapanış, performans ve hacim üzerinden okuyun.",
         searchPlaceholder: "Hisse kodu, ad veya sektör ara",
+    },
+    {
+        key: "indexes",
+        label: "Endeksler",
+        description: "BIST 30 ve BIST 100 endekslerini günlük kapanış verileriyle izleyin.",
+        searchPlaceholder: "Endeks kodu veya adı ara",
+    },
+    {
+        key: "commodities",
+        label: "Emtia",
+        description: "Altın, petrol ve metaller gibi emtiaları hisse listesinden ayrı takip edin.",
+        searchPlaceholder: "Emtia kodu veya adı ara",
+    },
+    {
+        key: "crypto",
+        label: "Kripto",
+        description: "Kripto varlıkları ayrı piyasa grubu olarak izleyin.",
+        searchPlaceholder: "Kripto kodu veya adı ara",
+    },
+    {
+        key: "macro",
+        label: "Makro",
+        description: "TÜFE ve TL mevduat faizlerini EVDS serileriyle takip edin.",
+        searchPlaceholder: "Seri adı, kodu veya veri tipi ara",
+    },
+    {
+        key: "viop",
+        label: "VİOP",
+        description: "Vadeli kontratları segment, fiyat değişimi ve hacme göre tarayın.",
+        searchPlaceholder: "Kontrat, segment veya dayanak ara",
     },
 ];
 
@@ -102,6 +141,11 @@ export const DEFAULT_SORT_STATE: MarketSortState = {
     bonds: { key: "maturity", direction: "asc" },
     funds: { key: "portfolioSize", direction: "desc" },
     stocks: { key: "change", direction: "desc" },
+    indexes: { key: "change", direction: "desc" },
+    commodities: { key: "change", direction: "desc" },
+    crypto: { key: "change", direction: "desc" },
+    macro: { key: "date", direction: "desc" },
+    viop: { key: "volumeTry", direction: "desc" },
 };
 
 // InstrumentDetailPage types

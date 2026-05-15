@@ -22,7 +22,8 @@ import { CHART_COLORS, DEFAULT_RANGE } from "../types";
 import type { ChartSeries, InstrumentMetricCard, RangeKey } from "../types";
 
 const parseType = (value: string | undefined): InstrumentType | null =>
-    value === "stocks" || value === "fx" || value === "funds" || value === "bonds" ? value : null;
+    value === "stocks" || value === "indexes" || value === "commodities" || value === "crypto" ||
+    value === "fx" || value === "funds" || value === "bonds" ? value : null;
 
 const parseRange = (value: string | null): RangeKey =>
     value === "1A" || value === "3A" || value === "6A" || value === "1Y" ? value : DEFAULT_RANGE;

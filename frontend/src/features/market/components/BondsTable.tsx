@@ -1,5 +1,6 @@
-import type { KeyboardEvent } from "react";
-import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
+import type { GridColDef, GridSortModel } from "@mui/x-data-grid";
+import { AppDataGrid } from "../../../components/ui/AppDataGrid";
 import type { BondResponse } from "../api/marketApi";
 import type { MarketSortKey, MarketSortState } from "../types";
 import { formatNumber, formatWholeNumber, formatLocalDate } from "../utils/marketFormatters";
@@ -11,82 +12,84 @@ type Props = {
     onRowClick: (code: string) => void;
 };
 
-const EMPTY_SX = {
-    borderRadius: 2.5,
-    p: 2.25,
-    bgcolor: "rgba(247, 245, 241, 0.9)",
-    border: "1px solid",
-    borderColor: "divider",
-    mt: 2,
-};
+const COLUMNS: GridColDef<BondResponse>[] = [
+    {
+        field: "instrument",
+        headerName: "Enstrüman",
+        flex: 1.4,
+        minWidth: 160,
+        renderCell: ({ row }) => (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25, py: 0.5 }}>
+                <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.3 }}>{row.name}</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>{row.evdsSeriesCode}</Typography>
+            </Box>
+        ),
+    },
+    {
+        field: "type",
+        headerName: "Tip",
+        flex: 0.8,
+        minWidth: 90,
+        renderCell: ({ row }) => row.bondType ?? "-",
+    },
+    {
+        field: "maturity",
+        headerName: "Vade",
+        flex: 0.8,
+        minWidth: 90,
+        renderCell: ({ row }) =>
+            row.maturityDays != null ? `${formatWholeNumber(row.maturityDays)} gün` : "-",
+    },
+    {
+        field: "interest",
+        headerName: "Faiz",
+        flex: 0.8,
+        minWidth: 90,
+        renderCell: ({ row }) =>
+            row.interestRate != null ? `%${formatNumber(row.interestRate, 2)}` : "-",
+    },
+    {
+        field: "compounded",
+        headerName: "Bileşik",
+        flex: 0.8,
+        minWidth: 90,
+        renderCell: ({ row }) =>
+            row.compoundedRate != null ? `%${formatNumber(row.compoundedRate, 2)}` : "-",
+    },
+    {
+        field: "currency",
+        headerName: "Para Birimi",
+        flex: 0.8,
+        minWidth: 90,
+        renderCell: ({ row }) => row.currency ?? "-",
+    },
+    {
+        field: "date",
+        headerName: "Tarih",
+        flex: 0.9,
+        minWidth: 100,
+        renderCell: ({ row }) => formatLocalDate(row.rateDate),
+    },
+];
 
 export function BondsTable({ rows, sortConfig, onSort, onRowClick }: Props) {
-    if (rows.length === 0) {
-        return (
-            <Box sx={EMPTY_SX}>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>Aramaya uyan tahvil kaydi yok.</Typography>
-                <Typography variant="caption" color="text.secondary">Filtreyi temizleyip tekrar deneyin.</Typography>
-            </Box>
-        );
-    }
+    const sortModel: GridSortModel = [{ field: sortConfig.key, sort: sortConfig.direction }];
 
-    const handleKeyDown = (event: KeyboardEvent<HTMLTableRowElement>, code: string) => {
-        if (event.key !== "Enter" && event.key !== " ") return;
-        event.preventDefault();
-        onRowClick(code);
+    const handleSortChange = (model: GridSortModel) => {
+        const item = model[0];
+        if (item?.field) onSort(item.field as MarketSortKey);
     };
 
-    const col = (key: MarketSortKey, label: string) => (
-        <TableSortLabel
-            active={sortConfig.key === key}
-            direction={sortConfig.key === key ? sortConfig.direction : "asc"}
-            onClick={() => onSort(key)}
-        >
-            {label}
-        </TableSortLabel>
-    );
-
     return (
-        <TableContainer sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2.5, mt: 2 }}>
-            <Table sx={{ minWidth: 880 }} stickyHeader size="small">
-                <TableHead>
-                    <TableRow>
-                        <TableCell>{col("instrument", "Enstrüman")}</TableCell>
-                        <TableCell>{col("type", "Tip")}</TableCell>
-                        <TableCell>{col("maturity", "Vade")}</TableCell>
-                        <TableCell>{col("interest", "Faiz")}</TableCell>
-                        <TableCell>{col("compounded", "Bileşik")}</TableCell>
-                        <TableCell>{col("currency", "Para Birimi")}</TableCell>
-                        <TableCell>{col("date", "Tarih")}</TableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {rows.map((row) => (
-                        <TableRow
-                            key={row.evdsSeriesCode}
-                            hover
-                            tabIndex={0}
-                            role="button"
-                            onClick={() => onRowClick(row.evdsSeriesCode)}
-                            onKeyDown={(e) => handleKeyDown(e, row.evdsSeriesCode)}
-                            sx={{ cursor: "pointer", "&:last-child td": { borderBottom: 0 } }}
-                        >
-                            <TableCell>
-                                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{row.name}</Typography>
-                                    <Typography variant="caption" color="text.secondary">{row.evdsSeriesCode}</Typography>
-                                </Box>
-                            </TableCell>
-                            <TableCell>{row.bondType ?? "-"}</TableCell>
-                            <TableCell>{row.maturityDays != null ? `${formatWholeNumber(row.maturityDays)} gun` : "-"}</TableCell>
-                            <TableCell>{row.interestRate != null ? `%${formatNumber(row.interestRate, 2)}` : "-"}</TableCell>
-                            <TableCell>{row.compoundedRate != null ? `%${formatNumber(row.compoundedRate, 2)}` : "-"}</TableCell>
-                            <TableCell>{row.currency ?? "-"}</TableCell>
-                            <TableCell>{formatLocalDate(row.rateDate)}</TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </TableContainer>
+        <AppDataGrid<BondResponse>
+            rows={rows}
+            columns={COLUMNS}
+            getRowId={(row) => row.evdsSeriesCode}
+            onRowClick={(row) => onRowClick(row.evdsSeriesCode)}
+            sortModel={sortModel}
+            onSortModelChange={handleSortChange}
+            emptyMessage="Aramaya uyan tahvil kaydı yok."
+            rowHeight={52}
+        />
     );
 }

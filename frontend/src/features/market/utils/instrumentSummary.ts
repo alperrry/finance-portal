@@ -23,7 +23,10 @@ const normalizeNameForQuery = (value: string) =>
 
 export function buildNewsQuery(instrument: InstrumentSummary): string {
     switch (instrument.type) {
-        case "stocks": {
+        case "stocks":
+        case "indexes":
+        case "commodities":
+        case "crypto": {
             const code = stripMarketSuffix(instrument.code);
             const normalizedName = normalizeNameForQuery(instrument.title).split(" ").slice(0, 3).join(" ");
             return normalizedName && normalizedName.toLocaleLowerCase("tr-TR") !== code.toLocaleLowerCase("tr-TR")
@@ -36,15 +39,15 @@ export function buildNewsQuery(instrument: InstrumentSummary): string {
     }
 }
 
-export function buildStockInstrumentSummary(row: StockResponse, code: string): InstrumentSummary {
+export function buildStockInstrumentSummary(row: StockResponse, code: string, type: InstrumentType = "stocks"): InstrumentSummary {
     return {
-        type: "stocks",
+        type,
         code,
         title: row.longName ?? row.shortName ?? code,
         subtitle: row.shortName && row.longName && row.shortName !== row.longName
             ? row.shortName
-            : row.sector ?? row.indexName ?? "Hisse",
-        helper: "Gün içi fiyat snapshot'tan, grafik ise tarihsel kapanış serisinden gelir.",
+            : row.sector ?? row.indexName ?? row.instrumentType,
+        helper: "Fiyat ve grafik günlük kapanış serisinden gelir.",
         currency: row.currency ?? "TRY",
         latestValue: row.price,
         latestDate: row.tradeDate,
@@ -136,6 +139,16 @@ export async function fetchInstrumentSummary(type: InstrumentType, code: string)
                 ? buildStockInstrumentSummary(match, code)
                 : { type, code, title: code, subtitle: "Hisse", helper: "Hisse detayları bulunamadı, grafik tarihsel seriden çiziliyor.", currency: "TRY", latestValue: null, latestDate: null, snapshotChange: null, newsQuery: stripMarketSuffix(code), stats: [] };
         }
+        case "indexes":
+        case "commodities":
+        case "crypto": {
+            const apiType = type === "indexes" ? "INDEX" : type === "commodities" ? "COMMODITY" : "CRYPTO";
+            const rows = await fetchStocks(undefined, apiType);
+            const match = rows.find((r) => r.symbol === code);
+            return match
+                ? buildStockInstrumentSummary(match, code, type)
+                : { type, code, title: code, subtitle: apiType, helper: "Detaylar bulunamadı, grafik tarihsel seriden çiziliyor.", currency: "TRY", latestValue: null, latestDate: null, snapshotChange: null, newsQuery: stripMarketSuffix(code), stats: [] };
+        }
         case "fx": {
             const rows = await fetchFx();
             const match = rows.find((r) => r.currencyCode === code);
@@ -201,7 +214,7 @@ export function getDisplayLatestNote(
     historyTo: string | null | undefined,
 ): string {
     return summary.type === "stocks"
-        ? `${formatLocalDate(summary.latestDate)} piyasa fiyatı`
+        ? `${formatLocalDate(summary.latestDate)} günlük kapanış`
         : latestClose !== null
           ? `${formatLocalDate(historyTo)}`
           : summary.helper;

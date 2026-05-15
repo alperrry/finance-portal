@@ -61,7 +61,8 @@ export const formatValueByType = (type: InstrumentType, value: number | null | u
     formatDecimal(value, getValueDigits(type, value));
 
 export const parseType = (value: string | null): InstrumentType | null =>
-    value === "stocks" || value === "fx" || value === "funds" || value === "bonds" ? value : null;
+    value === "stocks" || value === "indexes" || value === "commodities" || value === "crypto" ||
+    value === "fx" || value === "funds" || value === "bonds" ? value : null;
 
 export const parseRange = (value: string | null): RangeKey =>
     value === "1A" || value === "3A" || value === "6A" || value === "1Y" ? value : "6A";
@@ -117,6 +118,9 @@ export const getRangeDates = (range: RangeKey, today: Date): { from: string; to:
 
 export const createEmptyCatalog = () => ({
     stocks: [] as InstrumentOption[],
+    indexes: [] as InstrumentOption[],
+    commodities: [] as InstrumentOption[],
+    crypto: [] as InstrumentOption[],
     fx: [] as InstrumentOption[],
     funds: [] as InstrumentOption[],
     bonds: [] as InstrumentOption[],
@@ -154,7 +158,7 @@ export const sanitizeCompareCodes = (value: string | null, options: InstrumentOp
 };
 
 export const findFirstAvailableType = (catalog: ReturnType<typeof createEmptyCatalog>): InstrumentType => {
-    const order: InstrumentType[] = ["stocks", "fx", "funds", "bonds"];
+    const order: InstrumentType[] = ["stocks", "indexes", "commodities", "crypto", "fx", "funds", "bonds"];
     return order.find((type) => catalog[type].length > 0) ?? "stocks";
 };
 

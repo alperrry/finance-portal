@@ -1,4 +1,11 @@
-import type { BondResponse, FundResponse, FxResponse, StockResponse } from "../api/marketApi";
+import type {
+    BondResponse,
+    FundResponse,
+    FxResponse,
+    MacroObservationResponse,
+    StockResponse,
+    ViopContractPriceResponse,
+} from "../api/marketApi";
 import type { MarketSortState, MarketTab, MarketData, SummaryCard } from "../types";
 import {
     toSafeNumber,
@@ -188,6 +195,49 @@ export function sortStockRows(rows: StockResponse[], sortConfig: MarketSortState
     });
 }
 
+export function sortMacroRows(rows: MacroObservationResponse[], sortConfig: MarketSortState["macro"]) {
+    return [...rows].sort((l, r) => {
+        let result = 0;
+
+        switch (sortConfig.key) {
+            case "series":        result = compareNullableStringsAsc(l.name, r.name); break;
+            case "dataType":      result = compareNullableStringsAsc(l.dataType, r.dataType); break;
+            case "value":         result = compareNullableNumbersAsc(l.value, r.value); break;
+            case "monthlyChange": result = compareNullableNumbersAsc(l.monthlyChangePercent, r.monthlyChangePercent); break;
+            case "annualChange":  result = compareNullableNumbersAsc(l.annualChangePercent, r.annualChangePercent); break;
+            case "date":          result = compareNullableDatesAsc(l.date, r.date); break;
+            default:              result = compareNullableStringsAsc(l.name, r.name);
+        }
+
+        if (result === 0) result = compareNullableStringsAsc(l.seriesCode, r.seriesCode);
+        return applySortDirection(result, sortConfig.direction);
+    });
+}
+
+export function sortViopRows(rows: ViopContractPriceResponse[], sortConfig: MarketSortState["viop"]) {
+    return [...rows].sort((l, r) => {
+        let result = 0;
+
+        switch (sortConfig.key) {
+            case "contract":     result = compareNullableStringsAsc(l.contractName, r.contractName); break;
+            case "segment":      result = compareNullableStringsAsc(l.marketSegment, r.marketSegment); break;
+            case "underlying":   result = compareNullableStringsAsc(l.underlyingSymbol, r.underlyingSymbol); break;
+            case "maturity":     result = compareNullableStringsAsc(l.maturityText, r.maturityText); break;
+            case "price":        result = compareNullableNumbersAsc(l.lastPrice, r.lastPrice); break;
+            case "change":       result = compareNullableNumbersAsc(l.changePercent, r.changePercent); break;
+            case "changeAmount": result = compareNullableNumbersAsc(l.changeAmount, r.changeAmount); break;
+            case "volumeTry":    result = compareNullableNumbersAsc(l.volumeTry, r.volumeTry); break;
+            case "quantity":     result = compareNullableNumbersAsc(l.volumeQuantity, r.volumeQuantity); break;
+            case "date":         result = compareNullableDatesAsc(l.tradeDate, r.tradeDate); break;
+            case "fetchedAt":    result = compareNullableDatesAsc(l.fetchedAt, r.fetchedAt); break;
+            default:             result = compareNullableStringsAsc(l.contractName, r.contractName);
+        }
+
+        if (result === 0) result = compareNullableStringsAsc(l.contractName, r.contractName);
+        return applySortDirection(result, sortConfig.direction);
+    });
+}
+
 export const matchesSearch = (query: string, ...fields: Array<string | null | undefined>): boolean => {
     if (!query) return true;
     const nq = normalizeSearch(query);
@@ -300,9 +350,9 @@ export function buildFundMarketCards(rows: FundResponse[]): SummaryCard[] {
 export function buildStockMarketCards(rows: StockResponse[]): SummaryCard[] {
     if (rows.length === 0) {
         return [
-            { label: "Hisse verisi", value: "Veri yok", note: "Seans disi veya hafta sonu olabilir." },
-            { label: "Guncelleme", value: "-", note: "Yeni fiyat gelince otomatik olarak page refresh ile alinabilir." },
-            { label: "Durum", value: "Bekleniyor", note: "Bos liste backend contract'ina uygun bir durumdur." },
+            { label: "Hisse verisi", value: "Veri yok", note: "Günlük kapanış verisi henüz gelmemiş olabilir." },
+            { label: "Güncelleme", value: "-", note: "Yeni günlük fiyatlar yenileme ile alınır." },
+            { label: "Durum", value: "Bekleniyor", note: "Boş liste backend contract'ına uygun bir durumdur." },
         ];
     }
 
@@ -312,7 +362,7 @@ export function buildStockMarketCards(rows: StockResponse[]): SummaryCard[] {
 
     return [
         {
-            label: "Gun lideri",
+            label: "Gün lideri",
             value: formatPercent(topGainer?.changePercent),
             note: topGainer ? `${topGainer.symbol} · ${formatMoney(topGainer.price, topGainer.currency ?? "TRY")}` : "Veri yok",
             tone: toSafeNumber(topGainer?.changePercent) !== null && (topGainer?.changePercent ?? 0) < 0 ? "down" : "up",
@@ -323,9 +373,71 @@ export function buildStockMarketCards(rows: StockResponse[]): SummaryCard[] {
             note: topVolume ? `${topVolume.symbol} · ${topVolume.shortName ?? topVolume.longName ?? "Hisse"}` : "Veri yok",
         },
         {
-            label: "Piyasa degeri lideri",
+            label: "Piyasa değeri lideri",
             value: topMarketCap ? formatCompactMoney(topMarketCap.marketCap, topMarketCap.currency ?? "TRY") : "-",
             note: topMarketCap ? `${topMarketCap.symbol} · ${topMarketCap.indexName ?? "BIST"}` : "Veri yok",
+        },
+    ];
+}
+
+const getLatestBySeries = (rows: MacroObservationResponse[]) => {
+    const latest = new Map<string, MacroObservationResponse>();
+
+    rows.forEach((row) => {
+        const current = latest.get(row.seriesCode);
+        if (!current || (row.date ?? "") > (current.date ?? "")) {
+            latest.set(row.seriesCode, row);
+        }
+    });
+
+    return [...latest.values()];
+};
+
+export function buildMacroMarketCards(inflationRows: MacroObservationResponse[], depositRows: MacroObservationResponse[]): SummaryCard[] {
+    const latestInflation = getLatestBySeries(inflationRows).sort((l, r) => compareNullableDatesAsc(r.date, l.date))[0];
+    const latestDeposits = getLatestBySeries(depositRows);
+    const highestDeposit = [...latestDeposits].sort((l, r) => compareNullableNumbersDesc(l.value, r.value))[0];
+
+    return [
+        {
+            label: "Son TÜFE",
+            value: latestInflation?.value != null ? formatNumber(latestInflation.value, 2) : "-",
+            note: latestInflation ? `${formatLocalDate(latestInflation.date)} · ${latestInflation.unit ?? "Endeks"}` : "Veri yok",
+        },
+        {
+            label: "Yıllık değişim",
+            value: formatPercent(latestInflation?.annualChangePercent),
+            note: latestInflation?.name ?? "TÜFE serisi",
+            tone: toSafeNumber(latestInflation?.annualChangePercent) !== null && (latestInflation?.annualChangePercent ?? 0) < 0 ? "down" : "up",
+        },
+        {
+            label: "En yüksek TL mevduat",
+            value: highestDeposit?.value != null ? `%${formatNumber(highestDeposit.value, 2)}` : "-",
+            note: highestDeposit ? `${highestDeposit.name} · ${formatLocalDate(highestDeposit.date)}` : "Veri yok",
+        },
+    ];
+}
+
+export function buildViopMarketCards(rows: ViopContractPriceResponse[]): SummaryCard[] {
+    const highestVolume = [...rows].sort((l, r) => compareNullableNumbersDesc(l.volumeTry, r.volumeTry))[0];
+    const strongest = [...rows].sort((l, r) => compareNullableNumbersDesc(l.changePercent, r.changePercent))[0];
+
+    return [
+        {
+            label: "Kontrat sayısı",
+            value: formatWholeNumber(rows.length),
+            note: rows.length > 0 ? "Son 7 günlük varsayılan aralık" : "Veri yok",
+        },
+        {
+            label: "En yüksek hacim",
+            value: highestVolume ? formatCompactMoney(highestVolume.volumeTry, "TRY") : "-",
+            note: highestVolume?.contractName ?? "Veri yok",
+        },
+        {
+            label: "En güçlü değişim",
+            value: formatPercent(strongest?.changePercent),
+            note: strongest?.contractName ?? "Veri yok",
+            tone: toSafeNumber(strongest?.changePercent) !== null && (strongest?.changePercent ?? 0) < 0 ? "down" : "up",
         },
     ];
 }
@@ -336,6 +448,11 @@ export function getSummaryCards(tab: MarketTab, data: MarketData): SummaryCard[]
         case "bonds":  return buildBondMarketCards(data.bonds);
         case "funds":  return buildFundMarketCards(data.funds);
         case "stocks": return buildStockMarketCards(data.stocks);
+        case "indexes": return buildStockMarketCards(data.indexes);
+        case "commodities": return buildStockMarketCards(data.commodities);
+        case "crypto": return buildStockMarketCards(data.crypto);
+        case "macro":  return buildMacroMarketCards(data.macroInflation, data.macroDepositRates);
+        case "viop":   return buildViopMarketCards(data.viop);
         default:       return [];
     }
 }
@@ -346,6 +463,11 @@ export function getLatestDatasetDate(tab: MarketTab, data: MarketData): string {
         case "bonds":  return formatLocalDate(latestStringValue(data.bonds.map((r) => r.rateDate)));
         case "funds":  return formatLocalDate(latestStringValue(data.funds.map((r) => r.priceDate)));
         case "stocks": return formatLocalDate(latestStringValue(data.stocks.map((r) => r.tradeDate)));
+        case "indexes": return formatLocalDate(latestStringValue(data.indexes.map((r) => r.tradeDate)));
+        case "commodities": return formatLocalDate(latestStringValue(data.commodities.map((r) => r.tradeDate)));
+        case "crypto": return formatLocalDate(latestStringValue(data.crypto.map((r) => r.tradeDate)));
+        case "macro":  return formatLocalDate(latestStringValue([...data.macroInflation, ...data.macroDepositRates].map((r) => r.date)));
+        case "viop":   return formatLocalDate(latestStringValue(data.viop.map((r) => r.tradeDate)));
         default:       return "-";
     }
 }

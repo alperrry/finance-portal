@@ -56,10 +56,13 @@ export type CatalogState = {
     error: string | null;
 };
 
-export const TYPE_ORDER: InstrumentType[] = ["stocks", "fx", "funds", "bonds"];
+export const TYPE_ORDER: InstrumentType[] = ["stocks", "indexes", "commodities", "crypto", "fx", "funds", "bonds"];
 
 export const TYPE_META: Record<InstrumentType, { label: string; description: string }> = {
     stocks: { label: "Hisseler", description: "Fiyat, hareketli ortalama ve volatiliteyi tek panelde okuyun." },
+    indexes: { label: "Endeksler", description: "BIST endekslerini fiyat trendiyle birlikte izleyin." },
+    commodities: { label: "Emtia", description: "Emtia fiyat serilerini ayrı piyasa grubu olarak analiz edin." },
+    crypto: { label: "Kripto", description: "Kripto varlık fiyatlarını günlük seri üzerinden okuyun." },
     fx: { label: "Döviz", description: "TCMB serileri üzerinden kur trendlerini ve momentumunu izleyin." },
     funds: { label: "Fonlar", description: "Fon fiyat serilerini seçili aralıkta karşılaştırın." },
     bonds: { label: "Tahvil/Bono", description: "Faiz serilerini trend ve bant yapısıyla birlikte analiz edin." },

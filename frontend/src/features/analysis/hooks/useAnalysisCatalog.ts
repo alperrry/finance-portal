@@ -11,8 +11,11 @@ import {
 } from "../utils/analysisFormatters";
 
 async function fetchCatalogData() {
-    const [stocksResult, fxResult, fundsResult, bondsResult] = await Promise.allSettled([
+    const [stocksResult, indexesResult, commoditiesResult, cryptoResult, fxResult, fundsResult, bondsResult] = await Promise.allSettled([
         fetchStocks(),
+        fetchStocks(undefined, "INDEX"),
+        fetchStocks(undefined, "COMMODITY"),
+        fetchStocks(undefined, "CRYPTO"),
         fetchFx(),
         fetchFunds(),
         fetchBonds(),
@@ -25,6 +28,21 @@ async function fetchCatalogData() {
         nextCatalog.stocks = buildCatalogFromStocks(stocksResult.value);
     } else {
         failedGroups.push("hisse");
+    }
+    if (indexesResult.status === "fulfilled") {
+        nextCatalog.indexes = buildCatalogFromStocks(indexesResult.value);
+    } else {
+        failedGroups.push("endeks");
+    }
+    if (commoditiesResult.status === "fulfilled") {
+        nextCatalog.commodities = buildCatalogFromStocks(commoditiesResult.value);
+    } else {
+        failedGroups.push("emtia");
+    }
+    if (cryptoResult.status === "fulfilled") {
+        nextCatalog.crypto = buildCatalogFromStocks(cryptoResult.value);
+    } else {
+        failedGroups.push("kripto");
     }
     if (fxResult.status === "fulfilled") {
         nextCatalog.fx = buildCatalogFromFx(fxResult.value);

@@ -1,7 +1,7 @@
 import type { ApiResponse } from "../../market/api/marketApi";
 import { apiFetch } from "../../../services/api/client";
 
-export type InstrumentType = "stocks" | "fx" | "funds" | "bonds";
+export type InstrumentType = "stocks" | "indexes" | "commodities" | "crypto" | "fx" | "funds" | "bonds";
 
 export type HistoryPoint = {
     date: string;

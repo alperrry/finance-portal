@@ -46,6 +46,7 @@ export type StockResponse = {
     longName: string | null;
     sector: string | null;
     indexName: string | null;
+    instrumentType: "STOCK" | "INDEX" | "COMMODITY" | "CRYPTO";
     currency: string | null;
     price: number | null;
     change: number | null;
@@ -58,6 +59,33 @@ export type StockResponse = {
     marketCap: number | null;
     fiftyTwoWeekHigh: number | null;
     fiftyTwoWeekLow: number | null;
+    tradeDate: string | null;
+    fetchedAt: string | null;
+};
+
+export type MacroObservationResponse = {
+    seriesId: number;
+    seriesCode: string;
+    name: string;
+    dataType: string;
+    date: string | null;
+    value: number | null;
+    monthlyChangePercent: number | null;
+    annualChangePercent: number | null;
+    unit: string | null;
+};
+
+export type ViopContractPriceResponse = {
+    id: number;
+    marketSegment: string | null;
+    contractName: string;
+    underlyingSymbol: string | null;
+    maturityText: string | null;
+    lastPrice: number | null;
+    changePercent: number | null;
+    changeAmount: number | null;
+    volumeTry: number | null;
+    volumeQuantity: number | null;
     tradeDate: string | null;
     fetchedAt: string | null;
 };
@@ -98,6 +126,18 @@ export function fetchFunds(options?: ApiRequestOptions) {
     return fetchCollection<FundResponse>("/api/v1/funds", "Fon verileri yüklenemedi.", options);
 }
 
-export function fetchStocks(options?: ApiRequestOptions) {
-    return fetchCollection<StockResponse>("/api/v1/stocks", "Hisse verileri yüklenemedi.", options);
+export function fetchStocks(options?: ApiRequestOptions, type: StockResponse["instrumentType"] = "STOCK") {
+    return fetchCollection<StockResponse>(`/api/v1/stocks?type=${encodeURIComponent(type)}`, "Hisse verileri yüklenemedi.", options);
+}
+
+export function fetchMacroInflation(options?: ApiRequestOptions) {
+    return fetchCollection<MacroObservationResponse>("/api/v1/macro/inflation", "Enflasyon verileri yüklenemedi.", options);
+}
+
+export function fetchMacroDepositRates(options?: ApiRequestOptions) {
+    return fetchCollection<MacroObservationResponse>("/api/v1/macro/deposit-rates", "Mevduat faizi verileri yüklenemedi.", options);
+}
+
+export function fetchViop(options?: ApiRequestOptions) {
+    return fetchCollection<ViopContractPriceResponse>("/api/v1/viop", "VİOP verileri yüklenemedi.", options);
 }

@@ -151,7 +151,9 @@ export function getValueDigits(type: InstrumentType, value: number | null | unde
 export function formatValueByType(type: InstrumentType, value: number | null | undefined, currency?: string | null): string {
     const digits = getValueDigits(type, value);
 
-    if (type === "stocks") return formatCurrencyValue(value, currency ?? "TRY", digits);
+    if (type === "stocks" || type === "indexes" || type === "commodities" || type === "crypto") {
+        return formatCurrencyValue(value, currency ?? "TRY", digits);
+    }
     if (type === "funds") return formatCurrencyValue(value, "TRY", digits);
     if (type === "bonds") return value === null || value === undefined ? "-" : `%${formatNumber(value, digits)}`;
 
