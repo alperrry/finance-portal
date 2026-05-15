@@ -55,8 +55,10 @@ public class RedisConfig {
         cacheConfigs.put("stock-indicator-history", baseConfig.entryTtl(Duration.ofHours(1)));// Market — TCMB 15:35, EVDS 16:00'da bir kez güncelleniyor
         cacheConfigs.put("bonds", baseConfig.entryTtl(Duration.ofHours(24)));
 
-        // Market — her 5 dakikada güncelleniyor
-        cacheConfigs.put("funds",  baseConfig.entryTtl(Duration.ofMinutes(5)));
+        // Market — günlük veri modeli
+        cacheConfigs.put("funds",  baseConfig.entryTtl(Duration.ofHours(24)));
+        cacheConfigs.put("macro",  baseConfig.entryTtl(Duration.ofHours(24)));
+        cacheConfigs.put("viop",   baseConfig.entryTtl(Duration.ofHours(24)));
 
         // Portfolio
         cacheConfigs.put("portfolioValuation", baseConfig.entryTtl(Duration.ofSeconds(portfolioValuationCacheTtlSeconds)));

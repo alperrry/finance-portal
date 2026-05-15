@@ -16,6 +16,8 @@ import com.alper.backend.market.fx.repository.ExchangeRateRepository;
 import com.alper.backend.market.stocks.model.Stock;
 import com.alper.backend.market.stocks.model.StockPriceHistory;
 import com.alper.backend.market.stocks.repository.StockPriceHistoryRepository;
+import com.alper.backend.market.macro.repository.MacroObservationRepository;
+import com.alper.backend.market.viop.repository.ViopContractPriceRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -46,6 +48,8 @@ class HistoryQueryServiceTest {
     @Mock private ExchangeRateRepository exchangeRateRepository;
     @Mock private FundPriceRepository fundPriceRepository;
     @Mock private BondRateHistoryRepository bondRateHistoryRepository;
+    @Mock private MacroObservationRepository macroObservationRepository;
+    @Mock private ViopContractPriceRepository viopContractPriceRepository;
 
     // Mapper'ı GERÇEK kullanıyoruz — zaten test edilmiş, davranışını biliyoruz
     private HistoryMapper historyMapper;
@@ -63,6 +67,8 @@ class HistoryQueryServiceTest {
                 exchangeRateRepository,
                 fundPriceRepository,
                 bondRateHistoryRepository,
+                macroObservationRepository,
+                viopContractPriceRepository,
                 historyMapper);
     }
 
@@ -301,7 +307,7 @@ class HistoryQueryServiceTest {
             @DisplayName("Bilinmeyen type için BadRequestException fırlar")
             void unknownTypeThrowsBadRequest() {
                 assertThatThrownBy(() ->
-                        service.getHistory("crypto", "BTC", FROM, TO))
+                        service.getHistory("unknown-type", "BTC", FROM, TO))
                         .isInstanceOf(BadRequestException.class)
                         .hasMessageContaining("Parametre: type");
             }

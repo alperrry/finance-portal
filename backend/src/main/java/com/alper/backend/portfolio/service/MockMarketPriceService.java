@@ -6,10 +6,7 @@ import com.alper.backend.market.bond.repository.BondRateHistoryRepository;
 import com.alper.backend.market.bond.repository.BondRepository;
 import com.alper.backend.market.fund.repository.FundPriceRepository;
 import com.alper.backend.market.fx.repository.ExchangeRateRepository;
-import com.alper.backend.market.stocks.model.Stock;
-import com.alper.backend.market.stocks.model.StockPriceSnapshot;
 import com.alper.backend.market.stocks.repository.StockPriceHistoryRepository;
-import com.alper.backend.market.stocks.repository.StockPriceSnapshotRepository;
 import com.alper.backend.market.stocks.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,7 +27,6 @@ public class MockMarketPriceService {
     private static final int TREND_DAYS = 7;
 
     private final StockRepository stockRepository;
-    private final StockPriceSnapshotRepository stockPriceSnapshotRepository;
     private final StockPriceHistoryRepository stockPriceHistoryRepository;
     private final FundPriceRepository fundPriceRepository;
     private final ExchangeRateRepository exchangeRateRepository;
@@ -51,18 +47,6 @@ public class MockMarketPriceService {
     }
 
     private Optional<MarketPriceQuote> getStockQuote(Long stockId) {
-        Optional<StockPriceSnapshot> snapshotOpt = stockPriceSnapshotRepository
-                .findFirstByStockIdOrderByFetchedAtDesc(stockId);
-        if (snapshotOpt.isPresent()) {
-            StockPriceSnapshot snapshot = snapshotOpt.get();
-            return Optional.of(new MarketPriceQuote(
-                    snapshot.getPrice(),
-                    snapshot.getChange(),
-                    snapshot.getChangePercent(),
-                    buildTrend(InstrumentType.STOCK, stockId, snapshot.getPrice(), Instant.now().toEpochMilli() / 60000L)
-            ));
-        }
-
         BigDecimal basePrice = stockPriceHistoryRepository
                 .findFirstByStockIdOrderByTradeDateDesc(stockId)
                 .map(history -> history.getClosePrice())

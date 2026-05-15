@@ -85,10 +85,13 @@ public class TradeProcessService {
             return;
         }
 
-        try {
-            userBalanceService.verifySufficientBalance(portfolio.getUserId(), additionalRequired);
-        } catch (RuntimeException e) {
-            throw new TradeRejectionException(e.getMessage());
+        BigDecimal currentBalance = userBalanceService.getBalance(portfolio.getUserId());
+        if (currentBalance.compareTo(additionalRequired) < 0) {
+            throw new TradeRejectionException(String.format(
+                    "Yetersiz bakiye. Mevcut: %s TL, gereken: %s TL",
+                    currentBalance,
+                    additionalRequired
+            ));
         }
     }
 
@@ -143,6 +146,8 @@ public class TradeProcessService {
                     .divide(newQty, QUANTITY_SCALE, RoundingMode.HALF_UP);
             existing.setQuantity(newQty);
             existing.setAvgCost(newAvgCost);
+            log.debug("Pozisyon güncellendi (alış). tradeId={}, oldQty={}, addQty={}, newQty={}, newAvgCost={}",
+                    transaction.getId(), oldQty, qty, newQty, newAvgCost);
             return existing;
         }).orElseGet(() -> PortfolioItem.builder()
                 .portfolioId(transaction.getPortfolioId())
@@ -189,11 +194,15 @@ public class TradeProcessService {
                 portfolio.getDisplayCurrency()
         ).setScale(AMOUNT_SCALE, RoundingMode.HALF_UP);
         transaction.setRealizedProfitLoss(realizedPnLDisplay);
+        log.info("Satış gerçekleşti. tradeId={}, qty={}, executionPrice={}, avgCost={}, realizedPnL={}",
+                transaction.getId(), qty, executionPrice, item.getAvgCost(), realizedPnLDisplay);
 
         adjustUserBalance(portfolio.getUserId(), settlement.totalInBalanceCurrency());
 
         BigDecimal newQty = oldQty.subtract(qty);
         if (newQty.compareTo(BigDecimal.ZERO) == 0) {
+            log.info("Pozisyon kapatıldı. portfolioId={}, instrumentId={}",
+                    transaction.getPortfolioId(), transaction.getInstrumentId());
             portfolioItemRepository.delete(item);
         } else {
             item.setQuantity(newQty);

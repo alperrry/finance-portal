@@ -10,9 +10,7 @@ import com.alper.backend.market.fund.repository.FundRepository;
 import com.alper.backend.market.fx.model.ExchangeRate;
 import com.alper.backend.market.fx.repository.ExchangeRateRepository;
 import com.alper.backend.market.stocks.model.Stock;
-import com.alper.backend.market.stocks.model.StockPriceSnapshot;
 import com.alper.backend.market.stocks.repository.StockPriceHistoryRepository;
-import com.alper.backend.market.stocks.repository.StockPriceSnapshotRepository;
 import com.alper.backend.market.stocks.repository.StockRepository;
 import com.alper.backend.portfolio.dto.PortfolioItemResponse;
 import com.alper.backend.portfolio.model.PortfolioItem;
@@ -44,7 +42,6 @@ import java.util.Optional;
  *
  * <p>NOT: Kullanılan repository metodları (mevcut değilse eklenmeli):
  * <pre>
- * StockPriceSnapshotRepository.findFirstByStockIdOrderByFetchedAtDesc(Long stockId);
  * StockPriceHistoryRepository.findFirstByStockIdOrderByTradeDateDesc(Long stockId);
  * FundPriceRepository.findFirstByFundIdOrderByPriceDateDesc(Long fundId);
  * ExchangeRateRepository.findFirstByIdOrderByRateDateDesc(Long id);
@@ -64,7 +61,6 @@ public class PortfolioValuationService {
     private final CurrencyConverterService currencyConverterService;
 
     private final StockRepository stockRepository;
-    private final StockPriceSnapshotRepository stockPriceSnapshotRepository;
     private final StockPriceHistoryRepository stockPriceHistoryRepository;
 
     private final FundRepository fundRepository;
@@ -183,13 +179,10 @@ public class PortfolioValuationService {
 
     private InstrumentInfo resolveStock(Long stockId) {
         Stock stock = stockRepository.findById(stockId).orElse(null);
-        BigDecimal currentPrice = stockPriceSnapshotRepository
-                .findFirstByStockIdOrderByFetchedAtDesc(stockId)
-                .map(StockPriceSnapshot::getPrice)
-                .orElseGet(() -> stockPriceHistoryRepository
-                        .findFirstByStockIdOrderByTradeDateDesc(stockId)
-                        .map(history -> history.getClosePrice())
-                        .orElse(null));
+        BigDecimal currentPrice = stockPriceHistoryRepository
+                .findFirstByStockIdOrderByTradeDateDesc(stockId)
+                .map(history -> history.getClosePrice())
+                .orElse(null);
 
         String symbol = stock != null ? stock.getSymbol() : null;
         String name = stock != null ? stock.getShortName() : null;

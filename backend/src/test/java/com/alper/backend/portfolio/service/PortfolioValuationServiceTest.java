@@ -7,9 +7,8 @@ import com.alper.backend.market.fund.repository.FundPriceRepository;
 import com.alper.backend.market.fund.repository.FundRepository;
 import com.alper.backend.market.fx.repository.ExchangeRateRepository;
 import com.alper.backend.market.stocks.model.Stock;
-import com.alper.backend.market.stocks.model.StockPriceSnapshot;
+import com.alper.backend.market.stocks.model.StockPriceHistory;
 import com.alper.backend.market.stocks.repository.StockPriceHistoryRepository;
-import com.alper.backend.market.stocks.repository.StockPriceSnapshotRepository;
 import com.alper.backend.market.stocks.repository.StockRepository;
 import com.alper.backend.portfolio.model.PortfolioItem;
 import com.alper.backend.portfolio.repository.PortfolioItemRepository;
@@ -34,7 +33,6 @@ class PortfolioValuationServiceTest {
     @Mock private PortfolioItemRepository portfolioItemRepository;
     @Mock private CurrencyConverterService currencyConverterService;
     @Mock private StockRepository stockRepository;
-    @Mock private StockPriceSnapshotRepository stockPriceSnapshotRepository;
     @Mock private StockPriceHistoryRepository stockPriceHistoryRepository;
     @Mock private FundRepository fundRepository;
     @Mock private FundPriceRepository fundPriceRepository;
@@ -51,7 +49,6 @@ class PortfolioValuationServiceTest {
                 portfolioItemRepository,
                 currencyConverterService,
                 stockRepository,
-                stockPriceSnapshotRepository,
                 stockPriceHistoryRepository,
                 fundRepository,
                 fundPriceRepository,
@@ -63,8 +60,8 @@ class PortfolioValuationServiceTest {
     }
 
     @Test
-    @DisplayName("Pozisyon fiyatını mock quote yerine en güncel stock snapshot fiyatından hesaplar")
-    void valuateUsesLatestStockSnapshotAsCurrentPrice() {
+    @DisplayName("Pozisyon fiyatını mock quote yerine en güncel günlük kapanış fiyatından hesaplar")
+    void valuateUsesLatestStockHistoryAsCurrentPrice() {
         PortfolioItem item = PortfolioItem.builder()
                 .id(7L)
                 .portfolioId(3L)
@@ -79,14 +76,14 @@ class PortfolioValuationServiceTest {
                 .shortName("Akbank")
                 .currency("TRY")
                 .build();
-        StockPriceSnapshot snapshot = StockPriceSnapshot.builder()
+        StockPriceHistory history = StockPriceHistory.builder()
                 .stock(stock)
-                .price(new BigDecimal("150"))
+                .closePrice(new BigDecimal("150"))
                 .build();
 
         when(portfolioItemRepository.findAllByPortfolioId(3L)).thenReturn(List.of(item));
         when(stockRepository.findById(11L)).thenReturn(Optional.of(stock));
-        when(stockPriceSnapshotRepository.findFirstByStockIdOrderByFetchedAtDesc(11L)).thenReturn(Optional.of(snapshot));
+        when(stockPriceHistoryRepository.findFirstByStockIdOrderByTradeDateDesc(11L)).thenReturn(Optional.of(history));
         when(mockMarketPriceService.getQuote(InstrumentType.STOCK, 11L)).thenReturn(Optional.of(
                 new MockMarketPriceService.MarketPriceQuote(
                         new BigDecimal("99"),

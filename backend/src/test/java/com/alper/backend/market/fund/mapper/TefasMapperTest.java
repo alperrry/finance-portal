@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
@@ -265,13 +266,13 @@ class TefasMapperTest {
             }
 
             @Test
-            @DisplayName("Sayı olmayan tarih NumberFormatException fırlatır")
+            @DisplayName("Sayı olmayan ISO-benzeri tarih DateTimeParseException fırlatır")
             void nonNumericTarihThrowsException() {
                 TefasHistoryInfo dto = new TefasHistoryInfo();
                 dto.setTarih("not-a-number");
                 dto.setFiyat(new BigDecimal("10.0"));
 
-                assertThrows(NumberFormatException.class,
+                assertThrows(DateTimeParseException.class,
                         () -> mapper.toFundPriceEntity(dto, testFund));
             }
 

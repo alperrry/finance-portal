@@ -5,9 +5,8 @@ import com.alper.backend.market.bond.repository.BondRateHistoryRepository;
 import com.alper.backend.market.bond.repository.BondRepository;
 import com.alper.backend.market.fund.repository.FundPriceRepository;
 import com.alper.backend.market.fx.repository.ExchangeRateRepository;
-import com.alper.backend.market.stocks.model.StockPriceSnapshot;
+import com.alper.backend.market.stocks.model.StockPriceHistory;
 import com.alper.backend.market.stocks.repository.StockPriceHistoryRepository;
-import com.alper.backend.market.stocks.repository.StockPriceSnapshotRepository;
 import com.alper.backend.market.stocks.repository.StockRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,7 +26,6 @@ import static org.mockito.Mockito.when;
 class MockMarketPriceServiceTest {
 
     @Mock private StockRepository stockRepository;
-    @Mock private StockPriceSnapshotRepository stockPriceSnapshotRepository;
     @Mock private StockPriceHistoryRepository stockPriceHistoryRepository;
     @Mock private FundPriceRepository fundPriceRepository;
     @Mock private ExchangeRateRepository exchangeRateRepository;
@@ -40,7 +38,6 @@ class MockMarketPriceServiceTest {
     void setUp() {
         service = new MockMarketPriceService(
                 stockRepository,
-                stockPriceSnapshotRepository,
                 stockPriceHistoryRepository,
                 fundPriceRepository,
                 exchangeRateRepository,
@@ -50,22 +47,18 @@ class MockMarketPriceServiceTest {
     }
 
     @Test
-    @DisplayName("Stock quote currentPrice değerini oynatmadan son snapshot fiyatından döndürür")
-    void stockQuoteUsesSnapshotPriceAsCurrentPrice() {
-        StockPriceSnapshot snapshot = StockPriceSnapshot.builder()
-                .price(new BigDecimal("150.25"))
-                .change(new BigDecimal("1.10"))
-                .changePercent(new BigDecimal("0.74"))
+    @DisplayName("Stock quote currentPrice değerini son günlük kapanış fiyatından döndürür")
+    void stockQuoteUsesDailyHistoryClosePriceAsCurrentPrice() {
+        StockPriceHistory history = StockPriceHistory.builder()
+                .closePrice(new BigDecimal("150.25"))
                 .build();
 
-        when(stockPriceSnapshotRepository.findFirstByStockIdOrderByFetchedAtDesc(11L))
-                .thenReturn(Optional.of(snapshot));
+        when(stockPriceHistoryRepository.findFirstByStockIdOrderByTradeDateDesc(11L))
+                .thenReturn(Optional.of(history));
 
         Optional<MockMarketPriceService.MarketPriceQuote> quote = service.getQuote(InstrumentType.STOCK, 11L);
 
         assertThat(quote).isPresent();
         assertThat(quote.get().currentPrice()).isEqualByComparingTo("150.25");
-        assertThat(quote.get().dailyChange()).isEqualByComparingTo("1.10");
-        assertThat(quote.get().dailyChangePercentage()).isEqualByComparingTo("0.74");
     }
 }

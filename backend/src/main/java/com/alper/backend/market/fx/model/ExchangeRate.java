@@ -11,7 +11,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "exchange_rate")
+@Table(name = "exchange_rate", indexes = {
+        @Index(name = "idx_er_code_date", columnList = "currency_code, rate_date")
+})
 @Getter
 @Builder
 @NoArgsConstructor

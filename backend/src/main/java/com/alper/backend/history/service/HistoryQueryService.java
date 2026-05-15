@@ -4,7 +4,9 @@ import com.alper.backend.common.exception.BadRequestException;
 import com.alper.backend.market.bond.repository.BondRateHistoryRepository;
 import com.alper.backend.market.fund.repository.FundPriceRepository;
 import com.alper.backend.market.fx.repository.ExchangeRateRepository;
+import com.alper.backend.market.macro.repository.MacroObservationRepository;
 import com.alper.backend.market.stocks.repository.StockPriceHistoryRepository;
+import com.alper.backend.market.viop.repository.ViopContractPriceRepository;
 import com.alper.backend.history.dto.CompareResponse;
 import com.alper.backend.history.dto.HistoryResponse;
 import com.alper.backend.history.dto.PricePoint;
@@ -28,6 +30,8 @@ public class HistoryQueryService {
     private final ExchangeRateRepository exchangeRateRepository;
     private final FundPriceRepository fundPriceRepository;
     private final BondRateHistoryRepository bondRateHistoryRepository;
+    private final MacroObservationRepository macroObservationRepository;
+    private final ViopContractPriceRepository viopContractPriceRepository;
     private final HistoryMapper historyMapper;
 
     public HistoryResponse getHistory(String type, String code, LocalDate from, LocalDate to) {
@@ -66,6 +70,9 @@ public class HistoryQueryService {
             case "stocks" -> stockHistoryRepository
                     .findByStock_SymbolAndTradeDateBetweenOrderByTradeDateAsc(code, from, to)
                     .stream().map(historyMapper::fromStock).toList();
+            case "indexes", "commodities", "crypto" -> stockHistoryRepository
+                    .findByStock_SymbolAndTradeDateBetweenOrderByTradeDateAsc(code, from, to)
+                    .stream().map(historyMapper::fromStock).toList();
             case "fx" -> exchangeRateRepository
                     .findByCurrencyCodeAndRateDateBetweenOrderByRateDateAsc(code, from, to)
                     .stream().map(historyMapper::fromFx).toList();
@@ -75,6 +82,12 @@ public class HistoryQueryService {
             case "bonds" -> bondRateHistoryRepository
                     .findByBond_EvdsSeriesCodeAndRateDateBetweenOrderByRateDateAsc(code, from, to)
                     .stream().map(historyMapper::fromBond).toList();
+            case "inflation", "deposit-rates" -> macroObservationRepository
+                    .findBySeries_SeriesCodeAndObservationDateBetweenOrderByObservationDateAsc(code, from, to)
+                    .stream().map(historyMapper::fromMacro).toList();
+            case "viop" -> viopContractPriceRepository
+                    .findByContractNameAndTradeDateBetweenOrderByTradeDateAsc(code, from, to)
+                    .stream().map(historyMapper::fromViop).toList();
             default -> throw new BadRequestException("Geçersiz parametre değeri. Parametre: type");
         };
     }

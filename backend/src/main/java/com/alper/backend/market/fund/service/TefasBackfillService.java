@@ -55,6 +55,7 @@ public class TefasBackfillService extends AbstractBackfillService<Fund> {
         }
 
         // Biri yoksa empty dön, baştan backfill yapsın
+        log.info("Mevcut fon verisi yok, tam backfill başlatılıyor. fon={}", fund.getCode());
         return Optional.empty();
 
     }
@@ -92,6 +93,12 @@ public class TefasBackfillService extends AbstractBackfillService<Fund> {
                     break;
                 }
             } catch (Exception e) {
+                if (e.getMessage() != null && e.getMessage().contains("Boş yanıt")) {
+                    emptyChunks++;
+                    log.info("TEFAS boş yanıt, eski veri yok. Backfill durduruluyor: {} | {} → {}",
+                            fund.getCode(), chunkStart, chunkEnd);
+                    break;
+                }
                 failedChunks++;
                 log.warn("TEFAS chunk başarısız: {} | {} → {} → {}",
                         fund.getCode(), chunkStart, chunkEnd, e.getMessage());
@@ -100,6 +107,7 @@ public class TefasBackfillService extends AbstractBackfillService<Fund> {
         }
 
         if (successfulChunks == 0 && failedChunks > 0) {
+            log.error("TEFAS backfill tamamen başarısız. fon={}, failedChunks={}", fund.getCode(), failedChunks);
             throw new IllegalStateException("TEFAS backfill tüm chunk'larda başarısız oldu: " + fund.getCode());
         }
 

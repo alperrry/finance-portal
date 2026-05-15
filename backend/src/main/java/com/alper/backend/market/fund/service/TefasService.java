@@ -103,6 +103,9 @@ public class TefasService {
                 "fonGnlBlgSiraliGetir");
 
         List<TefasHistoryInfo> responseRows = rows(response);
+        if (responseRows.isEmpty()) {
+            log.warn("TEFAS yanıtında satır yok. endpoint=fonGnlBlgSiraliGetir, fon={}", fund.getCode());
+        }
         int saved = 0, skipped = 0;
         for (TefasHistoryInfo dto : responseRows) {
             FundPrice entity = tefasMapper.toFundPriceEntity(dto, fund);
@@ -126,10 +129,14 @@ public class TefasService {
                 TefasHistoryAllocation.class,
                 "dagilimSiraliGetirT");
 
+        List<TefasHistoryAllocation> allocationRows = rows(response);
+        if (allocationRows.isEmpty()) {
+            log.warn("TEFAS yanıtında satır yok. endpoint=dagilimSiraliGetirT, fon={}", fund.getCode());
+        }
         int saved = 0, skipped = 0;
         int filteredOut = 0;
         int matchingRows = 0;
-        for (TefasHistoryAllocation dto : rows(response)) {
+        for (TefasHistoryAllocation dto : allocationRows) {
             if (!fund.getCode().equals(trim(dto.getFonKodu()))) {
                 filteredOut++;
                 continue;
@@ -166,6 +173,8 @@ public class TefasService {
             } catch (ExternalApiException e) {
                 lastException = e;
                 if (!isRetryable(e) || attempt == MAX_RETRIES - 1) {
+                    log.error("TEFAS isteği başarısız (yeniden deneme yapılmayacak). endpoint={}, attempt={}, cause={}",
+                            context, attempt + 1, e.getMessage());
                     throw e;
                 }
                 log.warn("TEFAS retry: endpoint={}, attempt={}, cause={}", context, attempt + 1, e.getMessage());
@@ -270,7 +279,6 @@ public class TefasService {
         String message = exception.getMessage();
         return message != null && (message.contains("HTTP: 429")
                 || message.contains("HTTP: 5")
-                || message.contains("Boş yanıt")
                 || message.contains("HTML/WAF")
                 || message.contains("bağlanılamadı"));
     }

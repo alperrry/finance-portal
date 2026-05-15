@@ -4,6 +4,7 @@ import com.alper.backend.market.fx.dto.FxResponse;
 import com.alper.backend.market.fx.service.FxQueryService;
 import com.alper.backend.market.landing.dto.LandingMarketItem;
 import com.alper.backend.market.landing.dto.LandingMarketSnapshot;
+import com.alper.backend.market.stocks.model.InstrumentType;
 import com.alper.backend.market.stocks.dto.StockResponse;
 import com.alper.backend.market.stocks.service.StockQueryService;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class LandingMarketSnapshotService {
 
     private static final List<String> HERO_PRIORITY_KEYS = List.of(
             "USD",
+            "XU100.IS",
             "EUR",
             "THYAO.IS",
             "GARAN.IS",
@@ -35,6 +37,7 @@ public class LandingMarketSnapshotService {
 
     private static final List<String> MARKET_PRIORITY_KEYS = List.of(
             "USD",
+            "XU100.IS",
             "EUR",
             "GBP",
             "THYAO.IS",
@@ -52,7 +55,10 @@ public class LandingMarketSnapshotService {
     public LandingMarketSnapshot getSnapshot() {
         Map<String, LandingMarketItem> itemsByKey = Stream.concat(
                         buildFxItems(fxQueryService.getAll()).stream(),
-                        buildStockItems(stockQueryService.getAll()).stream()
+                        Stream.concat(
+                                buildStockItems(stockQueryService.getAll()).stream(),
+                                buildStockItems(stockQueryService.getByInstrumentType(InstrumentType.INDEX)).stream()
+                        )
                 )
                 .collect(
                         LinkedHashMap::new,
