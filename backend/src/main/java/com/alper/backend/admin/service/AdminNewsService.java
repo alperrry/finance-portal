@@ -114,7 +114,7 @@ public class AdminNewsService {
 
     @Transactional(readOnly = true)
     public Page<NewsResponse> listNews(String search, NewsStatus status, Long sourceId, Long categoryId, Pageable pageable) {
-        String normalizedSearch = search == null || search.isBlank() ? null : search.trim().toLowerCase();
+        String normalizedSearch = (search == null || search.isBlank()) ? null : "%" + search.trim().toLowerCase() + "%";
         return newsRepository.searchAdminNews(normalizedSearch, status, sourceId, categoryId, pageable)
                 .map(NewsResponse::new);
     }

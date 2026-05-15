@@ -42,6 +42,10 @@ public class AdminAuditAspect {
         // Asıl iş mantığını çalıştır
         Object result = joinPoint.proceed();
 
+        if (targetId == null) {
+            targetId = extractResultId(result);
+        }
+
         // After state — başarıdan sonraki güncel state
         Object afterState = captureAfterState(adminAudited.targetType(), targetId);
 
@@ -80,6 +84,35 @@ public class AdminAuditAspect {
             if (arg instanceof Long id) {
                 return id;
             }
+        }
+        return null;
+    }
+
+    private Long extractResultId(Object result) {
+        if (result == null) {
+            return null;
+        }
+        try {
+            Method idMethod = result.getClass().getMethod("id");
+            Object value = idMethod.invoke(result);
+            if (value instanceof Long id) {
+                return id;
+            }
+        } catch (NoSuchMethodException ignored) {
+            // Java record DTO'ları dışındaki sonuçlarda id() olmayabilir.
+        } catch (Exception e) {
+            log.debug("result id() çağrısı başarısız. result={}", result.getClass(), e);
+        }
+        try {
+            Method idMethod = result.getClass().getMethod("getId");
+            Object value = idMethod.invoke(result);
+            if (value instanceof Long id) {
+                return id;
+            }
+        } catch (NoSuchMethodException ignored) {
+            // getId() yoksa hedef id çözülemez.
+        } catch (Exception e) {
+            log.debug("result getId() çağrısı başarısız. result={}", result.getClass(), e);
         }
         return null;
     }

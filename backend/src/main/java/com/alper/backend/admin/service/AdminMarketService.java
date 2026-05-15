@@ -6,7 +6,9 @@ import com.alper.backend.admin.model.AuditAction;
 import com.alper.backend.market.bond.service.BondBackfillService;
 import com.alper.backend.market.fund.service.TefasBackfillService;
 import com.alper.backend.market.fx.service.TcmbBackfillService;
+import com.alper.backend.market.macro.service.MacroFetchService;
 import com.alper.backend.market.stocks.service.YahooBackfillService;
+import com.alper.backend.market.viop.service.ViopScraperService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Async;
@@ -24,12 +26,16 @@ public class AdminMarketService {
     private final TcmbBackfillService tcmbBackfillService;
     private final BondBackfillService bondBackfillService;
     private final TefasBackfillService tefasBackfillService;
+    private final MacroFetchService macroFetchService;
+    private final ViopScraperService viopScraperService;
 
     private final Map<String, AtomicBoolean> runningFlags = Map.of(
             "fx",     new AtomicBoolean(false),
             "stocks", new AtomicBoolean(false),
             "bonds",  new AtomicBoolean(false),
-            "funds",  new AtomicBoolean(false)
+            "funds",  new AtomicBoolean(false),
+            "macro",  new AtomicBoolean(false),
+            "viop",   new AtomicBoolean(false)
     );
 
     @AdminAudited(action = AuditAction.BACKFILL_TRIGGERED, targetType = "market")
@@ -74,6 +80,28 @@ public class AdminMarketService {
         }
         runFundsAsync(flag);
         return BackfillResponse.triggered("funds");
+    }
+
+    @AdminAudited(action = AuditAction.BACKFILL_TRIGGERED, targetType = "market")
+    public BackfillResponse triggerMacroBackfill() {
+        AtomicBoolean flag = runningFlags.get("macro");
+        if (!flag.compareAndSet(false, true)) {
+            log.warn("Backfill zaten çalışıyor: macro");
+            return BackfillResponse.alreadyRunning("macro");
+        }
+        runMacroAsync(flag);
+        return BackfillResponse.triggered("macro");
+    }
+
+    @AdminAudited(action = AuditAction.BACKFILL_TRIGGERED, targetType = "market")
+    public BackfillResponse triggerViopBackfill() {
+        AtomicBoolean flag = runningFlags.get("viop");
+        if (!flag.compareAndSet(false, true)) {
+            log.warn("Backfill zaten çalışıyor: viop");
+            return BackfillResponse.alreadyRunning("viop");
+        }
+        runViopAsync(flag);
+        return BackfillResponse.triggered("viop");
     }
 
     @Async
@@ -123,6 +151,33 @@ public class AdminMarketService {
             log.info("Manuel backfill tamamlandı: funds");
         } catch (Exception e) {
             log.error("Manuel backfill hatası: funds → {}", e.getMessage(), e);
+        } finally {
+            flag.set(false);
+        }
+    }
+
+    @Async
+    public void runMacroAsync(AtomicBoolean flag) {
+        try {
+            log.info("Manuel backfill başladı: macro");
+            macroFetchService.fetchInflation();
+            macroFetchService.fetchDepositRates();
+            log.info("Manuel backfill tamamlandı: macro");
+        } catch (Exception e) {
+            log.error("Manuel backfill hatası: macro → {}", e.getMessage(), e);
+        } finally {
+            flag.set(false);
+        }
+    }
+
+    @Async
+    public void runViopAsync(AtomicBoolean flag) {
+        try {
+            log.info("Manuel backfill başladı: viop");
+            viopScraperService.fetchAndSaveDaily();
+            log.info("Manuel backfill tamamlandı: viop");
+        } catch (Exception e) {
+            log.error("Manuel backfill hatası: viop → {}", e.getMessage(), e);
         } finally {
             flag.set(false);
         }
