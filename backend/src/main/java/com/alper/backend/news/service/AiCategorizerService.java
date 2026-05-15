@@ -4,15 +4,8 @@ import com.alper.backend.news.model.Category;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-
 import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @Service
@@ -23,7 +16,7 @@ public class AiCategorizerService {
     private static final Pattern MULTI_SPACE_PATTERN = Pattern.compile("\\s+");
 
     private static final Map<String, String> CATEGORY_ALIASES = new LinkedHashMap<>();
-    private static final Map<String, List<String>> CATEGORY_KEYWORDS = new LinkedHashMap<>();
+
 
     static {
         CATEGORY_ALIASES.put("enerji", "Emtia");
@@ -74,35 +67,7 @@ public class AiCategorizerService {
         CATEGORY_ALIASES.put("ekonomi", "Genel Ekonomi");
         CATEGORY_ALIASES.put("makro", "Genel Ekonomi");
 
-        CATEGORY_KEYWORDS.put("Hisse", List.of(
-            "borsa", "bist", "hisse", "halka arz", "endeks", "nasdaq", "dow", "sp500", "s&p"
-        ));
-        CATEGORY_KEYWORDS.put("Döviz", List.of(
-            "doviz", "dolar", "euro", "sterlin", "usd", "eur", "gbp", "parite"
-        ));
-        CATEGORY_KEYWORDS.put("Altın", List.of(
-            "altin", "gram altin", "ons altin", "ceyrek altin", "cumhuriyet altini", "gold", "silver"
-        ));
-        CATEGORY_KEYWORDS.put("Kripto Para", List.of(
-            "kripto", "bitcoin", "ethereum", "btc", "eth", "altcoin", "blockchain"
-        ));
-        CATEGORY_KEYWORDS.put("TCMB", List.of(
-            "tcmb", "merkez bankasi", "ppk", "faiz karari", "politika faizi", "rezerv"
-        ));
-        CATEGORY_KEYWORDS.put("Tahvil/Bono", List.of(
-            "tahvil", "bono", "eurobond", "bond", "getiri", "faiz indirimi", "faiz artisi"
-        ));
-        CATEGORY_KEYWORDS.put("Emtia", List.of(
-            "emtia", "petrol", "brent", "dogalgaz", "doğalgaz", "wti", "bakir", "gumus", "tarimsal emtia"
-        ));
-        CATEGORY_KEYWORDS.put("Politika", List.of(
-            "hukumet", "hükümet", "meclis", "secim", "seçim", "bakan", "cumhurbaskani", "policy"
-        ));
-        CATEGORY_KEYWORDS.put("Genel Ekonomi", List.of(
-            "ekonomi", "enflasyon", "ihracat", "ithalat", "gsyh", "buyume", "büyüme",
-            "issizlik", "işsizlik", "sanayi uretimi", "sanayi üretimi", "cari acik", "cari açık",
-            "kredi", "banka", "vergi", "butce", "bütçe"
-        ));
+
     }
 
     private final GroqApiService groqApiService;
@@ -174,7 +139,7 @@ public class AiCategorizerService {
             return aliasCategory;
         }
 
-        return matchByKeywordScore(normalizedText, categoriesByNormalizedName);
+        return Optional.empty(); // ← bunu koy
     }
 
     public Category getFallbackCategoryFromCache() {
@@ -241,7 +206,7 @@ public class AiCategorizerService {
                 .orElseGet(() -> {
                     if (!categories.isEmpty()) {
                         log.warn("Fallback category 'Diğer' not found, using first active category");
-                        return categories.get(0);
+                        return categories.getFirst();
                     }
                     log.warn("No active category found, AI categorization fallback is null");
                     return null;
@@ -269,36 +234,7 @@ public class AiCategorizerService {
         return Optional.empty();
     }
 
-    private Optional<Category> matchByKeywordScore(String normalizedText, Map<String, Category> categoriesByNormalizedName) {
-        List<CategoryScore> scores = new ArrayList<>();
 
-        for (Map.Entry<String, List<String>> entry : CATEGORY_KEYWORDS.entrySet()) {
-            String normalizedCategoryName = normalize(entry.getKey());
-            Category category = categoriesByNormalizedName.get(normalizedCategoryName);
-            if (category == null) {
-                continue;
-            }
-
-            int score = 0;
-            for (String keyword : entry.getValue()) {
-                String normalizedKeyword = normalize(keyword);
-                if (normalizedKeyword.isEmpty()) {
-                    continue;
-                }
-                if (containsToken(normalizedText, normalizedKeyword)) {
-                    score += normalizedKeyword.length() >= 6 ? 2 : 1;
-                }
-            }
-
-            if (score > 0) {
-                scores.add(new CategoryScore(category, score));
-            }
-        }
-
-        return scores.stream()
-            .max(Comparator.comparingInt(CategoryScore::score))
-            .map(CategoryScore::category);
-    }
 
     private boolean containsToken(String normalizedText, String normalizedKeyword) {
         if (normalizedText == null || normalizedText.isBlank() || normalizedKeyword == null || normalizedKeyword.isBlank()) {
@@ -336,8 +272,5 @@ public class AiCategorizerService {
         String decomposed = Normalizer.normalize(lowered, Normalizer.Form.NFKD);
         String withoutMarks = COMBINING_MARKS_PATTERN.matcher(decomposed).replaceAll("");
         return MULTI_SPACE_PATTERN.matcher(withoutMarks).replaceAll(" ").trim();
-    }
-
-    private record CategoryScore(Category category, int score) {
     }
 }

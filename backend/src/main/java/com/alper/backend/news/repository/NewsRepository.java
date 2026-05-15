@@ -17,17 +17,17 @@ public interface NewsRepository extends JpaRepository<News, Long> {
 
     // Base pagination query
     @Override
-    @EntityGraph(attributePaths = {"source", "categories"})
+    @EntityGraph(attributePaths = {"source"})
     Page<News> findAll(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"source", "categories"})
+    @EntityGraph(attributePaths = {"source"})
     @Query(value = """
             SELECT DISTINCT n FROM News n
             LEFT JOIN n.categories c
             WHERE (:search IS NULL
-                   OR LOWER(n.title) LIKE CONCAT('%', :search, '%')
-                   OR LOWER(COALESCE(n.context, '')) LIKE CONCAT('%', :search, '%')
-                   OR LOWER(n.canonicalUrl) LIKE CONCAT('%', :search, '%'))
+                   OR LOWER(n.title) LIKE :search
+                   OR LOWER(COALESCE(n.context, '')) LIKE :search
+                   OR LOWER(n.canonicalUrl) LIKE :search)
               AND (:status IS NULL OR n.status = :status)
               AND (:sourceId IS NULL OR n.source.id = :sourceId)
               AND (:categoryId IS NULL OR c.id = :categoryId)
@@ -36,9 +36,9 @@ public interface NewsRepository extends JpaRepository<News, Long> {
             SELECT COUNT(DISTINCT n) FROM News n
             LEFT JOIN n.categories c
             WHERE (:search IS NULL
-                   OR LOWER(n.title) LIKE CONCAT('%', :search, '%')
-                   OR LOWER(COALESCE(n.context, '')) LIKE CONCAT('%', :search, '%')
-                   OR LOWER(n.canonicalUrl) LIKE CONCAT('%', :search, '%'))
+                   OR LOWER(n.title) LIKE :search
+                   OR LOWER(COALESCE(n.context, '')) LIKE :search
+                   OR LOWER(n.canonicalUrl) LIKE :search)
               AND (:status IS NULL OR n.status = :status)
               AND (:sourceId IS NULL OR n.source.id = :sourceId)
               AND (:categoryId IS NULL OR c.id = :categoryId)

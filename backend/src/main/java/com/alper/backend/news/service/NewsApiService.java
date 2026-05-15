@@ -24,14 +24,8 @@ public class NewsApiService {
         this.restTemplate = new RestTemplate(requestFactory);
     }
 
-    /**
-     * API - Fetch financial news
-     * @param symbols Stock symbols (e.g., "TSLA,AAPL,MSFT")
-     * @param entities Companies (e.g., "Tesla,Apple")
-     * @param industries Industries (e.g., "Technology,Financials")
-     * @return JSON response
-     */
-    public String fetchNews(String symbols, String entities, String industries) {
+
+    public String fetchNews() {
         try {
             String baseUrl = trimToEmpty(newsApiProperties.getBaseUrl());
             String apiKey = trimToEmpty(newsApiProperties.getKey());
@@ -65,7 +59,7 @@ public class NewsApiService {
      * Fetch all news without filters
      */
     public String fetchAllNews() {
-        return fetchNews(null, null, null);
+        return fetchNews();
     }
 
     private String resolveEndpoint(String baseUrl) {

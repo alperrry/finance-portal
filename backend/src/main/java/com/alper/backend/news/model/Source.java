@@ -1,9 +1,16 @@
 package com.alper.backend.news.model;
 
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.OffsetDateTime;
 
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Table(name = "sources")
 public class Source {
 
@@ -25,21 +32,4 @@ public class Source {
 
     @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
     private OffsetDateTime updatedAt;
-
-    public Source() {}
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-
-    public String getSourceUrl() { return sourceUrl; }
-    public void setSourceUrl(String sourceUrl) { this.sourceUrl = sourceUrl; }
-
-    public boolean isActive() { return isActive; }
-    public void setActive(boolean active) { isActive = active; }
-
-    public OffsetDateTime getCreatedAt() { return createdAt; }
-    public OffsetDateTime getUpdatedAt() { return updatedAt; }
 }

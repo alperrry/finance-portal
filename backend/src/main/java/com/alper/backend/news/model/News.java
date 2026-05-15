@@ -1,11 +1,18 @@
 package com.alper.backend.news.model;
 
 import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.BatchSize;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Table(name = "news")
 public class News {
 
@@ -40,6 +47,7 @@ public class News {
     private Source source;
 
     @ManyToMany
+    @BatchSize(size = 50)
     @JoinTable(
             name = "news_categories",
             joinColumns = @JoinColumn(name = "news_id"),
@@ -53,37 +61,5 @@ public class News {
     @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
     private OffsetDateTime updatedAt;
 
-    public News() {}
 
-    public Long getId() { return id; }
-
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-
-    public String getContext() { return context; }
-    public void setContext(String context) { this.context = context; }
-
-    public OffsetDateTime getPublishedAt() { return publishedAt; }
-    public void setPublishedAt(OffsetDateTime publishedAt) { this.publishedAt = publishedAt; }
-
-    public String getCanonicalUrl() { return canonicalUrl; }
-    public void setCanonicalUrl(String canonicalUrl) { this.canonicalUrl = canonicalUrl; }
-
-    public String getExternalId() { return externalId; }
-    public void setExternalId(String externalId) { this.externalId = externalId; }
-
-    public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
-
-    public NewsStatus getStatus() { return status; }
-    public void setStatus(NewsStatus status) { this.status = status; }
-
-    public Source getSource() { return source; }
-    public void setSource(Source source) { this.source = source; }
-
-    public Set<Category> getCategories() { return categories; }
-    public void setCategories(Set<Category> categories) { this.categories = categories; }
-
-    public OffsetDateTime getCreatedAt() { return createdAt; }
-    public OffsetDateTime getUpdatedAt() { return updatedAt; }
 }

@@ -1,10 +1,13 @@
 package com.alper.backend.news.config;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
-
+@Getter
+@Setter
 @Configuration
 @ConfigurationProperties(prefix = "groq.api")
 public class GroqConfig {
@@ -22,11 +25,4 @@ public class GroqConfig {
                 .build();
     }
 
-    // Getters & Setters
-    public String getKey() { return key; }
-    public void setKey(String key) { this.key = key; }
-    public String getModel() { return model; }
-    public void setModel(String model) { this.model = model; }
-    public int getTimeout() { return timeout; }
-    public void setTimeout(int timeout) { this.timeout = timeout; }
 }

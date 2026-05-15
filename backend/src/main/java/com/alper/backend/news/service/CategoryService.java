@@ -8,12 +8,9 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
+
 
 @Service
 @Transactional
@@ -40,29 +37,15 @@ public class CategoryService {
             .toList();
     }
 
-    @Transactional(readOnly = true)
     public List<Category> getActiveCategoriesCached() {
-        List<CategorySnapshot> snapshots = getActiveCategorySnapshotsCached();
-        if (snapshots.isEmpty()) {
-            return List.of();
-        }
-
-        List<Long> idsInOrder = snapshots.stream()
-            .map(CategorySnapshot::id)
-            .toList();
-        Map<Long, Category> categoriesById = new LinkedHashMap<>();
-        for (Category category : categoryRepository.findAllById(idsInOrder)) {
-            categoriesById.put(category.getId(), category);
-        }
-
-        List<Category> orderedCategories = new ArrayList<>();
-        for (Long id : idsInOrder) {
-            Category category = categoriesById.get(id);
-            if (category != null) {
-                orderedCategories.add(category);
-            }
-        }
-        return orderedCategories;
+        return getActiveCategorySnapshotsCached().stream()
+                .map(s -> {
+                    Category c = new Category();
+                    c.setId(s.id());
+                    c.setName(s.name());
+                    return c;
+                })
+                .toList();
     }
 
     public Category getCategoryById(Long id) {
@@ -78,7 +61,6 @@ public class CategoryService {
 
         Category category = new Category();
         category.setName(name);
-        category.setActive(true);
         return categoryRepository.save(category);
     }
 

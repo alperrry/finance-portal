@@ -7,10 +7,10 @@ import com.alper.backend.news.event.NewsPublishedEvent;
 import com.alper.backend.news.model.Category;
 import com.alper.backend.news.model.News;
 import com.alper.backend.news.model.Source;
-import com.alper.backend.news.repository.CategoryRepository;
 import com.alper.backend.news.repository.NewsRepository;
 import com.alper.backend.news.repository.SourceRepository;
 import com.alper.backend.news.service.AiCategorizerService;
+import com.alper.backend.news.service.CategoryService;
 import com.alper.backend.news.service.NewsApiService;
 import com.alper.backend.news.service.RssFeedService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -78,31 +78,31 @@ public class NewsFetcherScheduler {
     );
 
     private final SourceRepository sourceRepository;
-    private final CategoryRepository categoryRepository;
     private final NewsRepository newsRepository;
     private final NewsApiService newsApiService;
     private final RssFeedService rssFeedService;
     private final AiCategorizerService aiCategorizerService;
+    private final CategoryService categoryService;
     private final NewsFetcherProperties fetcherProperties;
     private final CacheManager cacheManager;
     private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
 
     public NewsFetcherScheduler(SourceRepository sourceRepository,
-                                CategoryRepository categoryRepository,
                                 NewsRepository newsRepository,
                                 NewsApiService newsApiService,
                                 RssFeedService rssFeedService,
                                 AiCategorizerService aiCategorizerService,
+                                CategoryService categoryService,
                                 NewsFetcherProperties fetcherProperties,
                                 CacheManager cacheManager,
                                 ApplicationEventPublisher eventPublisher) {
         this.sourceRepository = sourceRepository;
-        this.categoryRepository = categoryRepository;
         this.newsRepository = newsRepository;
         this.newsApiService = newsApiService;
         this.rssFeedService = rssFeedService;
         this.aiCategorizerService = aiCategorizerService;
+        this.categoryService = categoryService;
         this.fetcherProperties = fetcherProperties;
         this.cacheManager = cacheManager;
         this.eventPublisher = eventPublisher;
@@ -216,7 +216,7 @@ public class NewsFetcherScheduler {
                     String context = readTextField(article, "description", "content");
                     Set<String> incomingCategoryLabels = extractApiCategoryLabels(article);
                     if (shouldSkipAsNonFinance(title, context, incomingCategoryLabels)) continue;
-                    String externalId = normalizeExternalId(readNestedTextField(article, "source", "id"));
+                    String externalId = normalizeExternalId(readNestedTextField(article));
                     if (externalId == null) externalId = normalizeExternalId(url);
                     if (isDuplicate(defaultSource.getId(), url, externalId)) continue;
                     News news = new News();
@@ -276,9 +276,9 @@ public class NewsFetcherScheduler {
                 var existingByUrl = newsRepository.findByCanonicalUrl(link);
                 if (existingByUrl.isPresent()) {
                     News existing = existingByUrl.get();
-                    if (existing.getPublishedAt() == null && publishedDate != null) {
-                        existing.setPublishedAt(OffsetDateTime.ofInstant(publishedDate.toInstant(), ZoneId.systemDefault()));
-                        newsRepository.save(existing);
+                    if (updateExistingRssNews(existing, publishedDate, entry, context)) {
+                        News savedExisting = newsRepository.save(existing);
+                        savedNewsList.add(savedExisting);
                         savedCount++;
                     }
                     continue;
@@ -306,11 +306,26 @@ public class NewsFetcherScheduler {
         return savedCount;
     }
 
+    private boolean updateExistingRssNews(News existing, Date publishedDate, SyndEntry entry, String context) {
+        boolean changed = false;
+        if (existing.getPublishedAt() == null && publishedDate != null) {
+            existing.setPublishedAt(OffsetDateTime.ofInstant(publishedDate.toInstant(), ZoneId.systemDefault()));
+            changed = true;
+        }
+        if ((existing.getImageUrl() == null || existing.getImageUrl().isBlank())) {
+            String imageUrl = resolveRssImageUrl(entry, context);
+            if (imageUrl != null) {
+                existing.setImageUrl(imageUrl);
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
     private boolean isDuplicate(Long sourceId, String canonicalUrl, String externalId) {
         if (newsRepository.existsByCanonicalUrl(canonicalUrl)) return true;
-        if (sourceId != null && externalId != null
-                && newsRepository.findBySourceIdAndExternalId(sourceId, externalId).isPresent()) return true;
-        return false;
+        return sourceId != null && externalId != null
+                && newsRepository.findBySourceIdAndExternalId(sourceId, externalId).isPresent();
     }
 
     private Source resolveOrCreateApiSource() {
@@ -343,11 +358,11 @@ public class NewsFetcherScheduler {
         return null;
     }
 
-    private String readNestedTextField(JsonNode node, String parentFieldName, String childFieldName) {
-        if (node == null || parentFieldName == null || childFieldName == null) return null;
-        JsonNode parentNode = node.get(parentFieldName);
+    private String readNestedTextField(JsonNode node) {
+        if (node == null) return null;
+        JsonNode parentNode = node.get("source");
         if (parentNode == null || parentNode.isNull()) return null;
-        return readTextField(parentNode, childFieldName);
+        return readTextField(parentNode, "id");
     }
 
     private String resolveApiImageUrl(JsonNode article) {
@@ -357,6 +372,9 @@ public class NewsFetcherScheduler {
     private String resolveRssImageUrl(SyndEntry entry, String context) {
         String fromForeignMarkup = resolveRssMediaImageUrl(entry);
         if (fromForeignMarkup != null) return fromForeignMarkup;
+
+        String fromItemImage = resolveRssItemImageUrl(entry);
+        if (fromItemImage != null) return fromItemImage;
 
         String fromEnclosure = resolveRssEnclosureImageUrl(entry);
         if (fromEnclosure != null) return fromEnclosure;
@@ -385,6 +403,28 @@ public class NewsFetcherScheduler {
         }
         for (Element child : element.getChildren()) {
             String imageUrl = resolveMediaElementImageUrl(child);
+            if (imageUrl != null) return imageUrl;
+        }
+        return null;
+    }
+
+    private String resolveRssItemImageUrl(SyndEntry entry) {
+        if (entry == null || entry.getForeignMarkup() == null) return null;
+        for (Element element : entry.getForeignMarkup()) {
+            String imageUrl = resolveItemImageElementUrl(element);
+            if (imageUrl != null) return imageUrl;
+        }
+        return null;
+    }
+
+    private String resolveItemImageElementUrl(Element element) {
+        if (element == null) return null;
+        if ("image".equalsIgnoreCase(element.getName())) {
+            String imageUrl = normalizeImageUrl(element.getTextNormalize());
+            if (imageUrl != null) return imageUrl;
+        }
+        for (Element child : element.getChildren()) {
+            String imageUrl = resolveItemImageElementUrl(child);
             if (imageUrl != null) return imageUrl;
         }
         return null;
@@ -457,7 +497,7 @@ public class NewsFetcherScheduler {
     private Set<Category> enrichNews(News news, Set<String> incomingCategoryLabels, AiCallBudget aiCallBudget) {
         Set<Category> matchedCategories = mapIncomingCategories(incomingCategoryLabels);
         if (matchedCategories.isEmpty()) {
-            List<Category> activeCategories = categoryRepository.findByIsActiveTrue();
+            List<Category> activeCategories = categoryService.getActiveCategoriesCached();
             Optional<Category> localCategory = aiCategorizerService.classifyWithoutAi(news.getTitle(), news.getContext(), activeCategories);
             if (localCategory.isPresent()) {
                 matchedCategories = new LinkedHashSet<>();
@@ -488,7 +528,7 @@ public class NewsFetcherScheduler {
 
     private Set<Category> mapIncomingCategories(Set<String> incomingCategoryLabels) {
         if (incomingCategoryLabels == null || incomingCategoryLabels.isEmpty()) return Set.of();
-        List<Category> activeCategories = categoryRepository.findByIsActiveTrue();
+        List<Category> activeCategories = categoryService.getActiveCategoriesCached();
         if (activeCategories.isEmpty()) return Set.of();
         Set<Category> matched = new LinkedHashSet<>();
         for (String label : incomingCategoryLabels) {
@@ -514,6 +554,7 @@ public class NewsFetcherScheduler {
         }
         if (containsAnyKeyword(normalizedText, NON_FINANCE_KEYWORDS)) return false;
         return false;
+
     }
 
     private boolean containsAnyKeyword(String text, Set<String> keywords) {
@@ -565,7 +606,7 @@ public class NewsFetcherScheduler {
     private void addRawLabel(Set<String> labels, String rawValue) {
         if (rawValue == null || rawValue.isBlank()) return;
         for (String part : rawValue.split("[,;/|]")) {
-            String trimmed = part == null ? "" : part.trim();
+            String trimmed = part.trim();
             if (!trimmed.isEmpty()) labels.add(trimmed);
         }
     }

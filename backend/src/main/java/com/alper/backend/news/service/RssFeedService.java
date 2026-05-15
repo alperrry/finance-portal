@@ -5,16 +5,21 @@ import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.ParsingFeedException;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
+import org.jdom2.Element;
+import org.jdom2.input.SAXBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @Service
 public class RssFeedService {
@@ -58,16 +63,92 @@ public class RssFeedService {
                     log.warn("RSS parsed but no entries found: {} (contentType='{}')", feedUrl, safe(contentType));
                     return List.of();
                 }
+                enrichPlainItemImages(responseBody, entries);
                 return entries;
             }
         } catch (ParsingFeedException e) {
             log.warn("RSS parse error for {}: {}", feedUrl, e.getMessage());
             log.debug("RSS parse stacktrace for {}", feedUrl, e);
             return List.of();
+        } catch (FileNotFoundException e) {
+            log.warn("RSS feed not found: {}", feedUrl);
+            return List.of();
         } catch (Exception e) {
             log.error("Error fetching RSS feed: {}", feedUrl, e);
             return List.of();
         }
+    }
+
+    private void enrichPlainItemImages(byte[] responseBody, List<SyndEntry> entries) {
+        Map<String, String> imagesByEntryKey = extractPlainItemImages(responseBody);
+        if (imagesByEntryKey.isEmpty()) return;
+
+        for (SyndEntry entry : entries) {
+            String imageUrl = firstNonBlank(
+                    imagesByEntryKey.get(key(entry.getLink())),
+                    imagesByEntryKey.get(key(entry.getUri())),
+                    imagesByEntryKey.get(key(entry.getTitle()))
+            );
+            if (imageUrl == null) continue;
+            entry.getForeignMarkup().add(new Element("image").setText(imageUrl));
+        }
+    }
+
+    private Map<String, String> extractPlainItemImages(byte[] responseBody) {
+        try {
+            SAXBuilder builder = safeSaxBuilder();
+            var document = builder.build(new ByteArrayInputStream(responseBody));
+            Element root = document.getRootElement();
+            Element channel = root.getChild("channel");
+            if (channel == null) return Map.of();
+
+            Map<String, String> imagesByEntryKey = new HashMap<>();
+            for (Element item : channel.getChildren("item")) {
+                String imageUrl = text(item, "image");
+                if (imageUrl == null) continue;
+                putImage(imagesByEntryKey, item.getChildTextTrim("link"), imageUrl);
+                putImage(imagesByEntryKey, item.getChildTextTrim("guid"), imageUrl);
+                putImage(imagesByEntryKey, item.getChildTextTrim("title"), imageUrl);
+            }
+            return imagesByEntryKey;
+        } catch (Exception e) {
+            log.debug("Plain RSS item image extraction skipped: {}", e.getMessage());
+            return Map.of();
+        }
+    }
+
+    private SAXBuilder safeSaxBuilder() {
+        SAXBuilder builder = new SAXBuilder();
+        try {
+            builder.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        } catch (Exception e) {
+            log.debug("RSS parser secure doctype feature is not supported: {}", e.getMessage());
+        }
+        return builder;
+    }
+
+    private void putImage(Map<String, String> imagesByEntryKey, String key, String imageUrl) {
+        String normalizedKey = key(key);
+        if (normalizedKey != null) imagesByEntryKey.putIfAbsent(normalizedKey, imageUrl);
+    }
+
+    private String text(Element parent, String childName) {
+        Element child = parent.getChild(childName);
+        if (child == null) return null;
+        String value = child.getTextNormalize();
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String key(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) return null;
+        for (String value : values) {
+            if (value != null && !value.isBlank()) return value.trim();
+        }
+        return null;
     }
 
     private boolean looksLikeHtml(String contentType, String preview) {

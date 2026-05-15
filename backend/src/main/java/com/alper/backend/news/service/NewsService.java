@@ -153,6 +153,7 @@ public class NewsService {
         return newsRepository.save(news);
     }
 
+
     @CacheEvict(value = NEWS_LIST_CACHE, allEntries = true)
     public News archiveNews(Long id) {
         return updateStatus(id, NewsStatus.archived);

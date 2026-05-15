@@ -1,11 +1,18 @@
 package com.alper.backend.news.model;
 
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Table(name = "categories")
 public class Category {
 
@@ -29,18 +36,5 @@ public class Category {
     @ManyToMany(mappedBy = "categories")
     private Set<News> news = new HashSet<>();
 
-    public Category() {}
 
-    public Long getId() { return id; }
-
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-
-    public boolean isActive() { return isActive; }
-    public void setActive(boolean active) { isActive = active; }
-
-    public OffsetDateTime getCreatedAt() { return createdAt; }
-    public OffsetDateTime getUpdatedAt() { return updatedAt; }
-
-    public Set<News> getNews() { return news; }
 }
