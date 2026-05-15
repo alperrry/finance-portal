@@ -10,7 +10,6 @@ import com.alper.backend.portfolio.model.TransactionType;
 import com.alper.backend.portfolio.repository.PortfolioItemRepository;
 import com.alper.backend.portfolio.repository.PortfolioRepository;
 import com.alper.backend.portfolio.repository.TradeTransactionRepository;
-import com.alper.backend.user.service.UserBalanceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.ApplicationEventPublisher;
@@ -23,11 +22,10 @@ import java.time.Instant;
 import java.util.Optional;
 
 /**
- * Trade lifecycle status machine (jBPM yerine).
+ * Trade lifecycle status machine.
  *
- * <p>Yürütülen 4 adım (FR-22):
+ * <p>Yürütülen adımlar:
  * <ol>
- *     <li>Bakiye kontrolü</li>
  *     <li>Enstrüman uygunluğu (mevcut tasarımda submit-time'da yapıldığı için placeholder)</li>
  *     <li>İşlem saati kontrolü (placeholder, ileride TurkishHolidayUtil ile aktive edilebilir)</li>
  *     <li>Limit kontrolleri (placeholder)</li>
@@ -49,7 +47,6 @@ public class TradeProcessService {
     private final PortfolioRepository portfolioRepository;
     private final PortfolioItemRepository portfolioItemRepository;
     private final ApplicationEventPublisher eventPublisher;
-    private final UserBalanceService userBalanceService;
     private final TradeCurrencyService tradeCurrencyService;
 
     /**
@@ -62,7 +59,6 @@ public class TradeProcessService {
                 transaction.getId(), transaction.getTransactionType(), executionPrice);
 
         try {
-            checkBalance(transaction, executionPrice);
             checkInstrumentEligibility(transaction);
             checkTradingHours(transaction);
             checkLimits(transaction);
@@ -71,27 +67,6 @@ public class TradeProcessService {
             approve(transaction, executionPrice);
         } catch (TradeRejectionException e) {
             reject(transaction, e.getMessage());
-        }
-    }
-
-    private void checkBalance(TradeTransaction transaction, BigDecimal executionPrice) {
-        if (transaction.getTransactionType() != TransactionType.BUY) {
-            return;
-        }
-        Portfolio portfolio = getPortfolio(transaction.getPortfolioId());
-        SettlementAmounts settlement = calculateSettlementAmounts(transaction, portfolio, executionPrice);
-        BigDecimal additionalRequired = settlement.totalInBalanceCurrency().subtract(reservedAmount(transaction));
-        if (additionalRequired.compareTo(BigDecimal.ZERO) <= 0) {
-            return;
-        }
-
-        BigDecimal currentBalance = userBalanceService.getBalance(portfolio.getUserId());
-        if (currentBalance.compareTo(additionalRequired) < 0) {
-            throw new TradeRejectionException(String.format(
-                    "Yetersiz bakiye. Mevcut: %s TL, gereken: %s TL",
-                    currentBalance,
-                    additionalRequired
-            ));
         }
     }
 
@@ -157,20 +132,7 @@ public class TradeProcessService {
                 .avgCost(executionPrice)
                 .build());
 
-        settleReservedBuyBalance(transaction, portfolio.getUserId(), settlement);
         portfolioItemRepository.save(item);
-    }
-
-    private void settleReservedBuyBalance(TradeTransaction transaction, Long userId, SettlementAmounts settlement) {
-        BigDecimal reservedAmount = reservedAmount(transaction);
-        BigDecimal actualAmount = settlement.totalInBalanceCurrency();
-        BigDecimal balanceDelta = reservedAmount.compareTo(BigDecimal.ZERO) > 0
-                ? reservedAmount.subtract(actualAmount)
-                : actualAmount.negate();
-
-        if (balanceDelta.compareTo(BigDecimal.ZERO) != 0) {
-            adjustUserBalance(userId, balanceDelta);
-        }
     }
 
     private void applySell(TradeTransaction transaction, Portfolio portfolio, BigDecimal executionPrice,
@@ -196,8 +158,6 @@ public class TradeProcessService {
         transaction.setRealizedProfitLoss(realizedPnLDisplay);
         log.info("Satış gerçekleşti. tradeId={}, qty={}, executionPrice={}, avgCost={}, realizedPnL={}",
                 transaction.getId(), qty, executionPrice, item.getAvgCost(), realizedPnLDisplay);
-
-        adjustUserBalance(portfolio.getUserId(), settlement.totalInBalanceCurrency());
 
         BigDecimal newQty = oldQty.subtract(qty);
         if (newQty.compareTo(BigDecimal.ZERO) == 0) {
@@ -229,26 +189,13 @@ public class TradeProcessService {
                 nativeCurrency,
                 portfolio.getDisplayCurrency()
         ).setScale(AMOUNT_SCALE, RoundingMode.HALF_UP);
-        BigDecimal totalInBalanceCurrency = convertAmount(
-                totalNative,
-                nativeCurrency,
-                TradeCurrencyService.BALANCE_CURRENCY
-        ).setScale(AMOUNT_SCALE, RoundingMode.HALF_UP);
 
-        return new SettlementAmounts(nativeCurrency, totalInPortfolioCurrency, totalInBalanceCurrency);
+        return new SettlementAmounts(nativeCurrency, totalInPortfolioCurrency);
     }
 
     private BigDecimal convertAmount(BigDecimal amount, String from, String to) {
         try {
             return tradeCurrencyService.convertOrThrow(amount, from, to);
-        } catch (RuntimeException e) {
-            throw new TradeRejectionException(e.getMessage());
-        }
-    }
-
-    private void adjustUserBalance(Long userId, BigDecimal delta) {
-        try {
-            userBalanceService.adjustBalance(userId, delta);
         } catch (RuntimeException e) {
             throw new TradeRejectionException(e.getMessage());
         }
@@ -271,7 +218,6 @@ public class TradeProcessService {
 
     private void reject(TradeTransaction transaction, String reason) {
         Long userId = resolvePortfolioUserId(transaction.getPortfolioId());
-        refundReservedBuyBalance(transaction, userId);
 
         transaction.setStatus(TransactionStatus.REJECTED);
         transaction.setRejectionReason(reason);
@@ -280,21 +226,6 @@ public class TradeProcessService {
 
         log.warn("Trade REJECTED. tradeId={}, userId={}, reason={}", saved.getId(), userId, reason);
         eventPublisher.publishEvent(TradeRejectedEvent.of(saved, userId, reason));
-    }
-
-    private void refundReservedBuyBalance(TradeTransaction transaction, Long userId) {
-        if (userId == null || transaction.getTransactionType() != TransactionType.BUY) {
-            return;
-        }
-
-        BigDecimal reservedAmount = reservedAmount(transaction);
-        if (reservedAmount.compareTo(BigDecimal.ZERO) > 0) {
-            adjustUserBalance(userId, reservedAmount);
-        }
-    }
-
-    private BigDecimal reservedAmount(TradeTransaction transaction) {
-        return transaction.getReservedAmount() == null ? BigDecimal.ZERO : transaction.getReservedAmount();
     }
 
     private Long resolvePortfolioUserId(Long portfolioId) {
@@ -315,8 +246,7 @@ public class TradeProcessService {
 
     private record SettlementAmounts(
             String nativeCurrency,
-            BigDecimal totalInPortfolioCurrency,
-            BigDecimal totalInBalanceCurrency
+            BigDecimal totalInPortfolioCurrency
     ) {
     }
 }

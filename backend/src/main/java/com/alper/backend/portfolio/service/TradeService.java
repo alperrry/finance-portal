@@ -25,8 +25,6 @@ import com.alper.backend.portfolio.model.TransactionStatus;
 import com.alper.backend.portfolio.model.TransactionType;
 import com.alper.backend.portfolio.repository.PortfolioItemRepository;
 import com.alper.backend.portfolio.repository.TradeTransactionRepository;
-import com.alper.backend.user.event.UserBalanceUpdatedEvent;
-import com.alper.backend.user.service.UserBalanceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.ApplicationEventPublisher;
@@ -36,7 +34,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.EnumMap;
 import java.util.List;
@@ -72,7 +69,6 @@ public class TradeService {
     private final PortfolioService portfolioService;
     private final TradeProcessService tradeProcessService;
     private final TradeCurrencyService tradeCurrencyService;
-    private final UserBalanceService userBalanceService;
     private final MockMarketPriceService mockMarketPriceService;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -121,13 +117,9 @@ public class TradeService {
             return submitBondMarketOrder(transaction);
         }
 
-        reserveBuyBalanceIfNeeded(transaction, portfolio);
         TradeTransaction saved = tradeTransactionRepository.save(transaction);
-        if (saved.getReservedAmount() != null) {
-            eventPublisher.publishEvent(UserBalanceUpdatedEvent.of(portfolio.getUserId()));
-        }
-        log.info("Trade PENDING olarak kaydedildi. tradeId={}, portfolioId={}, type={}, target={}, reservedAmount={}",
-                saved.getId(), portfolioId, request.transactionType(), request.targetPrice(), saved.getReservedAmount());
+        log.info("Trade PENDING olarak kaydedildi. tradeId={}, portfolioId={}, type={}, target={}",
+                saved.getId(), portfolioId, request.transactionType(), request.targetPrice());
         return toEnrichedResponses(List.of(saved)).get(0);
     }
 
@@ -145,28 +137,6 @@ public class TradeService {
                 refreshed.getId(), refreshed.getStatus(), executionPrice);
         return toEnrichedResponses(List.of(refreshed)).get(0);
     }
-
-    private void reserveBuyBalanceIfNeeded(TradeTransaction transaction, Portfolio portfolio) {
-        if (transaction.getTransactionType() != TransactionType.BUY) {
-            return;
-        }
-
-        BigDecimal reservedAmount = calculateBalanceAmount(transaction, portfolio, transaction.getTargetPrice());
-        userBalanceService.reserveBalance(portfolio.getUserId(), reservedAmount);
-        transaction.setReservedAmount(reservedAmount);
-    }
-
-    private BigDecimal calculateBalanceAmount(TradeTransaction transaction, Portfolio portfolio, BigDecimal nativePrice) {
-        BigDecimal totalNative = transaction.getQuantity().multiply(nativePrice);
-        String nativeCurrency = tradeCurrencyService.resolveNativeCurrency(
-                transaction.getInstrumentType(),
-                transaction.getInstrumentId()
-        );
-        return tradeCurrencyService
-                .convertOrThrow(totalNative, nativeCurrency, TradeCurrencyService.BALANCE_CURRENCY)
-                .setScale(2, RoundingMode.HALF_UP);
-    }
-
 
     private TradeResponse submitBondMarketOrder(TradeTransaction transaction) {
         Optional<BondRateHistory> historyOpt = bondRateHistoryRepository
@@ -359,20 +329,10 @@ public class TradeService {
 
         tx.setStatus(TransactionStatus.CANCELLED);
         tx.setProcessedAt(Instant.now());
-        refundReservedBuyBalanceIfNeeded(tx, portfolio);
         TradeTransaction saved = tradeTransactionRepository.save(tx);
         log.info("Trade CANCELLED. tradeId={}, userId={}", saved.getId(), userId);
 
         eventPublisher.publishEvent(TradeCancelledEvent.of(saved, portfolio.getUserId()));
     }
 
-    private void refundReservedBuyBalanceIfNeeded(TradeTransaction tx, Portfolio portfolio) {
-        if (tx.getTransactionType() != TransactionType.BUY || tx.getReservedAmount() == null) {
-            return;
-        }
-
-        userBalanceService.adjustBalance(portfolio.getUserId(), tx.getReservedAmount());
-        log.debug("PENDING BUY blokesi iade edildi. tradeId={}, userId={}, amount={}",
-                tx.getId(), portfolio.getUserId(), tx.getReservedAmount());
-    }
 }

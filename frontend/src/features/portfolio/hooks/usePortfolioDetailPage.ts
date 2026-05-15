@@ -26,7 +26,7 @@ import { filterTrades, resolveApiError } from "../utils/portfolioFormatters";
 export function usePortfolioDetailPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { token, currentUser, refreshCurrentUser } = useAuth();
+    const { token } = useAuth();
     const { showToast } = useToast();
     const portfolioId = Number(id);
     const validPortfolioId = Number.isFinite(portfolioId) && portfolioId > 0 ? portfolioId : null;
@@ -97,7 +97,7 @@ export function usePortfolioDetailPage() {
         return trade.instrumentSymbol || item?.instrumentSymbol || `${INSTRUMENT_LABELS[trade.instrumentType]} #${trade.instrumentId}`;
     }, [detailState.data?.items]);
 
-    useTradeNotifications({ token, activePortfolioId: validPortfolioId, onPortfolioSignal: refreshPortfolio, onBalanceSignal: refreshCurrentUser, resolveTradeLabel });
+    useTradeNotifications({ token, activePortfolioId: validPortfolioId, onPortfolioSignal: refreshPortfolio, resolveTradeLabel });
 
     useEffect(() => {
         if (!validPortfolioId || !token) return undefined;
@@ -156,7 +156,6 @@ export function usePortfolioDetailPage() {
                     : "İşlem talebi alındı. Hedef fiyata ulaşıldığında gerçekleşecek.",
                 "success",
             );
-            void refreshCurrentUser();
             refreshPortfolio(validPortfolioId);
         } catch (caughtError) {
             setTradeError(resolveApiError(caughtError, "İşlem talebi gönderilemedi."));
@@ -171,7 +170,6 @@ export function usePortfolioDetailPage() {
         try {
             await cancelTrade(validPortfolioId, trade.id);
             showToast("İşlem iptal edildi.", "info");
-            void refreshCurrentUser();
             refreshPortfolio(validPortfolioId);
         } catch (caughtError) {
             showToast(resolveApiError(caughtError, "İşlem iptal edilemedi."), "error");
@@ -215,7 +213,6 @@ export function usePortfolioDetailPage() {
 
     return {
         portfolio: detailState.data,
-        currentBalance: currentUser?.balance ?? null,
         detailState,
         tradeHistoryState,
         tradeStatus,

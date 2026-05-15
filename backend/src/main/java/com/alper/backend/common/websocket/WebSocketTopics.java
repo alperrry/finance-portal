@@ -21,9 +21,6 @@ public final class WebSocketTopics {
     /** Kullanıcının portföy update sinyalleri (PORTFOLIO_UPDATED — thin push). */
     public static final String USER_PORTFOLIO = "/queue/portfolio";
 
-    /** Kullanıcının bakiye update sinyali (USER_BALANCE_UPDATED — thin push). */
-    public static final String USER_BALANCE = "/queue/balance";
-
     // ---- Broadcast topic'ler (SimpMessagingTemplate.convertAndSend ile) ----
 
     /** Tüm aboneler: hisse fiyatı güncellemeleri (full push). */

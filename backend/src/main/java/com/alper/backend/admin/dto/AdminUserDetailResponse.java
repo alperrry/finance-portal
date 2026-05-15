@@ -21,7 +21,6 @@ public record AdminUserDetailResponse(
         Instant lastLoginAt,
         long portfolioCount,
         BigDecimal totalPortfolioValue,
-        BigDecimal balance,
         Instant createdAt,
         Instant updatedAt
 ) {

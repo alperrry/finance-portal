@@ -120,7 +120,6 @@ public class AdminUserService {
                 .lastLoginAt(toInstant(user.getLastLoginAt()))
                 .portfolioCount(portfolioCount)
                 .totalPortfolioValue(null)
-                .balance(user.getBalance())
                 .createdAt(toInstant(user.getCreatedAt()))
                 .updatedAt(toInstant(user.getUpdatedAt()))
                 .build();

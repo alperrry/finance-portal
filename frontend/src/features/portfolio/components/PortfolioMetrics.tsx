@@ -10,25 +10,17 @@ function AnimatedMoney({ value, currency, digits = 2 }: { value: number | null |
 
 type Props = {
     portfolio: PortfolioResponse;
-    currentBalance: number | null;
 };
 
 const toMetricTone = (tone: "up" | "down" | "neutral"): "up" | "down" | "neutral" => tone;
 
-export function PortfolioMetrics({ portfolio, currentBalance }: Props) {
-    const balanceLabel = portfolio.displayCurrency === "TRY" ? "Mevcut Bakiye" : "Mevcut Bakiye (TRY)";
+export function PortfolioMetrics({ portfolio }: Props) {
     const dailyChange = (portfolio.items ?? []).reduce((sum, item) => {
         const change = toNumber(item.dailyChange);
         return sum + (change === null ? 0 : change * item.quantity);
     }, 0);
 
     const metrics = [
-        {
-            label: balanceLabel,
-            value: <AnimatedMoney value={currentBalance} currency="TRY" />,
-            note: "Harcanabilir",
-            tone: "neutral" as const,
-        },
         {
             label: "Pozisyon Değeri",
             value: <AnimatedMoney value={portfolio.totalValue} currency={portfolio.displayCurrency} />,

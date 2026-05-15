@@ -11,7 +11,7 @@ interface PortfolioDetailContentProps {
 }
 
 export function PortfolioDetailContent({ page }: PortfolioDetailContentProps) {
-    const { portfolio, currentBalance, detailState, tradeHistoryState, tradeStatus, tradeFilters, pending, handlers } = page;
+    const { portfolio, detailState, tradeHistoryState, tradeStatus, tradeFilters, pending, handlers } = page;
 
     return (
         <>
@@ -35,7 +35,7 @@ export function PortfolioDetailContent({ page }: PortfolioDetailContentProps) {
             {portfolio ? (
                 <Stack sx={{ gap: 3 }}>
                     <SectionPanel>
-                        <PortfolioMetrics portfolio={portfolio} currentBalance={currentBalance} />
+                        <PortfolioMetrics portfolio={portfolio} />
                     </SectionPanel>
 
                     <SectionPanel>

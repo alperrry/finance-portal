@@ -26,7 +26,6 @@ function mapBondOption(item: BondResponse): InstrumentOption | null {
 
 export function useNewTradeForm(
     portfolio: PortfolioResponse,
-    currentBalance: number | null,
     onSubmit: (payload: TradeRequest) => Promise<void>,
 ) {
     const [transactionType, setTransactionType] = useState<TransactionType>("BUY");
@@ -100,9 +99,6 @@ export function useNewTradeForm(
             ? selectedDisplayPrice!
             : Number(targetPrice);
     const totalAmount = Number.isFinite(quantityNumber) && Number.isFinite(priceNumber) ? quantityNumber * priceNumber : null;
-    const requiredBalance = convertMoneyValue(totalAmount, portfolio.displayCurrency, "TRY", fxRates);
-    const insufficientBalance = transactionType === "BUY" && currentBalance !== null && requiredBalance !== null && requiredBalance > currentBalance;
-    const missingConversion = transactionType === "BUY" && totalAmount !== null && requiredBalance === null;
     const ownedQuantity = portfolio.items.find(
         (item) => item.instrumentType === instrumentType && String(item.instrumentId) === instrumentId,
     )?.quantity;
@@ -112,8 +108,6 @@ export function useNewTradeForm(
         if (!Number.isFinite(quantityNumber) || quantityNumber <= 0) return "Miktar 0'dan büyük olmalı.";
         if (orderType === "LIMIT" && (!Number.isFinite(priceNumber) || priceNumber <= 0)) return "Hedef fiyat 0'dan büyük olmalı.";
         if (orderType === "MARKET" && (!Number.isFinite(priceNumber) || priceNumber <= 0)) return "Market order için güncel fiyat bulunamadı.";
-        if (missingConversion) return "Bu işlem için güncel döviz dönüşüm kuru bulunamadı.";
-        if (insufficientBalance) return "Bu işlem için bakiyeniz yetersiz.";
         return null;
     };
 
@@ -145,8 +139,6 @@ export function useNewTradeForm(
         selectedOption,
         selectedDisplayPrice,
         totalAmount,
-        insufficientBalance,
-        missingConversion,
         ownedQuantity,
         handleSubmit,
     };

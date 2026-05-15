@@ -112,14 +112,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!token) return undefined;
 
         websocketClient.connect(token);
-        const unsubscribeBalance = websocketClient.subscribe<{ userId?: number }>("/user/queue/balance", (envelope) => {
-            if (envelope.type === "USER_BALANCE_UPDATED") {
-                void refreshCurrentUser();
-            }
-        });
 
         return () => {
-            unsubscribeBalance();
             websocketClient.disconnectIfIdle();
         };
     }, [refreshCurrentUser, token]);

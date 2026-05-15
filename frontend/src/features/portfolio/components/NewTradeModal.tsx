@@ -8,14 +8,13 @@ import { useNewTradeForm } from "../hooks/useNewTradeForm";
 
 type Props = {
     portfolio: PortfolioResponse;
-    currentBalance: number | null;
     busy: boolean;
     serverError: string | null;
     onClose: () => void;
     onSubmit: (payload: TradeRequest) => Promise<void>;
 };
 
-export function NewTradeModal({ portfolio, currentBalance, busy, serverError, onClose, onSubmit }: Props) {
+export function NewTradeModal({ portfolio, busy, serverError, onClose, onSubmit }: Props) {
     const {
         transactionType, setTransactionType,
         orderType, setOrderType,
@@ -28,11 +27,9 @@ export function NewTradeModal({ portfolio, currentBalance, busy, serverError, on
         fxRatesError,
         selectedOption,
         totalAmount,
-        insufficientBalance,
-        missingConversion,
         ownedQuantity,
         handleSubmit,
-    } = useNewTradeForm(portfolio, currentBalance, onSubmit);
+    } = useNewTradeForm(portfolio, onSubmit);
 
     return (
         <Dialog open onClose={onClose} maxWidth="sm" fullWidth aria-modal>
@@ -43,11 +40,6 @@ export function NewTradeModal({ portfolio, currentBalance, busy, serverError, on
             <DialogContent>
                 <Box component="form" id="new-trade-form" onSubmit={handleSubmit} noValidate>
                     <Stack sx={{ gap: 2, pt: 1 }}>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "action.hover", borderRadius: 1, px: 2, py: 1 }}>
-                            <Typography variant="caption" color="text.secondary">Mevcut Bakiye (TRY)</Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 800 }}>{formatMoney(currentBalance, "TRY")}</Typography>
-                        </Box>
-
                         <Box>
                             <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>İşlem tipi</Typography>
                             <ToggleButtonGroup
@@ -155,15 +147,13 @@ export function NewTradeModal({ portfolio, currentBalance, busy, serverError, on
                             )
                         )}
 
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: insufficientBalance ? "error.light" : "action.hover", borderRadius: 1, px: 2, py: 1.25 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "action.hover", borderRadius: 1, px: 2, py: 1.25 }}>
                             <Typography variant="caption" color="text.secondary">Toplam Tutar</Typography>
-                            <Typography variant="body1" sx={{ fontWeight: 800, color: insufficientBalance ? "error.dark" : "text.primary" }}>
+                            <Typography variant="body1" sx={{ fontWeight: 800 }}>
                                 {formatMoney(totalAmount, portfolio.displayCurrency)}
                             </Typography>
                         </Box>
 
-                        {insufficientBalance && <Alert severity="error" sx={{ py: 0.5 }}>Bakiyeniz bu işlem için yetersiz.</Alert>}
-                        {missingConversion && <Alert severity="warning" sx={{ py: 0.5 }}>Güncel döviz kuru bulunamadı, işlem gerçekleştirilemez.</Alert>}
                         {(localError ?? serverError) && <Alert severity="error">{localError ?? serverError}</Alert>}
                     </Stack>
                 </Box>
@@ -175,7 +165,7 @@ export function NewTradeModal({ portfolio, currentBalance, busy, serverError, on
                     form="new-trade-form"
                     variant="contained"
                     color="secondary"
-                    disabled={busy || optionsLoading || insufficientBalance || missingConversion}
+                    disabled={busy || optionsLoading}
                     startIcon={busy ? <CircularProgress size={14} color="inherit" /> : undefined}
                 >
                     {busy ? "Gönderiliyor..." : "İşlem Talebi Gönder"}

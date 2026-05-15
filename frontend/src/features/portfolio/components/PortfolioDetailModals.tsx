@@ -8,7 +8,7 @@ interface PortfolioDetailModalsProps {
 }
 
 export function PortfolioDetailModals({ page }: PortfolioDetailModalsProps) {
-    const { portfolio, currentBalance, modals, pending, errors, handlers } = page;
+    const { portfolio, modals, pending, errors, handlers } = page;
 
     return (
         <>
@@ -34,7 +34,6 @@ export function PortfolioDetailModals({ page }: PortfolioDetailModalsProps) {
             {modals.tradeModalOpen && portfolio ? (
                 <NewTradeModal
                     portfolio={portfolio}
-                    currentBalance={currentBalance}
                     busy={pending.tradeBusy}
                     serverError={errors.tradeError}
                     onClose={handlers.closeTradeModal}

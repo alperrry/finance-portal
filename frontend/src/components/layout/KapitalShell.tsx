@@ -27,17 +27,6 @@ const formatTime = (value: Date) =>
         minute: "2-digit",
     }).format(value);
 
-const formatMoney = (value: number | null | undefined, currency = "TRY") => {
-    if (typeof value !== "number" || !Number.isFinite(value)) return "-";
-
-    return new Intl.NumberFormat("tr-TR", {
-        style: "currency",
-        currency,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    }).format(value);
-};
-
 const navItems: Array<{ id: ActivePage; label: string; to: string }> = [
     { id: "portfolio", label: "Piyasalar", to: "/portfolio" },
     { id: "portfolios", label: "Portföyüm", to: "/portfolios" },
@@ -196,7 +185,6 @@ export default function KapitalShell({
                     >
                         <Chip size="small" label={navDate} variant="outlined" />
                         <Chip size="small" label={navTime} variant="outlined" />
-                        <Chip size="small" label={formatMoney(currentUser?.balance, "TRY")} aria-label="Kullanıcı bakiyesi" />
                         {currentUser?.role === "ADMIN" ? (
                             <Button
                                 variant="outlined"

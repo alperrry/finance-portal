@@ -21,7 +21,6 @@ type UseTradeNotificationsOptions = {
     token?: string;
     activePortfolioId: number | null;
     onPortfolioSignal: (portfolioId: number) => void;
-    onBalanceSignal?: () => void | Promise<unknown>;
     resolveTradeLabel?: (trade: TradeResponse) => string;
 };
 
@@ -35,14 +34,12 @@ export function useTradeNotifications({
     token,
     activePortfolioId,
     onPortfolioSignal,
-    onBalanceSignal,
     resolveTradeLabel,
 }: UseTradeNotificationsOptions) {
     const { showToast } = useToast();
     const lastSeenTimestampRef = useRef<string | null>(null);
     const activePortfolioIdRef = useRef(activePortfolioId);
     const onPortfolioSignalRef = useRef(onPortfolioSignal);
-    const onBalanceSignalRef = useRef(onBalanceSignal);
     const resolveTradeLabelRef = useRef(resolveTradeLabel);
 
     useEffect(() => {
@@ -52,10 +49,6 @@ export function useTradeNotifications({
     useEffect(() => {
         onPortfolioSignalRef.current = onPortfolioSignal;
     }, [onPortfolioSignal]);
-
-    useEffect(() => {
-        onBalanceSignalRef.current = onBalanceSignal;
-    }, [onBalanceSignal]);
 
     useEffect(() => {
         resolveTradeLabelRef.current = resolveTradeLabel;
@@ -79,13 +72,6 @@ export function useTradeNotifications({
             const portfolioId = envelope.data?.portfolioId;
             if (typeof portfolioId === "number") {
                 onPortfolioSignalRef.current(portfolioId);
-            }
-        });
-
-        const unsubscribeBalance = websocketClient.subscribe("/user/queue/balance", (envelope) => {
-            lastSeenTimestampRef.current = envelope.timestamp;
-            if (envelope.type === "USER_BALANCE_UPDATED") {
-                void onBalanceSignalRef.current?.();
             }
         });
 
@@ -123,7 +109,6 @@ export function useTradeNotifications({
             window.removeEventListener("portfolio-ws:connected", onReconnect);
             unsubscribeTrades();
             unsubscribePortfolio();
-            unsubscribeBalance();
             unsubscribeFx();
             unsubscribeNews();
             websocketClient.disconnectIfIdle();

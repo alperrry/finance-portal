@@ -4,7 +4,6 @@ import com.alper.backend.user.model.UserRole;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -19,6 +18,5 @@ public class UserResponse {
     private UserRole role;
     private Boolean isActive;
     private LocalDateTime lastLoginAt;
-    private BigDecimal balance;
     private LocalDateTime createdAt;
 }

@@ -14,7 +14,6 @@ export interface UserResponse {
     role: "NORMAL_USER" | "ADMIN";
     isActive: boolean;
     lastLoginAt: string;
-    balance: number;
     createdAt: string;
 }
 
