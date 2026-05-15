@@ -12,4 +12,6 @@ public class TcmbCurrency {
     private Integer unit;
     private String forexBuying;
     private String forexSelling;
+    private String banknoteBuying;
+    private String banknoteSelling;
 }

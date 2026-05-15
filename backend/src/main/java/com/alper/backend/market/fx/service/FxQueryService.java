@@ -32,6 +32,8 @@ public class FxQueryService {
                 .unit(entity.getUnit())
                 .forexBuying(entity.getForexBuying())
                 .forexSelling(entity.getForexSelling())
+                .banknoteBuying(entity.getBanknoteBuying())
+                .banknoteSelling(entity.getBanknoteSelling())
                 .rateDate(entity.getRateDate())
                 .build();
     }

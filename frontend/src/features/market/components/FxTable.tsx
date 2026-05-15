@@ -50,6 +50,20 @@ const COLUMNS: GridColDef<FxResponse>[] = [
         renderCell: ({ row }) => formatRate(row.forexSelling),
     },
     {
+        field: "efektifBuying",
+        headerName: "Efektif Alış",
+        flex: 0.9,
+        minWidth: 110,
+        renderCell: ({ row }) => formatRate(row.banknoteBuying),
+    },
+    {
+        field: "efektifSelling",
+        headerName: "Efektif Satış",
+        flex: 0.9,
+        minWidth: 110,
+        renderCell: ({ row }) => formatRate(row.banknoteSelling),
+    },
+    {
         field: "spread",
         headerName: "Makas",
         flex: 0.9,

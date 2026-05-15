@@ -27,6 +27,8 @@ public class TcmbMapper {
                 .unit(currency.getUnit())
                 .forexBuying(parseBigDecimal(currency.getForexBuying()))
                 .forexSelling(parseBigDecimal(currency.getForexSelling()))
+                .banknoteBuying(parseBigDecimal(currency.getBanknoteBuying()))
+                .banknoteSelling(parseBigDecimal(currency.getBanknoteSelling()))
                 .rateDate(response.getRateDate())
                 .source(SOURCE)
                 .build();

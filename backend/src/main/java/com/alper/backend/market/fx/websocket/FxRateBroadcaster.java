@@ -58,6 +58,8 @@ public class FxRateBroadcaster {
         payload.put("unit", rate.getUnit());
         payload.put("forexBuying", rate.getForexBuying());
         payload.put("forexSelling", rate.getForexSelling());
+        payload.put("banknoteBuying", rate.getBanknoteBuying());
+        payload.put("banknoteSelling", rate.getBanknoteSelling());
         payload.put("rateDate", rate.getRateDate());
         return payload;
     }

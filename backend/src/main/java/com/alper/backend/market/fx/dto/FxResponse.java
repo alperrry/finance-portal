@@ -16,5 +16,7 @@ public class FxResponse {
     private Integer unit;
     private BigDecimal forexBuying;
     private BigDecimal forexSelling;
+    private BigDecimal banknoteBuying;
+    private BigDecimal banknoteSelling;
     private LocalDate rateDate;
 }

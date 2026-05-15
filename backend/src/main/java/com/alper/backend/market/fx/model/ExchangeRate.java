@@ -39,6 +39,12 @@ public class ExchangeRate {
     @Column(name = "forex_selling", precision = 18, scale = 4)
     private BigDecimal forexSelling;
 
+    @Column(name = "banknote_buying", precision = 18, scale = 4)
+    private BigDecimal banknoteBuying;
+
+    @Column(name = "banknote_selling", precision = 18, scale = 4)
+    private BigDecimal banknoteSelling;
+
     @Column(name = "rate_date", nullable = false)
     private LocalDate rateDate;
 

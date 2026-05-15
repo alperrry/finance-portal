@@ -102,6 +102,8 @@ public class TcmbService {
                         .unit(Integer.parseInt(getTagValue(element, "Unit")))
                         .forexBuying(getTagValue(element, "ForexBuying"))
                         .forexSelling(getTagValue(element, "ForexSelling"))
+                        .banknoteBuying(getTagValue(element, "BanknoteBuying"))
+                        .banknoteSelling(getTagValue(element, "BanknoteSelling"))
                         .build();
                 currencies.add(dto);
             }

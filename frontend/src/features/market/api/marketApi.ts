@@ -12,6 +12,8 @@ export type FxResponse = {
     unit: number;
     forexBuying: number | null;
     forexSelling: number | null;
+    banknoteBuying: number | null;
+    banknoteSelling: number | null;
     rateDate: string | null;
 };
 
