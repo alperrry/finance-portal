@@ -26,4 +26,6 @@ public interface FundPriceRepository extends JpaRepository<FundPrice, Long> {
     List<FundPrice> findLatestPrices();
 
     Optional<FundPrice> findFirstByFundIdOrderByPriceDateDesc(Long fundId);
+
+    List<FundPrice> findTop8ByFundIdOrderByPriceDateDesc(Long fundId);
 }

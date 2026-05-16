@@ -25,6 +25,8 @@ public interface StockPriceHistoryRepository extends JpaRepository<StockPriceHis
 
     Optional<StockPriceHistory> findFirstByStockIdOrderByTradeDateDesc(Long stockId);
 
+    List<StockPriceHistory> findTop8ByStockIdOrderByTradeDateDesc(Long stockId);
+
     @EntityGraph(attributePaths = "stock")
     @Query("""
             SELECT h FROM StockPriceHistory h

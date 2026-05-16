@@ -1,15 +1,6 @@
 package com.alper.backend.portfolio.service;
 
 import com.alper.backend.common.model.InstrumentType;
-import com.alper.backend.market.bond.repository.BondRateHistoryRepository;
-import com.alper.backend.market.bond.repository.BondRepository;
-import com.alper.backend.market.fund.repository.FundPriceRepository;
-import com.alper.backend.market.fund.repository.FundRepository;
-import com.alper.backend.market.fx.repository.ExchangeRateRepository;
-import com.alper.backend.market.stocks.model.Stock;
-import com.alper.backend.market.stocks.model.StockPriceHistory;
-import com.alper.backend.market.stocks.repository.StockPriceHistoryRepository;
-import com.alper.backend.market.stocks.repository.StockRepository;
 import com.alper.backend.portfolio.model.PortfolioItem;
 import com.alper.backend.portfolio.repository.PortfolioItemRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,14 +23,8 @@ class PortfolioValuationServiceTest {
 
     @Mock private PortfolioItemRepository portfolioItemRepository;
     @Mock private CurrencyConverterService currencyConverterService;
-    @Mock private StockRepository stockRepository;
-    @Mock private StockPriceHistoryRepository stockPriceHistoryRepository;
-    @Mock private FundRepository fundRepository;
-    @Mock private FundPriceRepository fundPriceRepository;
-    @Mock private ExchangeRateRepository exchangeRateRepository;
-    @Mock private BondRepository bondRepository;
-    @Mock private BondRateHistoryRepository bondRateHistoryRepository;
-    @Mock private MockMarketPriceService mockMarketPriceService;
+    @Mock private MarketQuoteService marketQuoteService;
+    @Mock private InstrumentPriceResolverService instrumentPriceResolverService;
 
     private PortfolioValuationService service;
 
@@ -48,20 +33,14 @@ class PortfolioValuationServiceTest {
         service = new PortfolioValuationService(
                 portfolioItemRepository,
                 currencyConverterService,
-                stockRepository,
-                stockPriceHistoryRepository,
-                fundRepository,
-                fundPriceRepository,
-                exchangeRateRepository,
-                bondRepository,
-                bondRateHistoryRepository,
-                mockMarketPriceService
+                marketQuoteService,
+                instrumentPriceResolverService
         );
     }
 
     @Test
-    @DisplayName("Pozisyon fiyatını mock quote yerine en güncel günlük kapanış fiyatından hesaplar")
-    void valuateUsesLatestStockHistoryAsCurrentPrice() {
+    @DisplayName("Pozisyon fiyatını InstrumentPriceResolverService üzerinden hesaplar")
+    void valuateUsesResolvedCurrentPrice() {
         PortfolioItem item = PortfolioItem.builder()
                 .id(7L)
                 .portfolioId(3L)
@@ -70,22 +49,12 @@ class PortfolioValuationServiceTest {
                 .quantity(new BigDecimal("10"))
                 .avgCost(new BigDecimal("100"))
                 .build();
-        Stock stock = Stock.builder()
-                .id(11L)
-                .symbol("AKBNK.IS")
-                .shortName("Akbank")
-                .currency("TRY")
-                .build();
-        StockPriceHistory history = StockPriceHistory.builder()
-                .stock(stock)
-                .closePrice(new BigDecimal("150"))
-                .build();
 
         when(portfolioItemRepository.findAllByPortfolioId(3L)).thenReturn(List.of(item));
-        when(stockRepository.findById(11L)).thenReturn(Optional.of(stock));
-        when(stockPriceHistoryRepository.findFirstByStockIdOrderByTradeDateDesc(11L)).thenReturn(Optional.of(history));
-        when(mockMarketPriceService.getQuote(InstrumentType.STOCK, 11L)).thenReturn(Optional.of(
-                new MockMarketPriceService.MarketPriceQuote(
+        when(instrumentPriceResolverService.resolve(InstrumentType.STOCK, 11L))
+                .thenReturn(new InstrumentPriceResolverService.InstrumentInfo("AKBNK.IS", "Akbank", "TRY", new BigDecimal("150")));
+        when(marketQuoteService.getQuote(InstrumentType.STOCK, 11L)).thenReturn(Optional.of(
+                new MarketQuoteService.MarketPriceQuote(
                         new BigDecimal("99"),
                         BigDecimal.ZERO,
                         BigDecimal.ZERO,
