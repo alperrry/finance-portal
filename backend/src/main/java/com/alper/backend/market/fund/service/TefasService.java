@@ -173,8 +173,13 @@ public class TefasService {
             } catch (ExternalApiException e) {
                 lastException = e;
                 if (!isRetryable(e) || attempt == MAX_RETRIES - 1) {
-                    log.error("TEFAS isteği başarısız (yeniden deneme yapılmayacak). endpoint={}, attempt={}, cause={}",
-                            context, attempt + 1, e.getMessage());
+                    if (e.getMessage() != null && e.getMessage().contains("Boş yanıt")) {
+                        log.warn("TEFAS boş yanıt (tarihsel sınır veya throttle). endpoint={}, attempt={}",
+                                context, attempt + 1);
+                    } else {
+                        log.error("TEFAS isteği başarısız. endpoint={}, attempt={}, cause={}",
+                                context, attempt + 1, e.getMessage());
+                    }
                     throw e;
                 }
                 log.warn("TEFAS retry: endpoint={}, attempt={}, cause={}", context, attempt + 1, e.getMessage());
@@ -280,7 +285,8 @@ public class TefasService {
         return message != null && (message.contains("HTTP: 429")
                 || message.contains("HTTP: 5")
                 || message.contains("HTML/WAF")
-                || message.contains("bağlanılamadı"));
+                || message.contains("bağlanılamadı")
+                || message.contains("Boş yanıt"));
     }
 
     private long retryDelay(int attempt) {

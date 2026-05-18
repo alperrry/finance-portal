@@ -10,6 +10,7 @@ import com.alper.backend.market.common.AbstractBackfillService;
 import com.alper.backend.market.common.TurkishHolidayUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -21,7 +22,11 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class TefasBackfillService extends AbstractBackfillService<Fund> {
 
+    @Value("${fund.inter-fund-backfill-delay-ms:60000}")
+    private long interFundDelayMs;
+
     private final TefasService tefasService;
+    private final TefasCookieService tefasCookieService;
     private final FundRepository fundRepository;
     private final FundPriceRepository fundPriceRepository;
     private final FundAllocationRepository fundAllocationRepository;
@@ -78,6 +83,7 @@ public class TefasBackfillService extends AbstractBackfillService<Fund> {
 
         log.info("TEFAS backfill planı: {} | {} ← {} | chunk={} | tahminiİstek={}",
                 fund.getCode(), lowerBound, cursor, totalChunks, totalChunks * 2);
+        tefasCookieService.invalidate();
 
         while (!cursor.isBefore(lowerBound)) {
             LocalDate monthStart = cursor.withDayOfMonth(1);
@@ -104,6 +110,14 @@ public class TefasBackfillService extends AbstractBackfillService<Fund> {
                         fund.getCode(), chunkStart, chunkEnd, e.getMessage());
             }
             cursor = chunkStart.minusDays(1);
+        }
+
+        if (interFundDelayMs > 0) {
+            try {
+                Thread.sleep(interFundDelayMs);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
         }
 
         if (successfulChunks == 0 && failedChunks > 0) {
