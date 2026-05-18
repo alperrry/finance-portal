@@ -14,6 +14,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +39,7 @@ public class ViopScraperService {
     private final ViopContractPriceRepository repository;
 
     @Transactional
+    @CacheEvict(value = "viop", allEntries = true)
     public void fetchAndSaveDaily() {
         LocalDate tradeDate = LocalDate.now().minusDays(1);
         if (repository.existsByTradeDate(tradeDate)) {

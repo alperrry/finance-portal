@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,11 +35,13 @@ public class MacroFetchService {
     private final MacroObservationRepository observationRepository;
 
     @Transactional
+    @CacheEvict(value = "macro", allEntries = true)
     public void fetchInflation() {
         fetchType(MacroDataType.INFLATION);
     }
 
     @Transactional
+    @CacheEvict(value = "macro", allEntries = true)
     public void fetchDepositRates() {
         fetchType(MacroDataType.DEPOSIT_RATE);
     }

@@ -5,6 +5,7 @@ import com.alper.backend.market.macro.model.MacroDataType;
 import com.alper.backend.market.macro.model.MacroObservation;
 import com.alper.backend.market.macro.repository.MacroObservationRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -19,10 +20,12 @@ import java.util.Map;
 public class MacroQueryService {
     private final MacroObservationRepository observationRepository;
 
+    @Cacheable(value = "macro", key = "'inflation'", condition = "#from == null && #to == null")
     public List<MacroObservationResponse> getInflation(LocalDate from, LocalDate to) {
         return getByType(MacroDataType.INFLATION, from, to);
     }
 
+    @Cacheable(value = "macro", key = "'deposit-rates'", condition = "#from == null && #to == null")
     public List<MacroObservationResponse> getDepositRates(LocalDate from, LocalDate to) {
         return getByType(MacroDataType.DEPOSIT_RATE, from, to);
     }

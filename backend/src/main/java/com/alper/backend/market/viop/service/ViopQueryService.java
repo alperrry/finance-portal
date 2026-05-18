@@ -4,6 +4,7 @@ import com.alper.backend.market.viop.dto.ViopContractPriceResponse;
 import com.alper.backend.market.viop.model.ViopContractPrice;
 import com.alper.backend.market.viop.repository.ViopContractPriceRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -13,6 +14,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ViopQueryService {
     private final ViopContractPriceRepository repository;
+
+    @Cacheable(value = "viop", key = "'latest'")
+    public List<ViopContractPriceResponse> getLatest() {
+        return repository.findLatestByContractName().stream().map(this::toResponse).toList();
+    }
 
     public List<ViopContractPriceResponse> getAll(String segment, LocalDate from, LocalDate to) {
         LocalDate effectiveTo = to != null ? to : LocalDate.now();
