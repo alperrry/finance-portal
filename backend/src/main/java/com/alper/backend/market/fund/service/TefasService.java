@@ -21,6 +21,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,6 +66,7 @@ public class TefasService {
     private final FundAllocationRepository fundAllocationRepository;
 
     @Transactional
+    @CacheEvict(value = "funds", allEntries = true)
     public void fetchAndSave() {
         LocalDate today = LocalDate.now();
         log.info("TEFAS fon verisi çekiliyor. Tarih: {}", today);

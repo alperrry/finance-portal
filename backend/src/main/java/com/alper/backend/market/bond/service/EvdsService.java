@@ -12,6 +12,7 @@ import com.alper.backend.market.bond.mapper.EvdsMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,7 @@ public class EvdsService {
     private final BondRateHistoryRepository bondRateHistoryRepository;
 
     @Transactional
+    @CacheEvict(value = "bonds", allEntries = true)
     public void fetchAndSaveAll(String startDate, String endDate) {
         List<Bond> bonds = bondRepository.findAll();
         if (bonds.isEmpty()) {
