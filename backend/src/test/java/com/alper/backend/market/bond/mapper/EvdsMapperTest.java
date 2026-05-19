@@ -88,7 +88,6 @@ class EvdsMapperTest {
         @Test
         @DisplayName("Series code'daki noktalar alt çizgiye çevrilerek key olarak kullanılır")
         void seriesCodeDotsAreReplacedWithUnderscores() {
-            // EVDS series code "TP.RFY01.TCMB" gelir, JSON key'i "TP_RFY01_TCMB" olur
             String seriesCode = "TP.RFY01.TCMB";
             List<Map<String, Object>> items = List.of(
                     evdsItem("15-01-2026", "TP_RFY01_TCMB", "0.4500")
@@ -123,6 +122,79 @@ class EvdsMapperTest {
         }
     }
 
+    // ---------- Bileşik oran (formül) ----------
+
+    @Nested
+    @DisplayName("Bileşik oran (formül) senaryoları")
+    class CompoundedRateTests {
+
+        // n = 364/182 = 2.0 tam dönem → (1+r/200)^2 - 1 ile özdeş, doğrulanması kolay
+        private final Bond bondWith364Days = Bond.builder()
+                .id(2L)
+                .evdsSeriesCode("TP.TRD210826F19.ORAN")
+                .name("Test Bond 364")
+                .bondType(BondType.DEVLET_TAHVIL)
+                .maturityDays(364)
+                .build();
+
+        @Test
+        @DisplayName("maturityDays=364 → compoundedRate = (1+r/200)^2 - 1 formülüyle örtüşür")
+        void compoundedRateMatchesAnnualEffectiveForTwoPeriods() {
+            // (1 + 18.31/200)^2 - 1 = 19.1481
+            List<Map<String, Object>> items = List.of(
+                    evdsItem("15-01-2026", "TP_TRD210826F19_ORAN", "18.31")
+            );
+
+            List<BondRateHistory> result = mapper.toEntityList(bondWith364Days, "TP.TRD210826F19.ORAN", items);
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getInterestRate()).isEqualByComparingTo("18.31");
+            assertThat(result.get(0).getCompoundedRate()).isEqualByComparingTo("19.1481");
+        }
+
+        @Test
+        @DisplayName("Birden fazla item için bileşik oran bağımsız hesaplanır")
+        void multipleItemsHaveCompoundedRateCalculatedIndependently() {
+            List<Map<String, Object>> items = List.of(
+                    evdsItem("02-01-2026", "TP_TRD210826F19_ORAN", "18.00"),
+                    evdsItem("03-01-2026", "TP_TRD210826F19_ORAN", "18.31")
+            );
+
+            List<BondRateHistory> result = mapper.toEntityList(bondWith364Days, "TP.TRD210826F19.ORAN", items);
+
+            assertThat(result).hasSize(2);
+            assertThat(result.get(0).getCompoundedRate()).isNotEqualByComparingTo(
+                    result.get(1).getCompoundedRate());
+        }
+
+        @Test
+        @DisplayName("maturityDays null ise compoundedRate null döner")
+        void compoundedRateIsNullWhenMaturityDaysIsNull() {
+            List<Map<String, Object>> items = List.of(
+                    evdsItem("02-01-2026", "TP_DK_USD_A", "18.31")
+            );
+
+            List<BondRateHistory> result = mapper.toEntityList(testBond, "TP.DK.USD.A", items);
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getCompoundedRate()).isNull();
+        }
+
+        @Test
+        @DisplayName("interestRate null ise compoundedRate da null döner")
+        void compoundedRateIsNullWhenInterestRateIsNull() {
+            List<Map<String, Object>> items = List.of(
+                    evdsItem("02-01-2026", "TP_TRD210826F19_ORAN", "not-a-number")
+            );
+
+            List<BondRateHistory> result = mapper.toEntityList(bondWith364Days, "TP.TRD210826F19.ORAN", items);
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getInterestRate()).isNull();
+            assertThat(result.get(0).getCompoundedRate()).isNull();
+        }
+    }
+
     // ---------- Sad path ----------
 
     @Nested
@@ -145,7 +217,6 @@ class EvdsMapperTest {
 
             List<BondRateHistory> result = mapper.toEntityList(testBond, "TP.DK.USD.A", items);
 
-            // Bozuk item atlanır, geri kalan 2 başarılı
             assertThat(result).hasSize(2);
             assertThat(result.get(0).getRateDate()).isEqualTo(LocalDate.of(2026, 1, 2));
             assertThat(result.get(1).getRateDate()).isEqualTo(LocalDate.of(2026, 1, 3));
@@ -173,7 +244,6 @@ class EvdsMapperTest {
         @Test
         @DisplayName("Series key item'da hiç yoksa atlanır (null gibi davranır)")
         void itemWithoutSeriesKeyIsSkipped() {
-            // Map'te series key hiç yok
             Map<String, Object> noKey = new HashMap<>();
             noKey.put("Tarih", "02-01-2026");
             noKey.put("UNRELATED_KEY", "42.84");
@@ -207,14 +277,11 @@ class EvdsMapperTest {
         @Test
         @DisplayName("Geçersiz tarih formatı DateTimeParseException fırlatır (mapper bunu yutmaz)")
         void invalidDateFormatThrowsException() {
-            // Mapper LocalDate.parse'i try-catch içinde tutmuyor; bu davranış bilinçli
-            // çünkü tarih parse hatası gerçek bir veri kaynağı sorununu işaret eder.
             String key = "TP_DK_USD_A";
             List<Map<String, Object>> items = List.of(
-                    evdsItem("2026/01/02", key, "42.84") // yanlış format (yyyy/MM/dd değil)
+                    evdsItem("2026/01/02", key, "42.84")
             );
 
-            // Mapper bu durumu yakalamadığı için exception fırlatmalı
             org.junit.jupiter.api.Assertions.assertThrows(
                     java.time.format.DateTimeParseException.class,
                     () -> mapper.toEntityList(testBond, "TP.DK.USD.A", items)
@@ -224,11 +291,6 @@ class EvdsMapperTest {
         @Test
         @DisplayName("Geçersiz sayı formatı interestRate'i null yapar (item yine de eklenir — POTENSİYEL BUG)")
         void invalidNumberFormatLeadsToNullInterestRate() {
-            // DİKKAT: Bu test mapper'ın MEVCUT davranışını dokümante eder.
-            // parseBigDecimal NumberFormatException'ı yutup null döner.
-            // Sonuçta interestRate=null olan bir BondRateHistory üretilir.
-            // Veritabanı `interest_rate NOT NULL` kısıtı nedeniyle insert sırasında patlar.
-            // İdeal davranış: bu item'ın komple atlanması. Bu davranış değişirse test güncellenmeli.
             String key = "TP_DK_USD_A";
             List<Map<String, Object>> items = List.of(
                     evdsItem("02-01-2026", key, "not-a-number")
@@ -238,7 +300,6 @@ class EvdsMapperTest {
 
             assertThat(result).hasSize(1);
             assertThat(result.get(0).getInterestRate()).isNull();
-            // Bu null DB'de NOT NULL kısıtına takılır — parse aşamasında atlanması daha doğru olur.
         }
 
         @Test
@@ -265,8 +326,6 @@ class EvdsMapperTest {
 
             List<BondRateHistory> result = mapper.toEntityList(testBond, "TP.DK.USD.A", items);
 
-            // Boş string null değil, item üretilir ama interestRate null olur
-            // (Aynı bug: parseBigDecimal -> isBlank -> null)
             assertThat(result).hasSize(1);
             assertThat(result.get(0).getInterestRate()).isNull();
         }

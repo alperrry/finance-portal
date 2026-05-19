@@ -1,4 +1,5 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Tooltip, Typography } from "@mui/material";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import type { GridColDef, GridSortModel } from "@mui/x-data-grid";
 import { AppDataGrid } from "../../../components/ui/AppDataGrid";
 import type { BondResponse } from "../api/marketApi";
@@ -53,6 +54,17 @@ const COLUMNS: GridColDef<BondResponse>[] = [
         headerName: "Bileşik",
         flex: 0.8,
         minWidth: 90,
+        renderHeader: () => (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <span>Bileşik</span>
+                <Tooltip
+                    title="Kupon ödemelerinin aynı faiz oranıyla tekrar yatırıma yönlendirildiği varsayılarak hesaplanmış bileşik getiridir."
+                    arrow
+                >
+                    <InfoOutlinedIcon sx={{ fontSize: "0.85rem", color: "text.secondary", cursor: "help" }} />
+                </Tooltip>
+            </Box>
+        ),
         renderCell: ({ row }) =>
             row.compoundedRate != null ? `%${formatNumber(row.compoundedRate, 2)}` : "-",
     },

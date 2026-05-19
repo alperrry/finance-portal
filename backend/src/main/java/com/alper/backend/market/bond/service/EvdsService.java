@@ -47,6 +47,7 @@ public class EvdsService {
     }
 
     @Transactional
+    @CacheEvict(value = "bonds", allEntries = true)
     public void fetchAndSave(String seriesCode, String startDate, String endDate) {
         log.info("EVDS verisi çekiliyor. Seri: {}, Başlangıç: {}, Bitiş: {}", seriesCode, startDate, endDate);
 

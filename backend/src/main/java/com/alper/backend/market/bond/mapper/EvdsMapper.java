@@ -5,6 +5,7 @@ import com.alper.backend.market.bond.model.BondRateHistory;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -39,12 +40,28 @@ public class EvdsMapper {
             return null;
         }
 
+        BigDecimal interestRate = parseBigDecimal(rateObj.toString());
+        BigDecimal compoundedRate = calculateCompoundedRate(interestRate, bond.getMaturityDays());
+
         return BondRateHistory.builder()
                 .bond(bond)
                 .rateDate(LocalDate.parse(tarihStr, EVDS_DATE_FORMAT))
-                .interestRate(parseBigDecimal(rateObj.toString()))
+                .interestRate(interestRate)
+                .compoundedRate(compoundedRate)
                 .source(SOURCE)
                 .build();
+    }
+
+    // Formül: ((1 + couponRate/200)^(maturityDays/182) - 1) * 100
+    // Kupon ödemelerinin aynı faizle reinvest edildiği varsayımıyla vade sonu toplam bileşik getiri.
+    private BigDecimal calculateCompoundedRate(BigDecimal couponRate, Integer maturityDays) {
+        if (couponRate == null || maturityDays == null) {
+            return null;
+        }
+        double n = maturityDays / 182.0;
+        double base = 1.0 + couponRate.doubleValue() / 200.0;
+        double result = (Math.pow(base, n) - 1.0) * 100.0;
+        return BigDecimal.valueOf(result).setScale(4, RoundingMode.HALF_UP);
     }
 
     private BigDecimal parseBigDecimal(String value) {

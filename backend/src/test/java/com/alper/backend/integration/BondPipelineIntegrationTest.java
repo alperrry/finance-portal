@@ -54,6 +54,7 @@ class BondPipelineIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.data.length()").value(1))
                 .andExpect(jsonPath("$.data[0].evdsSeriesCode").value(SERIES_CODE))
                 .andExpect(jsonPath("$.data[0].interestRate").value(42.9157))
+                .andExpect(jsonPath("$.data[0].compoundedRate").value(19.0178))
                 .andExpect(jsonPath("$.data[0].rateDate").value("2026-01-03"));
     }
 
