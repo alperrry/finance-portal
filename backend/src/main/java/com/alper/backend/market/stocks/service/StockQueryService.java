@@ -57,6 +57,10 @@ public class StockQueryService {
                 .dayHigh(entity.getHighPrice())
                 .dayLow(entity.getLowPrice())
                 .volume(entity.getVolume())
+                .previousClose(entity.getStock().getPreviousClose())
+                .fiftyTwoWeekHigh(entity.getStock().getFiftyTwoWeekHigh())
+                .fiftyTwoWeekLow(entity.getStock().getFiftyTwoWeekLow())
+                .marketCap(entity.getStock().getMarketCap())
                 .tradeDate(entity.getTradeDate())
                 .fetchedAt(entity.getCreatedAt())
                 .build();

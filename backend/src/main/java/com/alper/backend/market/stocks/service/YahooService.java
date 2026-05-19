@@ -55,6 +55,31 @@ public class YahooService {
             }
         }
         log.info("Yahoo Finance günlük history tamamlandı. Eksik olduğu için işlenen enstrüman: {}", processed);
+        fetchAndUpdateMarketData(stocks);
+    }
+
+    private void fetchAndUpdateMarketData(List<Stock> stocks) {
+        if (stocks.isEmpty()) return;
+        try {
+            String symbols = buildSymbols(stocks);
+            String json = yahooHttpClient.fetchQuote(symbols);
+            List<YahooQuoteResult> quotes = parseQuote(json);
+            for (YahooQuoteResult quote : quotes) {
+                Stock stock = findStock(stocks, quote.getSymbol());
+                if (stock == null) continue;
+                stock.setPreviousClose(quote.getRegularMarketPreviousClose() != null
+                        ? java.math.BigDecimal.valueOf(quote.getRegularMarketPreviousClose()) : null);
+                stock.setMarketCap(quote.getMarketCap());
+                stock.setFiftyTwoWeekHigh(quote.getFiftyTwoWeekHigh() != null
+                        ? java.math.BigDecimal.valueOf(quote.getFiftyTwoWeekHigh()) : null);
+                stock.setFiftyTwoWeekLow(quote.getFiftyTwoWeekLow() != null
+                        ? java.math.BigDecimal.valueOf(quote.getFiftyTwoWeekLow()) : null);
+                stockRepository.save(stock);
+            }
+            log.info("Market data güncellendi. Hisse sayısı: {}", quotes.size());
+        } catch (Exception e) {
+            log.warn("Market data güncellemesi başarısız, bir sonraki çekimde tekrar denenecek: {}", e.getMessage());
+        }
     }
 
     @Transactional

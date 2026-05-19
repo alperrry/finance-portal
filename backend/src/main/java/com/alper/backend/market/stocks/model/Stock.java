@@ -5,7 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -50,6 +52,22 @@ public class Stock {
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
+
+    @Setter
+    @Column(name = "previous_close", precision = 18, scale = 4)
+    private BigDecimal previousClose;
+
+    @Setter
+    @Column(name = "market_cap")
+    private Long marketCap;
+
+    @Setter
+    @Column(name = "fifty_two_week_high", precision = 18, scale = 4)
+    private BigDecimal fiftyTwoWeekHigh;
+
+    @Setter
+    @Column(name = "fifty_two_week_low", precision = 18, scale = 4)
+    private BigDecimal fiftyTwoWeekLow;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
