@@ -33,4 +33,5 @@ public class MacroController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return ResponseEntity.ok(ApiResponse.success(macroQueryService.getDepositRates(from, to)));
     }
+
 }

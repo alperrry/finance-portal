@@ -20,6 +20,11 @@ import java.util.List;
 public class ViopController {
     private final ViopQueryService viopQueryService;
 
+    @GetMapping("/latest")
+    public ResponseEntity<ApiResponse<List<ViopContractPriceResponse>>> getLatest() {
+        return ResponseEntity.ok(ApiResponse.success(viopQueryService.getLatest()));
+    }
+
     @GetMapping
     public ResponseEntity<ApiResponse<List<ViopContractPriceResponse>>> getAll(
             @RequestParam(required = false) String segment,
