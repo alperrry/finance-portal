@@ -1,6 +1,6 @@
 import type { FxResponse } from "../../market/api/marketApi";
-import type { DisplayCurrency, PortfolioInstrumentType, PortfolioItemResponse, TradeResponse, TransactionStatus } from "../api/portfolioApi";
-import { CHART_PALETTE, INSTRUMENT_LABELS, type FxRateMap, type TradeFilters } from "../types";
+import type { DisplayCurrency, ManualPositionResponse, PortfolioInstrumentType, PortfolioItemResponse } from "../api/portfolioApi";
+import { CHART_PALETTE, INSTRUMENT_LABELS, TYPE_COLORS, type FxRateMap } from "../types";
 
 export function toNumber(value: number | null | undefined): number | null {
     return typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -74,13 +74,6 @@ export function getProfitTone(value: number | null | undefined): "up" | "down" |
     return normalized > 0 ? "up" : "down";
 }
 
-export function statusTone(status: TransactionStatus): string {
-    if (status === "PENDING") return "warning";
-    if (status === "APPROVED") return "success";
-    if (status === "REJECTED") return "error";
-    return "muted";
-}
-
 export function currencyBadgeClass(currency: string): string {
     const normalized = currency.toLowerCase();
     if (normalized === "try" || normalized === "usd" || normalized === "eur" || normalized === "btc") {
@@ -128,17 +121,67 @@ export function resolveApiError(caughtError: unknown, fallback: string): string 
     return fallback;
 }
 
-export function filterTrades(trades: TradeResponse[], filters: TradeFilters): TradeResponse[] {
-    return trades.filter((trade) => {
-        const created = trade.createdAt ? new Date(trade.createdAt) : null;
-        const fromOk = !filters.from || (created && created >= new Date(`${filters.from}T00:00:00`));
-        const toOk = !filters.to || (created && created <= new Date(`${filters.to}T23:59:59`));
-        const instrumentOk = !filters.instrument || `${trade.instrumentType}:${trade.instrumentId}` === filters.instrument;
-        const typeOk = !filters.type || trade.transactionType === filters.type;
-        const query = filters.query.trim().toLocaleLowerCase("tr-TR");
-        const queryOk = !query || (trade.instrumentSymbol || "").toLocaleLowerCase("tr-TR").includes(query);
-        return Boolean(fromOk && toOk && instrumentOk && typeOk && queryOk);
-    });
+export type TypeGroupEntry = {
+    type: PortfolioInstrumentType;
+    label: string;
+    value: number;
+    fill: string;
+    totalPnl: number | null;
+    positions: Array<{ id: number; name: string; value: number; fill: string }>;
+};
+
+function computePositionValue(pos: ManualPositionResponse): number {
+    const price = pos.currentPrice ?? pos.entryPrice;
+    const multiplier = pos.contractMultiplier ?? 1;
+    return price * pos.quantity * multiplier;
+}
+
+export function buildTypeGroupData(positions: ManualPositionResponse[]): TypeGroupEntry[] {
+    const map = new Map<PortfolioInstrumentType, TypeGroupEntry>();
+
+    for (const pos of positions) {
+        const value = computePositionValue(pos);
+        if (value <= 0) continue;
+
+        const type = pos.instrumentType;
+        if (!map.has(type)) {
+            map.set(type, {
+                type,
+                label: INSTRUMENT_LABELS[type],
+                value: 0,
+                fill: TYPE_COLORS[type],
+                totalPnl: null,
+                positions: [],
+            });
+        }
+
+        const entry = map.get(type)!;
+        entry.value += value;
+
+        const pnl = pos.unrealizedPnl ?? pos.realizedPnl;
+        if (pnl !== null) {
+            entry.totalPnl = (entry.totalPnl ?? 0) + pnl;
+        }
+
+        entry.positions.push({
+            id: pos.id,
+            name: pos.instrumentSymbol || pos.instrumentName || `${INSTRUMENT_LABELS[type]} #${pos.id}`,
+            value,
+            fill: TYPE_COLORS[type],
+        });
+    }
+
+    return Array.from(map.values()).sort((a, b) => b.value - a.value);
+}
+
+export function calcMaturityValue(pos: ManualPositionResponse): number | null {
+    if (!pos.interestRate || !pos.maturityDate || !pos.entryDate) return null;
+    const principal = pos.entryPrice * (pos.quantity ?? 1);
+    const start = new Date(pos.entryDate);
+    const end = new Date(pos.maturityDate);
+    const days = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    if (days <= 0) return null;
+    return principal * (1 + (pos.interestRate / 100) * (days / 365));
 }
 
 export function buildAllocationData(items: PortfolioItemResponse[]): Array<{ id: number; name: string; quantity: number; type: PortfolioInstrumentType; value: number; fill: string }> {

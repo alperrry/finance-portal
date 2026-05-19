@@ -1,0 +1,32 @@
+package com.alper.backend.portfolio.pnl;
+
+import com.alper.backend.portfolio.model.ManualPosition;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+
+/**
+ * Mevduat (DEPOSIT) P&L hesabı:
+ * exitDate = position.exitDate != null ? position.exitDate : LocalDate.now()
+ * days = ChronoUnit.DAYS.between(entryDate, exitDate)
+ * rate = interestRate != null ? interestRate : 0
+ * P&L = quantity * (rate / 100) * (days / 365.0)
+ *
+ * exitOrCurrentPrice parametresi DEPOSIT için kullanılmaz.
+ */
+public class DepositPnlCalculator implements PnlCalculator {
+
+    @Override
+    public BigDecimal calculate(ManualPosition position, BigDecimal exitOrCurrentPrice) {
+        LocalDate exitDate = position.getExitDate() != null ? position.getExitDate() : LocalDate.now();
+        long days = ChronoUnit.DAYS.between(position.getEntryDate(), exitDate);
+        BigDecimal rate = position.getInterestRate() != null ? position.getInterestRate() : BigDecimal.ZERO;
+
+        return position.getQuantity()
+                .multiply(rate.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP))
+                .multiply(BigDecimal.valueOf(days / 365.0))
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+}

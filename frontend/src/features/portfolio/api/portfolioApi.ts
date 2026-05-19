@@ -5,10 +5,7 @@ export type ApiResponse<T> = {
     data: T;
 };
 
-export type PortfolioInstrumentType = "STOCK" | "FUND" | "CURRENCY" | "BOND";
-export type TransactionType = "BUY" | "SELL";
-export type OrderType = "MARKET" | "LIMIT";
-export type TransactionStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+export type PortfolioInstrumentType = "STOCK" | "FUND" | "CURRENCY" | "BOND" | "VIOP" | "DEPOSIT";
 export type DisplayCurrency = "TRY" | "USD" | "EUR";
 
 export type PortfolioItemResponse = {
@@ -42,35 +39,6 @@ export type PortfolioResponse = {
     items: PortfolioItemResponse[];
     createdAt: string | null;
     updatedAt: string | null;
-};
-
-export type TradeRequest = {
-    instrumentType: PortfolioInstrumentType;
-    instrumentId: number;
-    transactionType: TransactionType;
-    orderType: OrderType;
-    quantity: number;
-    targetPrice: number | null;
-};
-
-export type TradeResponse = {
-    id: number;
-    portfolioId: number;
-    instrumentType: PortfolioInstrumentType;
-    instrumentId: number;
-    instrumentSymbol: string;
-    instrumentName: string | null;
-    transactionType: TransactionType;
-    orderType: OrderType;
-    quantity: number;
-    targetPrice: number | null;
-    executedPrice: number | null;
-    totalAmount: number | null;
-    realizedProfitLoss: number | null;
-    status: TransactionStatus;
-    rejectionReason: string | null;
-    processedAt: string | null;
-    createdAt: string | null;
 };
 
 export type CreatePortfolioRequest = {
@@ -174,55 +142,111 @@ export async function deletePortfolio(id: number): Promise<void> {
     });
 }
 
-export async function submitTrade(portfolioId: number, payload: TradeRequest): Promise<TradeResponse> {
-    const response = await apiFetch(`/api/v1/portfolios/${portfolioId}/trades`, {
+// ── Manuel Pozisyon ──────────────────────────────────────────────────────────
+
+export type PositionKind = "OPEN" | "CLOSED";
+export type PositionDirection = "LONG" | "SHORT";
+
+export type ManualPositionRequest = {
+    instrumentType: PortfolioInstrumentType;
+    positionKind: PositionKind;
+    instrumentId?: number | null;
+    instrumentSymbol?: string | null;
+    instrumentName?: string | null;
+    direction?: PositionDirection;
+    quantity: number;
+    entryPrice: number;
+    entryDate: string;
+    exitPrice?: number | null;
+    exitDate?: string | null;
+    contractMultiplier?: number | null;
+    maturityDate?: string | null;
+    marginAmount?: number | null;
+    underlyingSymbol?: string | null;
+    interestRate?: number | null;
+    bankName?: string | null;
+    notes?: string | null;
+};
+
+export type ManualPositionResponse = {
+    id: number;
+    portfolioId: number;
+    instrumentType: PortfolioInstrumentType;
+    positionKind: PositionKind;
+    instrumentId: number | null;
+    instrumentSymbol: string | null;
+    instrumentName: string | null;
+    direction: PositionDirection;
+    quantity: number;
+    entryPrice: number;
+    entryDate: string;
+    exitPrice: number | null;
+    exitDate: string | null;
+    contractMultiplier: number | null;
+    maturityDate: string | null;
+    marginAmount: number | null;
+    underlyingSymbol: string | null;
+    interestRate: number | null;
+    bankName: string | null;
+    realizedPnl: number | null;
+    unrealizedPnl: number | null;
+    currentPrice: number | null;
+    pnlPercent: number | null;
+    notes: string | null;
+    createdAt: string | null;
+};
+
+export async function createManualPosition(portfolioId: number, payload: ManualPositionRequest): Promise<ManualPositionResponse> {
+    const response = await apiFetch(`/api/v1/portfolios/${portfolioId}/positions`, {
         method: "POST",
-        errorMessage: "İşlem talebi gönderilemedi.",
+        errorMessage: "Pozisyon kaydedilemedi.",
         headers: {
             "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
     });
-    return parseApiResponse<TradeResponse>(response, "İşlem talebi gönderilemedi.");
+    return parseApiResponse<ManualPositionResponse>(response, "Pozisyon kaydedilemedi.");
 }
 
-export async function fetchPortfolioTrades(
-    portfolioId: number,
-    options: { status?: TransactionStatus | ""; page?: number; size?: number } = {},
-): Promise<PageResponse<TradeResponse>> {
+export async function fetchManualPositions(portfolioId: number, kind?: PositionKind, page = 0, size = 50): Promise<PageResponse<ManualPositionResponse>> {
     const params = new URLSearchParams();
-    if (options.status) params.set("status", options.status);
-    params.set("page", String(options.page ?? 0));
-    params.set("size", String(options.size ?? 10));
-    params.set("sort", "createdAt,desc");
+    if (kind) params.set("kind", kind);
+    params.set("page", String(page));
+    params.set("size", String(size));
 
-    const response = await apiFetch(`/api/v1/portfolios/${portfolioId}/trades?${params.toString()}`, {
-        errorMessage: "İşlem geçmişi yüklenemedi.",
+    const response = await apiFetch(`/api/v1/portfolios/${portfolioId}/positions?${params.toString()}`, {
+        errorMessage: "Pozisyonlar yüklenemedi.",
     });
-    const data = await parseApiResponse<RawPageResponse<TradeResponse>>(response, "İşlem geçmişi yüklenemedi.");
-    return normalizePage(data, options.size ?? 10);
+    const data = await parseApiResponse<RawPageResponse<ManualPositionResponse>>(response, "Pozisyonlar yüklenemedi.");
+    return normalizePage(data, size);
 }
 
-export async function fetchPortfolioTradesSince(portfolioId: number, since: string): Promise<TradeResponse[]> {
-    const params = new URLSearchParams();
-    params.set("since", since);
-
-    const response = await apiFetch(`/api/v1/portfolios/${portfolioId}/trades/since?${params.toString()}`, {
-        errorMessage: "Kaçırılan işlem güncellemeleri yüklenemedi.",
+export async function fetchManualPosition(portfolioId: number, positionId: number): Promise<ManualPositionResponse> {
+    const response = await apiFetch(`/api/v1/portfolios/${portfolioId}/positions/${positionId}`, {
+        errorMessage: "Pozisyon detayı yüklenemedi.",
     });
-    return parseApiResponse<TradeResponse[]>(response, "Kaçırılan işlem güncellemeleri yüklenemedi.");
+    return parseApiResponse<ManualPositionResponse>(response, "Pozisyon detayı yüklenemedi.");
 }
 
-export async function fetchTrade(portfolioId: number, tradeId: number): Promise<TradeResponse> {
-    const response = await apiFetch(`/api/v1/portfolios/${portfolioId}/trades/${tradeId}`, {
-        errorMessage: "İşlem detayı yüklenemedi.",
-    });
-    return parseApiResponse<TradeResponse>(response, "İşlem detayı yüklenemedi.");
-}
-
-export async function cancelTrade(portfolioId: number, tradeId: number): Promise<void> {
-    await apiFetch(`/api/v1/portfolios/${portfolioId}/trades/${tradeId}`, {
+export async function deleteManualPosition(portfolioId: number, positionId: number): Promise<void> {
+    await apiFetch(`/api/v1/portfolios/${portfolioId}/positions/${positionId}`, {
         method: "DELETE",
-        errorMessage: "İşlem iptal edilemedi.",
+        errorMessage: "Pozisyon silinemedi.",
     });
+}
+
+export type ClosePositionRequest = {
+    exitPrice: number;
+    exitDate: string;
+    quantity: number;
+};
+
+export async function closeManualPosition(portfolioId: number, positionId: number, payload: ClosePositionRequest): Promise<ManualPositionResponse[]> {
+    const response = await apiFetch(`/api/v1/portfolios/${portfolioId}/positions/${positionId}/close`, {
+        method: "POST",
+        errorMessage: "Pozisyon kapatılamadı.",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+    return parseApiResponse<ManualPositionResponse[]>(response, "Pozisyon kapatılamadı.");
 }

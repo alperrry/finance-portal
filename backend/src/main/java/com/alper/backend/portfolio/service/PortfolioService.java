@@ -7,10 +7,10 @@ import com.alper.backend.portfolio.dto.PortfolioResponse;
 import com.alper.backend.portfolio.dto.UpdatePortfolioRequest;
 import com.alper.backend.portfolio.mapper.PortfolioMapper;
 import com.alper.backend.portfolio.model.Portfolio;
-import com.alper.backend.portfolio.model.TransactionStatus;
+import com.alper.backend.portfolio.model.PositionKind;
+import com.alper.backend.portfolio.repository.ManualPositionRepository;
 import com.alper.backend.portfolio.repository.PortfolioItemRepository;
 import com.alper.backend.portfolio.repository.PortfolioRepository;
-import com.alper.backend.portfolio.repository.TradeTransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.cache.annotation.CacheEvict;
@@ -33,7 +33,7 @@ public class PortfolioService {
 
     private final PortfolioRepository portfolioRepository;
     private final PortfolioItemRepository portfolioItemRepository;
-    private final TradeTransactionRepository tradeTransactionRepository;
+    private final ManualPositionRepository manualPositionRepository;
     private final PortfolioMapper portfolioMapper;
     private final PortfolioValuationService portfolioValuationService;
 
@@ -67,7 +67,7 @@ public class PortfolioService {
     }
 
     /**
-     * Yeni portföy oluşturur. Bakiye kullanıcı seviyesinde tutulur.
+     * Yeni portföy oluşturur.
      */
     @Transactional
     public PortfolioResponse create(CreatePortfolioRequest request, Long userId) {
@@ -91,8 +91,7 @@ public class PortfolioService {
     }
 
     /**
-     * Portföyü siler. İçinde pozisyon veya bekleyen emir varsa CONFLICT (2002) döner.
-     * Geçmiş emir kayıtları portföyle beraber temizlenir; aksi halde DB FK silmeyi engeller.
+     * Portföyü siler. İçinde pozisyon veya açık manuel pozisyon varsa CONFLICT döner.
      */
     @Transactional
     @CacheEvict(value = "portfolioValuation", key = "#id")
@@ -102,17 +101,16 @@ public class PortfolioService {
             log.warn("Portföy silinemedi, içinde pozisyon var. portfolioId={}", portfolio.getId());
             throw new ConflictException("Portföy içinde pozisyon mevcut, önce pozisyonları kapatın");
         }
-        if (tradeTransactionRepository.existsByPortfolioIdAndStatus(portfolio.getId(), TransactionStatus.PENDING)) {
-            log.warn("Portföy silinemedi, bekleyen emir var. portfolioId={}", portfolio.getId());
-            throw new ConflictException("Portföyde bekleyen emir mevcut, önce bekleyen emirleri iptal edin veya tamamlanmasını bekleyin");
+        if (manualPositionRepository.existsByPortfolioIdAndPositionKind(portfolio.getId(), PositionKind.OPEN)) {
+            log.warn("Portföy silinemedi, açık manuel pozisyon var. portfolioId={}", portfolio.getId());
+            throw new ConflictException("Portföyde açık pozisyon mevcut, önce pozisyonları kapatın");
         }
-        long deletedTrades = tradeTransactionRepository.deleteByPortfolioId(portfolio.getId());
         portfolioRepository.delete(portfolio);
-        log.info("Portföy silindi. portfolioId={}, userId={}, deletedTradeCount={}", id, userId, deletedTrades);
+        log.info("Portföy silindi. portfolioId={}, userId={}", id, userId);
     }
 
     /**
-     * Ownership-aware lookup. Trade servisleri tarafından da kullanılır.
+     * Ownership-aware lookup. Başka servislerin de kullanabileceği yardımcı metot.
      * @throws NotFoundException kullanıcıya ait portföy yoksa
      */
     @Transactional(readOnly = true)

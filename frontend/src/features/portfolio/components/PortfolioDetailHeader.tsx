@@ -1,4 +1,5 @@
-import { Box, Button, Chip, Skeleton, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, CircularProgress, Skeleton, Stack, Typography } from "@mui/material";
+import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import { SectionPanel } from "../../../components/ui/SectionPanel";
 import type { PortfolioDetailPageState } from "../hooks/usePortfolioDetailPage";
 
@@ -7,7 +8,7 @@ interface PortfolioDetailHeaderProps {
 }
 
 export function PortfolioDetailHeader({ page }: PortfolioDetailHeaderProps) {
-    const { portfolio, detailState, handlers } = page;
+    const { portfolio, detailState, pending, handlers } = page;
 
     return (
         <>
@@ -43,8 +44,17 @@ export function PortfolioDetailHeader({ page }: PortfolioDetailHeaderProps) {
                                 Düzenle
                             </Button>
                         ) : null}
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={pending.pdfBusy ? <CircularProgress size={14} /> : <DownloadOutlinedIcon />}
+                            onClick={handlers.handlePdfExport}
+                            disabled={!portfolio || pending.pdfBusy}
+                        >
+                            PDF İndir
+                        </Button>
                         <Button variant="contained" color="secondary" onClick={handlers.openTradeModal} disabled={!portfolio}>
-                            + Yeni İşlem
+                            + Pozisyon Ekle
                         </Button>
                     </Stack>
                 </Stack>

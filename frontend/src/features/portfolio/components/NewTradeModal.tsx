@@ -1,9 +1,26 @@
-import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, InputLabel, MenuItem, Select, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import {
+    Alert,
+    Box,
+    Button,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Divider,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
+    Stack,
+    TextField,
+    ToggleButton,
+    ToggleButtonGroup,
+    Typography,
+} from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material/Select";
-import type { OrderType, PortfolioResponse, TradeRequest, TransactionType } from "../api/portfolioApi";
-import { ORDER_LABELS, TRANSACTION_LABELS } from "../types";
-import type { PortfolioInstrumentType } from "../api/portfolioApi";
-import { formatMoney, formatQuantity } from "../utils/portfolioFormatters";
+import type { ManualPositionRequest, PortfolioInstrumentType, PortfolioResponse, PositionDirection, PositionKind } from "../api/portfolioApi";
+import { formatMoney, formatSignedMoney } from "../utils/portfolioFormatters";
 import { useNewTradeForm } from "../hooks/useNewTradeForm";
 
 type Props = {
@@ -11,67 +28,91 @@ type Props = {
     busy: boolean;
     serverError: string | null;
     onClose: () => void;
-    onSubmit: (payload: TradeRequest) => Promise<void>;
+    onSubmit: (payload: ManualPositionRequest) => Promise<void>;
 };
 
 export function NewTradeModal({ portfolio, busy, serverError, onClose, onSubmit }: Props) {
     const {
-        transactionType, setTransactionType,
-        orderType, setOrderType,
+        positionKind, setPositionKind,
         instrumentType, setInstrumentType,
         instrumentId, setInstrumentId,
+        direction, setDirection,
         quantity, setQuantity,
-        targetPrice, setTargetPrice,
+        entryPrice, setEntryPrice,
+        entryDate, setEntryDate,
+        exitPrice, setExitPrice,
+        exitDate, setExitDate,
+        contractMultiplier, setContractMultiplier,
+        maturityDate, setMaturityDate,
+        marginAmount, setMarginAmount,
+        interestRate, setInterestRate,
+        bankName, setBankName,
+        notes, setNotes,
+        instrumentSymbolManual, setInstrumentSymbolManual,
+        instrumentNameManual, setInstrumentNameManual,
+        underlyingSymbolInput, setUnderlyingSymbolInput,
+        isManualEntry,
         localError,
         options, optionsLoading, optionsError,
-        fxRatesError,
         selectedOption,
-        totalAmount,
-        ownedQuantity,
+        previewPnl,
         handleSubmit,
     } = useNewTradeForm(portfolio, onSubmit);
 
+    const isDeposit = instrumentType === "DEPOSIT";
+    const isViop = instrumentType === "VIOP";
+    const isBond = instrumentType === "BOND";
+    const isClosed = positionKind === "CLOSED";
+
+    const realOptions = options.filter(o => o.id !== -1);
+    const hasSentinel = !isDeposit && options.some(o => o.id === -1);
+
+    const entryPriceLabel =
+        instrumentType === "CURRENCY" ? "Alış Kuru" :
+        instrumentType === "VIOP"     ? "Kontrat Fiyatı (TL)" :
+                                        "Alış Fiyatı (TL)";
+
+    const totalCost = (() => {
+        const qty = Number(quantity);
+        if (!Number.isFinite(qty) || qty <= 0) return null;
+        if (isDeposit) return qty;
+        const entry = Number(entryPrice);
+        if (!Number.isFinite(entry) || entry <= 0) return null;
+        const multiplier = isViop ? (Number(contractMultiplier) || 1) : 1;
+        return qty * entry * multiplier;
+    })();
+
     return (
-        <Dialog open onClose={onClose} maxWidth="sm" fullWidth aria-modal>
+        <Dialog open onClose={onClose} maxWidth="md" fullWidth aria-modal>
             <DialogTitle sx={{ pb: 0 }}>
-                <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>Trade Desk</Typography>
-                <Typography variant="h6" sx={{ fontWeight: 800 }}>Yeni İşlem</Typography>
+                <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>Portföy Yönetimi</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                    {positionKind === "OPEN" ? "Mevcut Pozisyon Ekle" : "Geçmiş Pozisyon Ekle"}
+                </Typography>
             </DialogTitle>
+
             <DialogContent>
-                <Box component="form" id="new-trade-form" onSubmit={handleSubmit} noValidate>
+                <Box component="form" id="position-form" onSubmit={handleSubmit} noValidate>
                     <Stack sx={{ gap: 2, pt: 1 }}>
+
+                        {/* Bölüm 1: Pozisyon Türü */}
                         <Box>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>İşlem tipi</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+                                Pozisyon Türü
+                            </Typography>
                             <ToggleButtonGroup
                                 exclusive
-                                value={transactionType}
-                                onChange={(_, val: TransactionType | null) => { if (val) setTransactionType(val); }}
+                                value={positionKind}
+                                onChange={(_, val: PositionKind | null) => { if (val) setPositionKind(val); }}
                                 size="small"
                                 fullWidth
                             >
-                                {(["BUY", "SELL"] as TransactionType[]).map((type) => (
-                                    <ToggleButton key={type} value={type} color={type === "BUY" ? "success" : "error"}>
-                                        {TRANSACTION_LABELS[type]}
-                                    </ToggleButton>
-                                ))}
+                                <ToggleButton value="OPEN">Mevcut Pozisyon</ToggleButton>
+                                <ToggleButton value="CLOSED">Geçmiş Pozisyon</ToggleButton>
                             </ToggleButtonGroup>
                         </Box>
 
-                        <Box>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>Emir tipi</Typography>
-                            <ToggleButtonGroup
-                                exclusive
-                                value={orderType}
-                                onChange={(_, val: OrderType | null) => { if (val) setOrderType(val); }}
-                                size="small"
-                                fullWidth
-                            >
-                                {(["MARKET", "LIMIT"] as OrderType[]).map((type) => (
-                                    <ToggleButton key={type} value={type}>{ORDER_LABELS[type]}</ToggleButton>
-                                ))}
-                            </ToggleButtonGroup>
-                        </Box>
-
+                        {/* Bölüm 2: Enstrüman Tipi */}
                         <FormControl size="small" fullWidth>
                             <InputLabel id="instrument-type-label">Enstrüman Tipi</InputLabel>
                             <Select
@@ -84,91 +125,305 @@ export function NewTradeModal({ portfolio, busy, serverError, onClose, onSubmit 
                                 <MenuItem value="FUND">Fon</MenuItem>
                                 <MenuItem value="CURRENCY">Döviz</MenuItem>
                                 <MenuItem value="BOND">Tahvil</MenuItem>
+                                <MenuItem value="VIOP">VİOP</MenuItem>
+                                <MenuItem value="DEPOSIT">Vadeli Mevduat</MenuItem>
                             </Select>
                         </FormControl>
 
-                        <FormControl size="small" fullWidth>
-                            <InputLabel id="instrument-label">Enstrüman</InputLabel>
-                            <Select
-                                labelId="instrument-label"
-                                value={instrumentId}
-                                label="Enstrüman"
-                                disabled={optionsLoading || options.length === 0}
-                                onChange={(e: SelectChangeEvent) => setInstrumentId(e.target.value)}
-                                startAdornment={optionsLoading ? <CircularProgress size={14} sx={{ mr: 1 }} /> : undefined}
-                            >
-                                <MenuItem value="" disabled>{optionsLoading ? "Yükleniyor..." : "Seçiniz"}</MenuItem>
-                                {options.map((option) => (
-                                    <MenuItem key={`${option.type}-${option.id}`} value={String(option.id)}>
-                                        {option.symbol} — {option.name}
+                        {/* Enstrüman dropdown — DEPOSIT dışı tipler için */}
+                        {!isDeposit && (
+                            <FormControl size="small" fullWidth>
+                                <InputLabel id="instrument-label">Enstrüman</InputLabel>
+                                <Select
+                                    labelId="instrument-label"
+                                    value={instrumentId}
+                                    label="Enstrüman"
+                                    disabled={optionsLoading || options.length === 0}
+                                    onChange={(e: SelectChangeEvent) => setInstrumentId(e.target.value)}
+                                    startAdornment={optionsLoading ? <CircularProgress size={14} sx={{ mr: 1 }} /> : undefined}
+                                >
+                                    <MenuItem value="" disabled>
+                                        {optionsLoading ? "Yükleniyor..." : "Seçiniz"}
                                     </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-
-                        {optionsError && <Alert severity="error">{optionsError}</Alert>}
-                        {fxRatesError && <Alert severity="warning">{fxRatesError}</Alert>}
-                        {selectedOption && selectedOption.currency !== portfolio.displayCurrency && (
-                            <Alert severity="info" sx={{ py: 0.5 }}>
-                                Güncel fiyat {formatMoney(selectedOption.price, selectedOption.currency, 4)} üzerinden {portfolio.displayCurrency} karşılığıyla işlem girilir.
-                            </Alert>
+                                    {realOptions.map((option) => (
+                                        <MenuItem key={`${option.type}-${option.id}`} value={String(option.id)}>
+                                            {option.symbol} — {option.name}
+                                        </MenuItem>
+                                    ))}
+                                    {hasSentinel && [
+                                        <Divider key="divider" />,
+                                        <MenuItem key="manual" value="-1">
+                                            <em>Diğer (Manuel Giriş)</em>
+                                        </MenuItem>,
+                                    ]}
+                                </Select>
+                            </FormControl>
                         )}
 
-                        <Stack direction="row" sx={{ gap: 1 }}>
+                        {/* Manuel giriş alanları — "Diğer" seçilince (DEPOSIT dışı) */}
+                        {!isDeposit && isManualEntry && (
+                            <Stack direction="row" sx={{ gap: 1 }}>
+                                <TextField
+                                    label="Sembol"
+                                    value={instrumentSymbolManual}
+                                    onChange={(e) => setInstrumentSymbolManual(e.target.value)}
+                                    size="small"
+                                    sx={{ flex: 0.4 }}
+                                />
+                                <TextField
+                                    label="Enstrüman Adı"
+                                    value={instrumentNameManual}
+                                    onChange={(e) => setInstrumentNameManual(e.target.value)}
+                                    size="small"
+                                    sx={{ flex: 1 }}
+                                />
+                            </Stack>
+                        )}
+
+                        {/* Vadeli Mevduat alanları */}
+                        {isDeposit && (
+                            <>
+                                <TextField
+                                    label="Banka / Kurum Adı"
+                                    value={bankName}
+                                    onChange={(e) => setBankName(e.target.value)}
+                                    size="small"
+                                    fullWidth
+                                />
+                                <TextField
+                                    label="Faiz Oranı (%)"
+                                    type="number"
+                                    value={interestRate}
+                                    onChange={(e) => setInterestRate(e.target.value)}
+                                    slotProps={{ htmlInput: { min: "0", step: "0.01" } }}
+                                    size="small"
+                                    fullWidth
+                                />
+                            </>
+                        )}
+
+                        {optionsError && <Alert severity="error">{optionsError}</Alert>}
+
+                        {/* Bölüm 3: VIOP Ek Alanlar */}
+                        {isViop && (
+                            <>
+                                <Stack direction="row" sx={{ gap: 1, alignItems: "center" }}>
+                                    <Box>
+                                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+                                            Pozisyon Yönü
+                                        </Typography>
+                                        <ToggleButtonGroup
+                                            exclusive
+                                            value={direction}
+                                            onChange={(_, val: PositionDirection | null) => { if (val) setDirection(val); }}
+                                            size="small"
+                                        >
+                                            <ToggleButton value="LONG" sx={{ color: "success.main", "&.Mui-selected": { bgcolor: "success.light", color: "success.dark" } }}>
+                                                Long
+                                            </ToggleButton>
+                                            <ToggleButton value="SHORT" sx={{ color: "error.main", "&.Mui-selected": { bgcolor: "error.light", color: "error.dark" } }}>
+                                                Short
+                                            </ToggleButton>
+                                        </ToggleButtonGroup>
+                                    </Box>
+                                    <TextField
+                                        label="Kontrat Çarpanı"
+                                        type="number"
+                                        value={contractMultiplier}
+                                        onChange={(e) => setContractMultiplier(e.target.value)}
+                                        slotProps={{ htmlInput: { min: "1", step: "1" } }}
+                                        size="small"
+                                        sx={{ flexGrow: 1 }}
+                                    />
+                                </Stack>
+                                <Stack direction="row" sx={{ gap: 1 }}>
+                                    <TextField
+                                        label="Marjin / Teminat (TL)"
+                                        type="number"
+                                        value={marginAmount}
+                                        onChange={(e) => setMarginAmount(e.target.value)}
+                                        slotProps={{ htmlInput: { min: "0", step: "0.01" } }}
+                                        size="small"
+                                        fullWidth
+                                    />
+                                    <TextField
+                                        label="Vade Tarihi"
+                                        type="date"
+                                        value={maturityDate}
+                                        onChange={(e) => setMaturityDate(e.target.value)}
+                                        slotProps={{ inputLabel: { shrink: true } }}
+                                        size="small"
+                                        fullWidth
+                                    />
+                                </Stack>
+                                {!isManualEntry && selectedOption?.maturityText && (
+                                    <Typography variant="caption" color="text.secondary">
+                                        Sistem vade bilgisi: {selectedOption.maturityText}
+                                    </Typography>
+                                )}
+                                {(isManualEntry || selectedOption) && (
+                                    <TextField
+                                        label="Dayanak Enstrüman"
+                                        value={isManualEntry ? underlyingSymbolInput : (selectedOption?.name ?? "")}
+                                        onChange={isManualEntry ? (e) => setUnderlyingSymbolInput(e.target.value) : undefined}
+                                        slotProps={{ input: { readOnly: !isManualEntry } }}
+                                        size="small"
+                                        fullWidth
+                                    />
+                                )}
+                            </>
+                        )}
+
+                        {/* BOND: Vade Tarihi */}
+                        {isBond && (
                             <TextField
-                                label="Miktar"
+                                label="Vade Tarihi"
+                                type="date"
+                                value={maturityDate}
+                                onChange={(e) => setMaturityDate(e.target.value)}
+                                slotProps={{ inputLabel: { shrink: true } }}
+                                size="small"
+                                fullWidth
+                            />
+                        )}
+
+                        {/* Bölüm 4: Pozisyon Bilgileri */}
+                        {isDeposit ? (
+                            <TextField
+                                label="Anapara (TL)"
                                 type="number"
                                 value={quantity}
                                 onChange={(e) => setQuantity(e.target.value)}
-                                slotProps={{ htmlInput: { min: "0.000001", step: "0.000001" } }}
+                                slotProps={{ htmlInput: { min: "0.000001", step: "0.01" } }}
                                 size="small"
                                 fullWidth
                             />
+                        ) : (
+                            <Stack direction="row" sx={{ gap: 1 }}>
+                                <TextField
+                                    label="Miktar"
+                                    type="number"
+                                    value={quantity}
+                                    onChange={(e) => setQuantity(e.target.value)}
+                                    slotProps={{ htmlInput: { min: "0.000001", step: "0.000001" } }}
+                                    size="small"
+                                    fullWidth
+                                />
+                                <TextField
+                                    label={entryPriceLabel}
+                                    type="number"
+                                    value={entryPrice}
+                                    onChange={(e) => setEntryPrice(e.target.value)}
+                                    slotProps={{ htmlInput: { min: "0.000001", step: "0.000001" } }}
+                                    size="small"
+                                    fullWidth
+                                />
+                            </Stack>
+                        )}
+
+                        <TextField
+                            label="Alım Tarihi"
+                            type="date"
+                            value={entryDate}
+                            onChange={(e) => setEntryDate(e.target.value)}
+                            slotProps={{ inputLabel: { shrink: true } }}
+                            size="small"
+                            fullWidth
+                        />
+
+                        {isClosed && (
+                            <Stack direction="row" sx={{ gap: 1 }}>
+                                <TextField
+                                    label="Satış Fiyatı (TL)"
+                                    type="number"
+                                    value={exitPrice}
+                                    onChange={(e) => setExitPrice(e.target.value)}
+                                    slotProps={{ htmlInput: { min: "0.000001", step: "0.000001" } }}
+                                    size="small"
+                                    fullWidth
+                                />
+                                <TextField
+                                    label="Satım Tarihi"
+                                    type="date"
+                                    value={exitDate}
+                                    onChange={(e) => setExitDate(e.target.value)}
+                                    slotProps={{ inputLabel: { shrink: true } }}
+                                    size="small"
+                                    fullWidth
+                                />
+                            </Stack>
+                        )}
+
+                        {isDeposit && (
                             <TextField
-                                label={`Hedef Fiyat (${portfolio.displayCurrency})`}
-                                type="number"
-                                value={targetPrice}
-                                onChange={(e) => setTargetPrice(e.target.value)}
-                                slotProps={{ htmlInput: { min: "0.000001", step: "0.000001" } }}
-                                disabled={instrumentType === "BOND" || orderType === "MARKET"}
+                                label="Vade Tarihi"
+                                type="date"
+                                value={maturityDate}
+                                onChange={(e) => setMaturityDate(e.target.value)}
+                                slotProps={{ inputLabel: { shrink: true } }}
                                 size="small"
                                 fullWidth
                             />
-                        </Stack>
-
-                        {instrumentType === "BOND" && (
-                            <Alert severity="info" sx={{ py: 0.5 }}>Tahvil işlemi anlık olarak gerçekleştirilecek.</Alert>
-                        )}
-                        {transactionType === "SELL" && instrumentId && (
-                            ownedQuantity !== undefined ? (
-                                <Alert severity="info" sx={{ py: 0.5 }}>Mevcut pozisyon: {formatQuantity(ownedQuantity)} adet</Alert>
-                            ) : (
-                                <Alert severity="warning" sx={{ py: 0.5 }}>Bu enstrümanda pozisyon bulunmuyor.</Alert>
-                            )
                         )}
 
-                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "action.hover", borderRadius: 1, px: 2, py: 1.25 }}>
-                            <Typography variant="caption" color="text.secondary">Toplam Tutar</Typography>
-                            <Typography variant="body1" sx={{ fontWeight: 800 }}>
-                                {formatMoney(totalAmount, portfolio.displayCurrency)}
-                            </Typography>
+                        {/* Bölüm 5: P&L Özeti */}
+                        <Box sx={{ bgcolor: "action.hover", borderRadius: 1, px: 2, py: 1.25 }}>
+                            <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
+                                <Typography variant="caption" color="text.secondary">
+                                    Toplam Maliyet
+                                </Typography>
+                                <Typography variant="body1" sx={{ fontWeight: 800 }}>
+                                    {formatMoney(totalCost, "TRY")}
+                                </Typography>
+                            </Stack>
+                            {(isClosed || isDeposit) && (
+                                <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mt: 0.5 }}>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Tahmini P&L
+                                    </Typography>
+                                    <Typography
+                                        variant="body1"
+                                        sx={{
+                                            fontWeight: 800,
+                                            color: previewPnl === null ? "text.secondary" : previewPnl >= 0 ? "success.main" : "error.main",
+                                        }}
+                                    >
+                                        {formatSignedMoney(previewPnl, "TRY")}
+                                    </Typography>
+                                </Stack>
+                            )}
                         </Box>
 
-                        {(localError ?? serverError) && <Alert severity="error">{localError ?? serverError}</Alert>}
+                        {/* Bölüm 6: Notlar + Hata */}
+                        <TextField
+                            label="Notlar"
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            multiline
+                            rows={2}
+                            size="small"
+                            fullWidth
+                            placeholder="İsteğe bağlı..."
+                        />
+
+                        {(localError ?? serverError) && (
+                            <Alert severity="error">{localError ?? serverError}</Alert>
+                        )}
                     </Stack>
                 </Box>
             </DialogContent>
+
             <DialogActions>
                 <Button onClick={onClose}>İptal</Button>
                 <Button
                     type="submit"
-                    form="new-trade-form"
+                    form="position-form"
                     variant="contained"
                     color="secondary"
                     disabled={busy || optionsLoading}
                     startIcon={busy ? <CircularProgress size={14} color="inherit" /> : undefined}
                 >
-                    {busy ? "Gönderiliyor..." : "İşlem Talebi Gönder"}
+                    {busy ? "Kaydediliyor..." : "Pozisyon Kaydet"}
                 </Button>
             </DialogActions>
         </Dialog>

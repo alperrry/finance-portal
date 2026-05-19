@@ -3,15 +3,19 @@ import { SectionPanel } from "../../../components/ui/SectionPanel";
 import type { PortfolioDetailPageState } from "../hooks/usePortfolioDetailPage";
 import { PortfolioAllocationChart } from "./PortfolioAllocationChart";
 import { PortfolioMetrics } from "./PortfolioMetrics";
+import { PortfolioTypeChart } from "./PortfolioTypeChart";
+import { PositionsByTypeTable } from "./PositionsByTypeTable";
 import { PositionsTable } from "./PositionsTable";
-import { TradeHistoryTable } from "./TradeHistoryTable";
 
 interface PortfolioDetailContentProps {
     page: PortfolioDetailPageState;
 }
 
 export function PortfolioDetailContent({ page }: PortfolioDetailContentProps) {
-    const { portfolio, detailState, tradeHistoryState, tradeStatus, tradeFilters, pending, handlers } = page;
+    const { portfolio, detailState, openPositions, closedPositions, positionsLoading, positionsError, positionKindTab, handlers } = page;
+
+    const activePositions = positionKindTab === "OPEN" ? openPositions : closedPositions;
+    const hasTrackedItems = (portfolio?.items?.length ?? 0) > 0;
 
     return (
         <>
@@ -34,37 +38,42 @@ export function PortfolioDetailContent({ page }: PortfolioDetailContentProps) {
 
             {portfolio ? (
                 <Stack sx={{ gap: 3 }}>
+                    <PortfolioMetrics portfolio={portfolio} />
+
+                    {hasTrackedItems && (
+                        <SectionPanel>
+                            <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>Takip Edilen Pozisyonlar</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 800, mb: 2 }}>Portföy Dağılımı</Typography>
+                            <PortfolioAllocationChart items={portfolio.items} displayCurrency={portfolio.displayCurrency} />
+                            <Divider sx={{ my: 2 }} />
+                            <PositionsTable items={portfolio.items} displayCurrency={portfolio.displayCurrency} />
+                        </SectionPanel>
+                    )}
+
                     <SectionPanel>
-                        <PortfolioMetrics portfolio={portfolio} />
+                        <PortfolioTypeChart positions={openPositions} currency={portfolio.displayCurrency} onNewTrade={handlers.openTradeModal} />
                     </SectionPanel>
 
                     <SectionPanel>
-                        <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>Portföy Dağılımı</Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 800, mb: 2 }}>Dağılım Grafiği</Typography>
-                        <PortfolioAllocationChart portfolio={portfolio} onNewTrade={handlers.openTradeModal} />
-                    </SectionPanel>
-
-                    <SectionPanel>
-                        <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>Açık Pozisyonlar</Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 800, mb: 2 }}>Pozisyonlar</Typography>
-                        <PositionsTable items={portfolio.items ?? []} displayCurrency={portfolio.displayCurrency} />
-                    </SectionPanel>
-
-                    <SectionPanel>
-                        <TradeHistoryTable
-                            state={tradeHistoryState}
-                            status={tradeStatus}
-                            filters={tradeFilters}
-                            displayCurrency={portfolio.displayCurrency}
-                            onStatusChange={handlers.setTradeStatus}
-                            onFiltersChange={handlers.setTradeFilters}
-                            onPageChange={handlers.setTradePage}
-                            onCancel={handlers.handleCancelTrade}
-                            onExportPdf={handlers.handleExportPdf}
-                            cancelingTradeId={pending.cancelingTradeId}
-                            exportBusy={pending.exportBusy}
-                            canExport={Boolean(portfolio)}
-                        />
+                        {positionsError ? (
+                            <Alert
+                                severity="error"
+                                sx={{ mb: 2 }}
+                                action={<Button size="small" color="inherit" onClick={handlers.retryPositions}>Tekrar dene</Button>}
+                            >
+                                {positionsError}
+                            </Alert>
+                        ) : (
+                            <PositionsByTypeTable
+                                portfolioId={portfolio.id}
+                                positions={activePositions}
+                                loading={positionsLoading}
+                                kind={positionKindTab}
+                                onKindChange={handlers.setPositionKindTab}
+                                onDelete={handlers.handlePositionDelete}
+                                onSell={handlers.handleSellOpen}
+                            />
+                        )}
                     </SectionPanel>
 
                     <SectionPanel sx={{ borderColor: "error.light", border: "1px solid" }}>

@@ -1,7 +1,7 @@
-import { Box, Button, Paper, Stack, Typography } from "@mui/material";
+import { Box, Paper, Stack, Typography } from "@mui/material";
 import { useMemo, useState } from "react";
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import type { PortfolioResponse } from "../api/portfolioApi";
+import type { PortfolioItemResponse } from "../api/portfolioApi";
 import { buildAllocationData, formatMoney, formatPercent, formatQuantity } from "../utils/portfolioFormatters";
 
 type TooltipProps = {
@@ -28,26 +28,19 @@ function AllocationTooltip({ active, payload, total, currency }: TooltipProps) {
 }
 
 type Props = {
-    portfolio: PortfolioResponse;
-    onNewTrade: () => void;
+    items: PortfolioItemResponse[];
+    displayCurrency: string;
 };
 
-export function PortfolioAllocationChart({ portfolio, onNewTrade }: Props) {
-    const data = useMemo(() => buildAllocationData(portfolio.items ?? []), [portfolio.items]);
+export function PortfolioAllocationChart({ items, displayCurrency }: Props) {
+    const data = useMemo(() => buildAllocationData(items ?? []), [items]);
     const total = data.reduce((sum, item) => sum + item.value, 0);
     const [activeSegment, setActiveSegment] = useState<number | null>(null);
 
     if (data.length === 0) {
         return (
-            <Stack sx={{ alignItems: "center", py: 4, gap: 1 }}>
-                <Typography variant="h3" aria-hidden="true">▦</Typography>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Henüz pozisyon yok</Typography>
-                <Typography variant="body2" color="text.secondary">
-                    İlk işlemini eklediğinde portföy dağılımı burada görünecek.
-                </Typography>
-                <Button variant="contained" color="secondary" size="small" onClick={onNewTrade} sx={{ mt: 1 }}>
-                    + Yeni İşlem
-                </Button>
+            <Stack sx={{ alignItems: "center", py: 2, gap: 1 }}>
+                <Typography variant="body2" color="text.secondary">Değer bilgisi olan pozisyon bulunamadı.</Typography>
             </Stack>
         );
     }
@@ -55,7 +48,7 @@ export function PortfolioAllocationChart({ portfolio, onNewTrade }: Props) {
     return (
         <Box sx={{ position: "relative" }}>
             <Box sx={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 1, textAlign: "center", pointerEvents: "none" }}>
-                <Typography variant="body2" sx={{ fontWeight: 900 }}>{formatMoney(total, portfolio.displayCurrency)}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 900 }}>{formatMoney(total, displayCurrency)}</Typography>
                 <Typography variant="caption" color="text.secondary">Toplam</Typography>
             </Box>
             <ResponsiveContainer width="100%" height={280}>
@@ -78,7 +71,7 @@ export function PortfolioAllocationChart({ portfolio, onNewTrade }: Props) {
                             />
                         ))}
                     </Pie>
-                    <Tooltip content={<AllocationTooltip total={total} currency={portfolio.displayCurrency} />} />
+                    <Tooltip content={<AllocationTooltip total={total} currency={displayCurrency} />} />
                     <Legend
                         formatter={(value, _entry, index) => (
                             <button

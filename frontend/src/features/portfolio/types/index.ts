@@ -1,12 +1,7 @@
 import type {
     DisplayCurrency,
-    OrderType,
-    PageResponse,
     PortfolioInstrumentType,
     PortfolioResponse,
-    TradeResponse,
-    TransactionStatus,
-    TransactionType,
 } from "../api/portfolioApi";
 
 export type PortfolioLoadState = {
@@ -20,20 +15,6 @@ export type DetailState = {
     data: PortfolioResponse | null;
 };
 
-export type TradeHistoryState = {
-    loading: boolean;
-    error: string | null;
-    page: PageResponse<TradeResponse> | null;
-};
-
-export type TradeFilters = {
-    from: string;
-    to: string;
-    instrument: string;
-    type: TransactionType | "";
-    query: string;
-};
-
 export type InstrumentOption = {
     id: number;
     type: PortfolioInstrumentType;
@@ -41,6 +22,8 @@ export type InstrumentOption = {
     name: string;
     price: number | null;
     currency: string;
+    maturityText?: string | null;  // VIOP only
+    maturityDate?: string | null;  // BOND only
 };
 
 export type PortfolioFormState = {
@@ -50,15 +33,15 @@ export type PortfolioFormState = {
 
 export type FxRateMap = Partial<Record<DisplayCurrency, number>>;
 
-export const TRADE_PAGE_SIZE = 8;
-export const TRADE_EXPORT_PAGE_SIZE = 100;
 export const CHART_PALETTE = ["#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"];
 
-export const STATUS_LABELS: Record<TransactionStatus, string> = {
-    PENDING: "Bekleyen",
-    APPROVED: "Onaylanan",
-    REJECTED: "Reddedilen",
-    CANCELLED: "İptal edilen",
+export const TYPE_COLORS: Record<PortfolioInstrumentType, string> = {
+    STOCK: "#3b82f6",
+    FUND: "#8b5cf6",
+    CURRENCY: "#f59e0b",
+    BOND: "#10b981",
+    VIOP: "#ef4444",
+    DEPOSIT: "#64748b",
 };
 
 export const INSTRUMENT_LABELS: Record<PortfolioInstrumentType, string> = {
@@ -66,16 +49,8 @@ export const INSTRUMENT_LABELS: Record<PortfolioInstrumentType, string> = {
     FUND: "Fon",
     CURRENCY: "Döviz",
     BOND: "Tahvil",
-};
-
-export const TRANSACTION_LABELS: Record<TransactionType, string> = {
-    BUY: "AL",
-    SELL: "SAT",
-};
-
-export const ORDER_LABELS: Record<OrderType, string> = {
-    MARKET: "Piyasa",
-    LIMIT: "Limit",
+    VIOP: "VİOP",
+    DEPOSIT: "Vadeli Mevduat",
 };
 
 export const CURRENCIES: DisplayCurrency[] = ["TRY", "USD", "EUR"];

@@ -2,6 +2,7 @@ import type { PortfolioDetailPageState } from "../hooks/usePortfolioDetailPage";
 import { DeletePortfolioModal } from "./DeletePortfolioModal";
 import { NewTradeModal } from "./NewTradeModal";
 import { PortfolioFormModal } from "./PortfolioFormModal";
+import { SellPositionModal } from "./SellPositionModal";
 
 interface PortfolioDetailModalsProps {
     page: PortfolioDetailPageState;
@@ -37,7 +38,16 @@ export function PortfolioDetailModals({ page }: PortfolioDetailModalsProps) {
                     busy={pending.tradeBusy}
                     serverError={errors.tradeError}
                     onClose={handlers.closeTradeModal}
-                    onSubmit={handlers.submitNewTrade}
+                    onSubmit={handlers.handlePositionSubmit}
+                />
+            ) : null}
+            {modals.sellTarget ? (
+                <SellPositionModal
+                    position={modals.sellTarget}
+                    busy={pending.sellBusy}
+                    error={errors.sellError}
+                    onClose={handlers.handleSellClose}
+                    onSubmit={handlers.handleSellSubmit}
                 />
             ) : null}
         </>

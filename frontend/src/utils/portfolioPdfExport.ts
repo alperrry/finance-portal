@@ -1,18 +1,9 @@
 import type { Content, TDocumentDefinitions, TableCell } from "pdfmake/interfaces";
-import type { PortfolioItemResponse, PortfolioResponse, TradeResponse } from "../features/portfolio/api/portfolioApi";
-
-type TradeFilters = {
-    from: string;
-    to: string;
-    instrument: string;
-    type: string;
-    query: string;
-};
+import type { ManualPositionResponse, PortfolioItemResponse, PortfolioInstrumentType, PortfolioResponse } from "../features/portfolio/api/portfolioApi";
 
 type ExportOptions = {
     portfolio: PortfolioResponse;
-    trades: TradeResponse[];
-    filters: TradeFilters;
+    manualPositions?: ManualPositionResponse[];
     generatedAt?: Date;
 };
 
@@ -24,29 +15,14 @@ type PdfMakeApi = {
     vfs?: Record<string, string>;
 };
 
-const INSTRUMENT_LABELS = {
+const INSTRUMENT_LABELS: Record<PortfolioInstrumentType, string> = {
     STOCK: "Hisse",
     FUND: "Fon",
     CURRENCY: "Döviz",
     BOND: "Tahvil",
-} as const;
-
-const TRANSACTION_LABELS = {
-    BUY: "AL",
-    SELL: "SAT",
-} as const;
-
-const ORDER_LABELS = {
-    MARKET: "Piyasa",
-    LIMIT: "Limit",
-} as const;
-
-const STATUS_LABELS = {
-    PENDING: "Bekleyen",
-    APPROVED: "Onaylanan",
-    REJECTED: "Reddedilen",
-    CANCELLED: "İptal edilen",
-} as const;
+    VIOP: "VIOP",
+    DEPOSIT: "Mevduat",
+};
 
 function toNumber(value: number | null | undefined) {
     return typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -148,7 +124,7 @@ function rightCell(text: string): TableCell {
 }
 
 function positionName(item: PortfolioItemResponse) {
-    return item.instrumentSymbol || `${INSTRUMENT_LABELS[item.instrumentType]} #${item.instrumentId}`;
+    return item.instrumentSymbol || item.instrumentName || `${INSTRUMENT_LABELS[item.instrumentType]} #${item.instrumentId}`;
 }
 
 function createSummaryMetrics(portfolio: PortfolioResponse): Content {
@@ -227,48 +203,48 @@ function createAllocationSummary(portfolio: PortfolioResponse): Content {
     };
 }
 
-function createTradesTable(portfolio: PortfolioResponse, trades: TradeResponse[]): Content {
-    if (trades.length === 0) {
-        return { text: "Bu filtrelerde işlem bulunamadı.", style: "emptyText", margin: [0, 2, 0, 14] };
+function createManualPositionsSection(positions: ManualPositionResponse[]): Content[] {
+    if (!positions.length) return [];
+
+    const byType = new Map<PortfolioInstrumentType, ManualPositionResponse[]>();
+    for (const pos of positions) {
+        const existing = byType.get(pos.instrumentType) ?? [];
+        existing.push(pos);
+        byType.set(pos.instrumentType, existing);
     }
 
-    return {
-        table: {
-            headerRows: 1,
-            widths: [54, "*", 34, 44, 48, 48, 54, 58, 54],
-            body: [
-                ["Tarih", "Enstrüman", "Tip", "Emir", "Miktar", "Hedef", "Gerçekleşme", "Tutar", "Durum"],
-                ...trades.map((trade) => [
-                    formatDateTime(trade.createdAt),
-                    primaryCell(`${trade.instrumentSymbol || "Bilinmiyor"}\n${trade.instrumentName || INSTRUMENT_LABELS[trade.instrumentType]}`),
-                    TRANSACTION_LABELS[trade.transactionType],
-                    ORDER_LABELS[trade.orderType ?? "LIMIT"],
-                    rightCell(formatQuantity(trade.quantity)),
-                    rightCell(formatNumber(trade.targetPrice, 4)),
-                    rightCell(formatNumber(trade.executedPrice, 4)),
-                    rightCell(formatMoney(trade.totalAmount, portfolio.displayCurrency)),
-                    STATUS_LABELS[trade.status],
-                ]),
-            ],
-        },
-        layout: "lightHorizontalLines",
-        margin: [0, 0, 0, 14],
-    };
+    const sections: Content[] = [{ text: "Manuel Pozisyon Defteri", style: "sectionTitle" }];
+
+    for (const [type, rows] of byType) {
+        sections.push({ text: INSTRUMENT_LABELS[type], style: "subSectionTitle" });
+
+        const body: TableCell[][] = [
+            ["Enstrüman", "Miktar", "Alış Fiy.", "Güncel Fiy.", "Gerç. K/Z", "K/Z %"],
+            ...rows.map((pos) => {
+                const name = pos.instrumentSymbol ?? pos.bankName ?? pos.instrumentName ?? INSTRUMENT_LABELS[type];
+                const pnl = pos.unrealizedPnl ?? pos.realizedPnl;
+                return [
+                    primaryCell(name),
+                    rightCell(formatQuantity(pos.quantity)),
+                    rightCell(formatMoney(pos.entryPrice, "TRY", 4)),
+                    rightCell(pos.currentPrice != null ? formatMoney(pos.currentPrice, "TRY", 4) : "—"),
+                    rightCell(pnl != null ? formatSignedMoney(pnl, "TRY") : "—"),
+                    rightCell(pos.pnlPercent != null ? formatPercent(pos.pnlPercent) : "—"),
+                ];
+            }),
+        ];
+
+        sections.push({
+            table: { headerRows: 1, widths: ["*", 48, 62, 62, 62, 42], body },
+            layout: "lightHorizontalLines",
+            margin: [0, 0, 0, 10] as [number, number, number, number],
+        });
+    }
+
+    return sections;
 }
 
-function filterSummary(filters: TradeFilters, tradeCount: number) {
-    const parts = [
-        filters.from ? `Başlangıç: ${filters.from}` : null,
-        filters.to ? `Bitiş: ${filters.to}` : null,
-        filters.instrument ? `Enstrüman: ${filters.instrument}` : null,
-        filters.type ? `Tip: ${filters.type}` : null,
-        filters.query.trim() ? `Arama: ${filters.query.trim()}` : null,
-    ].filter(Boolean);
-
-    return `${tradeCount} işlem${parts.length ? ` | ${parts.join(" | ")}` : ""}`;
-}
-
-function createDocumentDefinition({ portfolio, trades, filters, generatedAt = new Date() }: ExportOptions): TDocumentDefinitions {
+function createDocumentDefinition({ portfolio, manualPositions, generatedAt = new Date() }: ExportOptions): TDocumentDefinitions {
     return {
         pageSize: "A4",
         pageOrientation: "landscape",
@@ -299,11 +275,9 @@ function createDocumentDefinition({ portfolio, trades, filters, generatedAt = ne
             createSummaryMetrics(portfolio),
             { text: "Pozisyon Dağılımı", style: "sectionTitle" },
             createAllocationSummary(portfolio),
-            { text: "Pozisyonlar", style: "sectionTitle" },
+            { text: "Takip Edilen Pozisyonlar", style: "sectionTitle" },
             createPositionsTable(portfolio),
-            { text: "İşlem Geçmişi", style: "sectionTitle", pageBreak: portfolio.items.length > 8 ? "before" : undefined },
-            { text: filterSummary(filters, trades.length), style: "meta", margin: [0, 0, 0, 8] },
-            createTradesTable(portfolio, trades),
+            ...(manualPositions?.length ? createManualPositionsSection(manualPositions) : []),
         ],
         defaultStyle: {
             font: "Roboto",
@@ -319,6 +293,7 @@ function createDocumentDefinition({ portfolio, trades, filters, generatedAt = ne
             metricValue: { fontSize: 13, bold: true, color: "#111111", margin: [0, 2, 0, 1] },
             metricCaption: { fontSize: 8, color: "#666666" },
             primaryCell: { bold: true },
+            subSectionTitle: { fontSize: 10, bold: true, color: "#444444", margin: [0, 6, 0, 4] },
             emptyText: { color: "#666666", italics: true },
             footer: { fontSize: 7, color: "#777777" },
         },
@@ -342,7 +317,7 @@ export async function exportPortfolioPdf(options: ExportOptions) {
         pdfMake.vfs = fontVfs;
     }
 
-    const blob = await createPdfBlob(pdfMake, createDocumentDefinition({ ...options, generatedAt }));
+    const blob = await createPdfBlob(pdfMake, createDocumentDefinition({ portfolio: options.portfolio, generatedAt }));
     downloadBlob(blob, fileName);
 }
 

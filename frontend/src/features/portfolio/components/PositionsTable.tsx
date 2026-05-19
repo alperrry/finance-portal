@@ -150,16 +150,19 @@ export function PositionsTable({ items, displayCurrency }: Props) {
             field: "profitLoss",
             headerName: "K/Z",
             flex: 1,
-            minWidth: 110,
+            minWidth: 120,
             align: "right",
             headerAlign: "right",
             renderCell: ({ row }) => {
-                const tone = getProfitTone(row.profitLoss);
-                const icon = tone === "up" ? "▲" : tone === "down" ? "▼" : "•";
+                const v = row.profitLoss;
+                const positive = (v ?? 0) > 0;
+                const negative = (v ?? 0) < 0;
                 return (
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: toneColor(tone) }}>
-                        {icon} {formatSignedMoney(row.profitLoss, displayCurrency)}
-                    </Typography>
+                    <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.3, px: 0.75, py: 0.15, borderRadius: 0.75, bgcolor: positive ? "rgba(46,125,50,0.10)" : negative ? "rgba(211,47,47,0.10)" : "transparent" }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.78rem", color: positive ? "success.main" : negative ? "error.main" : "text.secondary" }}>
+                            {positive ? "▲ " : negative ? "▼ " : ""}{formatSignedMoney(v, displayCurrency)}
+                        </Typography>
+                    </Box>
                 );
             },
         },
@@ -170,14 +173,18 @@ export function PositionsTable({ items, displayCurrency }: Props) {
             minWidth: 90,
             align: "right",
             headerAlign: "right",
-            renderCell: ({ row }) => (
-                <Typography
-                    variant="body2"
-                    sx={{ fontWeight: 700, color: toneColor(getProfitTone(row.profitLossPct)) }}
-                >
-                    {formatPercent(row.profitLossPct)}
-                </Typography>
-            ),
+            renderCell: ({ row }) => {
+                const v = row.profitLossPct;
+                const positive = (v ?? 0) > 0;
+                const negative = (v ?? 0) < 0;
+                return (
+                    <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.3, px: 0.75, py: 0.15, borderRadius: 0.75, bgcolor: positive ? "rgba(46,125,50,0.10)" : negative ? "rgba(211,47,47,0.10)" : "transparent" }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.78rem", color: positive ? "success.main" : negative ? "error.main" : "text.secondary" }}>
+                            {positive ? "▲ " : negative ? "▼ " : ""}{formatPercent(v)}
+                        </Typography>
+                    </Box>
+                );
+            },
         },
     ], [displayCurrency]);
 

@@ -5,23 +5,24 @@ import { useToast } from "../../../components/ToastContext";
 import { useTradeNotifications } from "../../../hooks/useTradeNotifications";
 import { ApiError } from "../../../services/api/client";
 import { websocketClient } from "../../../services/websocketClient";
-import { exportPortfolioPdf } from "../../../utils/portfolioPdfExport";
 import {
-    cancelTrade,
+    closeManualPosition,
+    createManualPosition,
+    deleteManualPosition,
     deletePortfolio,
+    fetchManualPositions,
     fetchPortfolio,
-    fetchPortfolioTrades,
-    submitTrade,
     updatePortfolio,
+    type ClosePositionRequest,
     type CreatePortfolioRequest,
+    type ManualPositionRequest,
+    type ManualPositionResponse,
     type PortfolioResponse,
-    type TradeRequest,
-    type TradeResponse,
-    type TransactionStatus,
+    type PositionKind,
 } from "../api/portfolioApi";
-import { INSTRUMENT_LABELS, TRADE_EXPORT_PAGE_SIZE, TRADE_PAGE_SIZE } from "../types";
-import type { DetailState, PortfolioFormState, TradeFilters, TradeHistoryState } from "../types";
-import { filterTrades, resolveApiError } from "../utils/portfolioFormatters";
+import { exportPortfolioPdf } from "../../../utils/portfolioPdfExport";
+import type { DetailState, PortfolioFormState } from "../types";
+import { resolveApiError } from "../utils/portfolioFormatters";
 
 export function usePortfolioDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -33,11 +34,6 @@ export function usePortfolioDetailPage() {
 
     const [detailReloadToken, setDetailReloadToken] = useState(0);
     const [detailState, setDetailState] = useState<DetailState>({ loading: false, error: null, data: null });
-    const [tradeHistoryState, setTradeHistoryState] = useState<TradeHistoryState>({ loading: false, error: null, page: null });
-    const [tradeStatus, setTradeStatus] = useState<TransactionStatus | "">("");
-    const [tradeFilters, setTradeFilters] = useState<TradeFilters>({ from: "", to: "", instrument: "", type: "", query: "" });
-    const [tradePage, setTradePage] = useState(0);
-    const [tradeReloadToken, setTradeReloadToken] = useState(0);
     const [formState, setFormState] = useState<PortfolioFormState | null>(null);
     const [formBusy, setFormBusy] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
@@ -47,8 +43,18 @@ export function usePortfolioDetailPage() {
     const [tradeModalOpen, setTradeModalOpen] = useState(false);
     const [tradeBusy, setTradeBusy] = useState(false);
     const [tradeError, setTradeError] = useState<string | null>(null);
-    const [cancelingTradeId, setCancelingTradeId] = useState<number | null>(null);
-    const [exportBusy, setExportBusy] = useState(false);
+    const [pdfBusy, setPdfBusy] = useState(false);
+    const [sellTarget, setSellTarget] = useState<ManualPositionResponse | null>(null);
+    const [sellBusy, setSellBusy] = useState(false);
+    const [sellError, setSellError] = useState<string | null>(null);
+
+    // Position state
+    const [openPositions, setOpenPositions] = useState<ManualPositionResponse[]>([]);
+    const [closedPositions, setClosedPositions] = useState<ManualPositionResponse[]>([]);
+    const [positionsLoading, setPositionsLoading] = useState(false);
+    const [positionsError, setPositionsError] = useState<string | null>(null);
+    const [positionKindTab, setPositionKindTab] = useState<PositionKind>("OPEN");
+    const [positionReloadToken, setPositionReloadToken] = useState(0);
 
     useEffect(() => {
         if (!validPortfolioId) {
@@ -67,37 +73,42 @@ export function usePortfolioDetailPage() {
         return () => { active = false; };
     }, [detailReloadToken, validPortfolioId]);
 
+    // Load both OPEN and CLOSED positions
     useEffect(() => {
         if (!validPortfolioId) {
-            setTradeHistoryState({ loading: false, error: null, page: null });
+            setOpenPositions([]);
+            setClosedPositions([]);
             return undefined;
         }
         let active = true;
-        setTradeHistoryState((current) => ({ ...current, loading: true, error: null }));
-        fetchPortfolioTrades(validPortfolioId, { status: tradeStatus, page: tradePage, size: TRADE_PAGE_SIZE })
-            .then((page) => {
-                if (active) setTradeHistoryState({ loading: false, error: null, page });
+        setPositionsLoading(true);
+        setPositionsError(null);
+
+        Promise.all([
+            fetchManualPositions(validPortfolioId, "OPEN"),
+            fetchManualPositions(validPortfolioId, "CLOSED"),
+        ])
+            .then(([openPage, closedPage]) => {
+                if (!active) return;
+                setOpenPositions(openPage.content);
+                setClosedPositions(closedPage.content);
             })
             .catch((caughtError) => {
-                if (active) setTradeHistoryState({ loading: false, error: resolveApiError(caughtError, "İşlem geçmişi yüklenemedi."), page: null });
+                if (active) setPositionsError(resolveApiError(caughtError, "Pozisyonlar yüklenemedi."));
+            })
+            .finally(() => {
+                if (active) setPositionsLoading(false);
             });
+
         return () => { active = false; };
-    }, [tradePage, tradeReloadToken, tradeStatus, validPortfolioId]);
+    }, [validPortfolioId, positionReloadToken]);
 
     const refreshPortfolio = useCallback((changedPortfolioId?: number) => {
         if (!validPortfolioId || (changedPortfolioId && changedPortfolioId !== validPortfolioId)) return;
         setDetailReloadToken((value) => value + 1);
-        setTradeReloadToken((value) => value + 1);
     }, [validPortfolioId]);
 
-    const resolveTradeLabel = useCallback((trade: TradeResponse) => {
-        const item = detailState.data?.items.find(
-            (portfolioItem) => portfolioItem.instrumentType === trade.instrumentType && portfolioItem.instrumentId === trade.instrumentId,
-        );
-        return trade.instrumentSymbol || item?.instrumentSymbol || `${INSTRUMENT_LABELS[trade.instrumentType]} #${trade.instrumentId}`;
-    }, [detailState.data?.items]);
-
-    useTradeNotifications({ token, activePortfolioId: validPortfolioId, onPortfolioSignal: refreshPortfolio, resolveTradeLabel });
+    useTradeNotifications({ token, activePortfolioId: validPortfolioId, onPortfolioSignal: refreshPortfolio });
 
     useEffect(() => {
         if (!validPortfolioId || !token) return undefined;
@@ -135,7 +146,7 @@ export function usePortfolioDetailPage() {
         } catch (caughtError) {
             const message =
                 caughtError instanceof ApiError && caughtError.status === 409
-                    ? "Bu portföyde pozisyon veya bekleyen emir var. Önce pozisyonları kapatman ve bekleyen emirleri iptal etmen gerekir."
+                    ? "Bu portföyde pozisyon var. Önce pozisyonları kapatman gerekir."
                     : resolveApiError(caughtError, "Portföy silinemedi.");
             setDeleteError(message);
         } finally {
@@ -143,56 +154,30 @@ export function usePortfolioDetailPage() {
         }
     };
 
-    const submitNewTrade = async (payload: TradeRequest) => {
+    const handlePositionSubmit = async (payload: ManualPositionRequest) => {
         if (!validPortfolioId) return;
         setTradeBusy(true);
         setTradeError(null);
         try {
-            const response = await submitTrade(validPortfolioId, payload);
+            await createManualPosition(validPortfolioId, payload);
             setTradeModalOpen(false);
-            showToast(
-                response.status === "APPROVED"
-                    ? "İşlem onaylandı."
-                    : "İşlem talebi alındı. Hedef fiyata ulaşıldığında gerçekleşecek.",
-                "success",
-            );
-            refreshPortfolio(validPortfolioId);
+            showToast("Pozisyon kaydedildi.", "success");
+            setPositionReloadToken((v) => v + 1);
         } catch (caughtError) {
-            setTradeError(resolveApiError(caughtError, "İşlem talebi gönderilemedi."));
+            setTradeError(resolveApiError(caughtError, "Pozisyon kaydedilemedi."));
         } finally {
             setTradeBusy(false);
         }
     };
 
-    const handleCancelTrade = async (trade: TradeResponse) => {
+    const handlePositionDelete = async (positionId: number) => {
         if (!validPortfolioId) return;
-        setCancelingTradeId(trade.id);
         try {
-            await cancelTrade(validPortfolioId, trade.id);
-            showToast("İşlem iptal edildi.", "info");
-            refreshPortfolio(validPortfolioId);
+            await deleteManualPosition(validPortfolioId, positionId);
+            showToast("Pozisyon silindi.", "info");
+            setPositionReloadToken((v) => v + 1);
         } catch (caughtError) {
-            showToast(resolveApiError(caughtError, "İşlem iptal edilemedi."), "error");
-        } finally {
-            setCancelingTradeId(null);
-        }
-    };
-
-    const handleExportPdf = async () => {
-        if (!detailState.data || !validPortfolioId) return;
-        setExportBusy(true);
-        try {
-            const firstPage = await fetchPortfolioTrades(validPortfolioId, { status: tradeStatus, page: 0, size: TRADE_EXPORT_PAGE_SIZE });
-            const allTrades = [...firstPage.content];
-            for (let page = 1; page < firstPage.totalPages; page += 1) {
-                const nextPage = await fetchPortfolioTrades(validPortfolioId, { status: tradeStatus, page, size: TRADE_EXPORT_PAGE_SIZE });
-                allTrades.push(...nextPage.content);
-            }
-            await exportPortfolioPdf({ portfolio: detailState.data, trades: filterTrades(allTrades, tradeFilters), filters: tradeFilters });
-        } catch (caughtError) {
-            showToast(resolveApiError(caughtError, "PDF raporu oluşturulamadı."), "error");
-        } finally {
-            setExportBusy(false);
+            showToast(resolveApiError(caughtError, "Pozisyon silinemedi."), "error");
         }
     };
 
@@ -206,6 +191,39 @@ export function usePortfolioDetailPage() {
         setTradeModalOpen(true);
     };
 
+    const handleSellOpen = (pos: ManualPositionResponse) => {
+        setSellError(null);
+        setSellTarget(pos);
+    };
+
+    const handleSellClose = () => setSellTarget(null);
+
+    const handleSellSubmit = async (payload: ClosePositionRequest) => {
+        if (!validPortfolioId || !sellTarget) return;
+        setSellBusy(true);
+        setSellError(null);
+        try {
+            await closeManualPosition(validPortfolioId, sellTarget.id, payload);
+            setSellTarget(null);
+            showToast("Pozisyon kapatıldı.", "success");
+            setPositionReloadToken((v) => v + 1);
+        } catch (caughtError) {
+            setSellError(resolveApiError(caughtError, "Pozisyon kapatılamadı."));
+        } finally {
+            setSellBusy(false);
+        }
+    };
+
+    const handlePdfExport = async () => {
+        if (!detailState.data) return;
+        setPdfBusy(true);
+        try {
+            await exportPortfolioPdf({ portfolio: detailState.data, manualPositions: openPositions });
+        } finally {
+            setPdfBusy(false);
+        }
+    };
+
     const openDelete = (portfolio: PortfolioResponse) => {
         setDeleteError(null);
         setDeleteTarget(portfolio);
@@ -214,46 +232,49 @@ export function usePortfolioDetailPage() {
     return {
         portfolio: detailState.data,
         detailState,
-        tradeHistoryState,
-        tradeStatus,
-        tradeFilters,
+        openPositions,
+        closedPositions,
+        positionsLoading,
+        positionsError,
+        positionKindTab,
         modals: {
             formState,
             deleteTarget,
             tradeModalOpen,
+            sellTarget,
         },
         pending: {
             formBusy,
             deleteBusy,
             tradeBusy,
-            cancelingTradeId,
-            exportBusy,
+            pdfBusy,
+            sellBusy,
         },
         errors: {
             formError,
             deleteError,
             tradeError,
+            sellError,
         },
         handlers: {
             backToPortfolios: () => navigate("/portfolios"),
             retryDetail: () => setDetailReloadToken((value) => value + 1),
+            retryPositions: () => setPositionReloadToken((v) => v + 1),
             openEdit,
             openDelete,
             openTradeModal,
             closeForm: () => setFormState(null),
             closeDelete: () => setDeleteTarget(null),
             closeTradeModal: () => setTradeModalOpen(false),
+            handlePdfExport,
+            handleSellOpen,
+            handleSellClose,
+            handleSellSubmit,
             submitPortfolioForm,
             confirmDelete,
-            submitNewTrade,
-            handleCancelTrade,
-            handleExportPdf,
-            setTradeStatus: (status: TransactionStatus | "") => {
-                setTradeStatus(status);
-                setTradePage(0);
-            },
-            setTradeFilters,
-            setTradePage,
+            handlePositionSubmit,
+            handlePositionDelete,
+            setPositionKindTab: (kind: PositionKind) => setPositionKindTab(kind),
         },
     };
 }
