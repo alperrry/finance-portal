@@ -1,0 +1,33 @@
+{
+  "name": "finance-portal-keycloak-theme",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "postinstall": "keycloakify sync-extensions",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "build-keycloak-theme": "vite build && keycloakify build",
+    "dev-keycloak-theme": "VITE_KC_DEV=true npm run dev"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@keycloakify/email-native": "^260007.0.0",
+    "@keycloakify/login-ui": "~250004.7.0",
+    "@mui/icons-material": "^9.0.1",
+    "@mui/material": "^9.0.1",
+    "keycloakify": "^11.15.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tsafe": "^1.8.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "typescript": "~5.9.3",
+    "vite": "^7.2.4"
+  }
+}

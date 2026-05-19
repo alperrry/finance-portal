@@ -1,41 +1,54 @@
 # Finance Portal Keycloak Theme
 
-Finance Portal icin Keycloak 26.x custom `login` + `email` temasi ve Keycloak'a ayri PostgreSQL database acilisi burada tutulur.
+Finance Portal Keycloak `login` + `email` temasi React + TypeScript + MUI tabanli Keycloakify build'i ile bu modulden uretilir. Aktif tema JAR'i `keycloak-theme/dist_keycloak` altindan Keycloak provider olarak mount edilir.
 
-Bu tema mevcut frontend'in `frontend/src/styles/kapital.css` dosyasindaki tasarim dilini tekrar eder:
+Aktif tema kaynaklari:
 
-- Ana font: `Sora`
-- Display font: `Playfair Display`
-- Mono font: `JetBrains Mono`
-- Brand accent: `#c1622f`
-- Zemin: `#edeae4`
-- Surface: `#f7f5f1`
-- Ink text: `#111111`
+```text
+keycloak-theme/src/keycloak-theme/
+├── login/  # React + TS + MUI auth ekranlari
+└── email/  # native FreeMarker email temasi
+```
 
-> Not: `login/resources/img/favicon.ico` bilincli olarak placeholder'dir. Tarayici favicon'u `logo.svg` uzerinden alir. Gercek `.ico` istiyorsaniz bu dosyayi degistirin.
+Tema uretimi:
+
+```bash
+cd keycloak-theme
+npm run build-keycloak-theme
+```
+
+Keycloak 26 icin Docker Compose su JAR'i kullanir:
+
+```text
+keycloak-theme/dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar
+```
 
 ## Yapi
 
 ```text
 keycloak-theme/
-├── pom.xml
+├── package.json
+├── vite.config.ts
+├── pom.xml  # legacy Maven paketleme referansi; aktif build npm/Keycloakify
 ├── README.md
+├── src/
+│   └── keycloak-theme/
 ├── db/
 │   └── init.sql
-├── docker/
-│   └── docker-compose.keycloak.yml
 ├── realm/
 │   └── finance-portal-realm.json
-└── src/main/resources/
-    └── theme/
-        └── finance-portal/
-            ├── login/
-            └── email/
 ```
 
 ## Dev Workflow
 
-1. Ana compose dosyaniza [docker-compose.keycloak.yml](./docker/docker-compose.keycloak.yml) icindeki `postgres` volume mount'unu ve `keycloak` servisini merge edin.
+1. Tema bagimliliklarini kurun ve JAR'i uretin:
+
+```bash
+cd keycloak-theme
+npm install
+npm run build-keycloak-theme
+```
+
 2. PostgreSQL volume'u daha once olustuysa init script'i tekrar kosmaz. Ilk kurulum icin en temiz yol:
 
 ```bash
@@ -49,7 +62,7 @@ docker compose up -d postgres
 docker compose up -d keycloak
 ```
 
-4. Theme klasoru mount'lu oldugu icin FTL/CSS degisiklikleri container restart sonrasi hemen gorunur. Asagidaki flag'ler bunun icin kritiktir ve snippet'e dahil edildi:
+4. Tema JAR'i provider olarak mount edilir. Degisikliklerden sonra once `cd keycloak-theme && npm run build-keycloak-theme`, sonra Keycloak restart gerekir. Asagidaki flag'ler dev sirasinda cache'i kapatir:
 
 ```text
 --spi-theme-static-max-age=-1
@@ -60,7 +73,7 @@ docker compose up -d keycloak
 5. Admin UI:
 
 ```text
-http://localhost:8180/admin/
+http://localhost:8080/admin/
 ```
 
 Kullanici / sifre: `admin` / `admin`
@@ -176,13 +189,13 @@ JAR paketlemek icin:
 
 ```bash
 cd keycloak-theme
-mvn clean package
+npm run build-keycloak-theme
 ```
 
 Uretilen artefact:
 
 ```text
-target/keycloak-theme-finance-portal-1.0.0.jar
+dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar
 ```
 
 Prod kurulum adimlari:
@@ -205,9 +218,9 @@ Yeni ekran override etmek istediginde resmi kaynak yol:
 https://github.com/keycloak/keycloak/tree/main/themes/src/main/resources/theme/keycloak.v2/login
 ```
 
-Bu tema `parent=keycloak.v2` oldugu icin yalnizca degistirmek istediginiz `.ftl` dosyalarini child theme altina koymaniz yeterlidir.
+React login temasi icin yeni sayfa override'lari `src/keycloak-theme/login/pages` altinda yapilir. Email temasi FreeMarker oldugu icin yeni email override'lari `src/keycloak-theme/email` altinda tutulur.
 
-## Frontend Token Guncelleme
+## Tema Token Guncelleme
 
 Frontend tasarim dili degisirse once su dosyayi referans alin:
 
@@ -218,7 +231,8 @@ frontend/src/styles/kapital.css
 Ardindan su dosyayi guncelleyin:
 
 ```text
-src/main/resources/theme/finance-portal/login/resources/css/tokens.css
+src/theme/kapitalTheme.ts
+src/keycloak-theme/login/styleLevelCustomization.tsx
 ```
 
 Genelde degisecek alanlar:
@@ -231,4 +245,4 @@ Genelde degisecek alanlar:
 - `--fp-space-*`
 - `--fp-font-family`
 
-Tek bir token degisikligiyle tum login ve email gorunumu donusur.
+Login ekraninin MUI temasi `kapitalTheme.ts`, Keycloak sinif ve global stilleri `styleLevelCustomization.tsx` icinden gelir.
