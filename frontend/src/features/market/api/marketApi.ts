@@ -96,6 +96,7 @@ export { API_BASE };
 
 type ApiRequestOptions = {
     auth?: ApiAuthMode;
+    includeUnpriced?: boolean;
 };
 
 async function fetchCollection<T>(path: string, errorMessage: string, options: ApiRequestOptions = {}): Promise<T[]> {
@@ -121,11 +122,17 @@ export function fetchFx(options?: ApiRequestOptions) {
 }
 
 export function fetchBonds(options?: ApiRequestOptions) {
-    return fetchCollection<BondResponse>("/api/v1/bonds", "Tahvil verileri yüklenemedi.", options);
+    const params = new URLSearchParams();
+    if (options?.includeUnpriced) params.set("includeUnpriced", "true");
+    const query = params.toString();
+    return fetchCollection<BondResponse>(`/api/v1/bonds${query ? `?${query}` : ""}`, "Tahvil verileri yüklenemedi.", options);
 }
 
 export function fetchFunds(options?: ApiRequestOptions) {
-    return fetchCollection<FundResponse>("/api/v1/funds", "Fon verileri yüklenemedi.", options);
+    const params = new URLSearchParams();
+    if (options?.includeUnpriced) params.set("includeUnpriced", "true");
+    const query = params.toString();
+    return fetchCollection<FundResponse>(`/api/v1/funds${query ? `?${query}` : ""}`, "Fon verileri yüklenemedi.", options);
 }
 
 export function fetchStocks(options?: ApiRequestOptions, type: StockResponse["instrumentType"] = "STOCK") {
@@ -142,4 +149,41 @@ export function fetchMacroDepositRates(options?: ApiRequestOptions) {
 
 export function fetchViop(options?: ApiRequestOptions) {
     return fetchCollection<ViopContractPriceResponse>("/api/v1/viop", "VİOP verileri yüklenemedi.", options);
+}
+
+export function fetchViopLatest(options?: ApiRequestOptions) {
+    return fetchCollection<ViopContractPriceResponse>("/api/v1/viop/latest", "VİOP verileri yüklenemedi.", options);
+}
+
+export type FundAllocationResponse = {
+    allocationDate: string | null;
+    hs: number | null;
+    yhs: number | null;
+    kb: number | null;
+    ob: number | null;
+    ykb: number | null;
+    yob: number | null;
+    tpp: number | null;
+    vdm: number | null;
+    vm: number | null;
+    r: number | null;
+    t: number | null;
+    d: number | null;
+    gas: number | null;
+    byf: number | null;
+    vint: number | null;
+    diger: number | null;
+};
+
+export async function fetchFundAllocation(code: string, options: ApiRequestOptions = {}): Promise<FundAllocationResponse> {
+    const response = await apiFetch(`/api/v1/funds/${encodeURIComponent(code)}/allocation`, {
+        auth: options.auth,
+        errorMessage: "Fon portföy dağılımı yüklenemedi.",
+        headers: { Accept: "application/json" },
+    });
+    const raw = (await response.json()) as ApiResponse<FundAllocationResponse>;
+    if (raw?.success !== true || !raw.data) {
+        throw new Error("Fon portföy dağılımı yüklenemedi. Geçersiz API cevabı alındı.");
+    }
+    return raw.data;
 }

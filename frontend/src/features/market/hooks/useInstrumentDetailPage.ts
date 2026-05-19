@@ -1,7 +1,18 @@
 import { useMemo } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import type { InstrumentType } from "../../analysis/api/historyApi";
 import { useInstrumentDetail } from "./useInstrumentDetail";
+import {
+    fetchBonds,
+    fetchFunds,
+    fetchFx,
+    fetchStocks,
+    type BondResponse,
+    type FundResponse,
+    type FxResponse,
+    type StockResponse,
+} from "../api/marketApi";
 import {
     formatCompactNumber,
     formatLocalDate,
@@ -58,6 +69,58 @@ export function useInstrumentDetailPage() {
         [historyPoints, summary],
     );
 
+    const stocksQuery = useQuery({
+        queryKey: ["market", "stocks", "STOCK"],
+        queryFn: () => fetchStocks(undefined, "STOCK"),
+        enabled: instrumentType === "stocks",
+        staleTime: 5 * 60 * 1000,
+    });
+    const indexesQuery = useQuery({
+        queryKey: ["market", "stocks", "INDEX"],
+        queryFn: () => fetchStocks(undefined, "INDEX"),
+        enabled: instrumentType === "indexes",
+        staleTime: 5 * 60 * 1000,
+    });
+    const fxQuery = useQuery({
+        queryKey: ["market", "fx"],
+        queryFn: () => fetchFx(),
+        enabled: instrumentType === "fx",
+        staleTime: 5 * 60 * 1000,
+    });
+    const bondsQuery = useQuery({
+        queryKey: ["market", "bonds"],
+        queryFn: () => fetchBonds(),
+        enabled: instrumentType === "bonds",
+        staleTime: 5 * 60 * 1000,
+    });
+    const fundsQuery = useQuery({
+        queryKey: ["market", "funds"],
+        queryFn: () => fetchFunds(),
+        enabled: instrumentType === "funds",
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const stockData = useMemo<StockResponse | null>(() => {
+        if (instrumentType === "stocks") return stocksQuery.data?.find((s) => s.symbol === code) ?? null;
+        if (instrumentType === "indexes") return indexesQuery.data?.find((s) => s.symbol === code) ?? null;
+        return null;
+    }, [code, indexesQuery.data, instrumentType, stocksQuery.data]);
+
+    const fxData = useMemo<FxResponse | null>(
+        () => instrumentType === "fx" ? (fxQuery.data?.find((f) => f.currencyCode === code) ?? null) : null,
+        [code, fxQuery.data, instrumentType],
+    );
+
+    const bondData = useMemo<BondResponse | null>(
+        () => instrumentType === "bonds" ? (bondsQuery.data?.find((b) => b.evdsSeriesCode === code) ?? null) : null,
+        [code, bondsQuery.data, instrumentType],
+    );
+
+    const fundData = useMemo<FundResponse | null>(
+        () => instrumentType === "funds" ? (fundsQuery.data?.find((f) => f.code === code) ?? null) : null,
+        [code, fundsQuery.data, instrumentType],
+    );
+
     const metricCards = useMemo<InstrumentMetricCard[]>(() => {
         if (!summary) return [];
         return [
@@ -107,5 +170,9 @@ export function useInstrumentDetailPage() {
         chartSeries,
         metricCards,
         updateRange,
+        stockData,
+        fxData,
+        bondData,
+        fundData,
     };
 }

@@ -3,6 +3,7 @@ package com.alper.backend.market.bond.service;
 import com.alper.backend.market.bond.model.Bond;
 import com.alper.backend.market.bond.model.BondRateHistory;
 import com.alper.backend.market.bond.model.BondType;
+import com.alper.backend.market.bond.repository.BondRepository;
 import com.alper.backend.market.bond.repository.BondRateHistoryRepository;
 import com.alper.backend.market.bond.dto.BondResponse;
 import org.junit.jupiter.api.DisplayName;
@@ -24,11 +25,12 @@ import static org.mockito.Mockito.when;
 class BondQueryServiceTest {
 
     @Mock private BondRateHistoryRepository repository;
+    @Mock private BondRepository bondRepository;
     private BondQueryService service;
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        service = new BondQueryService(repository);
+        service = new BondQueryService(repository, bondRepository);
     }
 
     private Bond bond(String code, String name, BondType type, Integer maturityDays) {
@@ -135,5 +137,30 @@ class BondQueryServiceTest {
         List<BondResponse> result = service.getAll();
 
         assertThat(result.get(0).getMaturityDays()).isNull();
+    }
+
+    @Test
+    @DisplayName("Rate kaydı olmayan aktif tahviller includeUnpriced listesinde null rate alanlarıyla döner")
+    void unpricedBondsAreIncludedWithNullRateFields() {
+        Bond priced = bond("TP.PRICED.ORAN", "Fiyatlı Tahvil", BondType.DEVLET_TAHVIL, 730);
+        Bond unpriced = bond("TP.UNPRICED.ORAN", "Fiyatsız Tahvil", BondType.HAZINE_BONOSU, 180);
+        BondRateHistory rate = rate(priced, LocalDate.of(2026, 4, 24), "42.8500", "44.0100");
+
+        when(bondRepository.findActiveWithLatestRate()).thenReturn(List.of(
+                new Object[] { priced, rate },
+                new Object[] { unpriced, null }
+        ));
+
+        List<BondResponse> result = service.getAllIncludingUnpriced();
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getEvdsSeriesCode()).isEqualTo("TP.PRICED.ORAN");
+        assertThat(result.get(0).getInterestRate()).isEqualByComparingTo("42.8500");
+        assertThat(result.get(1).getEvdsSeriesCode()).isEqualTo("TP.UNPRICED.ORAN");
+        assertThat(result.get(1).getName()).isEqualTo("Fiyatsız Tahvil");
+        assertThat(result.get(1).getBondType()).isEqualTo(BondType.HAZINE_BONOSU);
+        assertThat(result.get(1).getInterestRate()).isNull();
+        assertThat(result.get(1).getCompoundedRate()).isNull();
+        assertThat(result.get(1).getRateDate()).isNull();
     }
 }

@@ -6,6 +6,7 @@ import com.alper.backend.market.bond.service.BondQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,7 +20,11 @@ public class BondController {
     private final BondQueryService bondQueryService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<BondResponse>>> getAll() {
-        return ResponseEntity.ok(ApiResponse.success(bondQueryService.getAll()));
+    public ResponseEntity<ApiResponse<List<BondResponse>>> getAll(
+            @RequestParam(defaultValue = "false") boolean includeUnpriced) {
+        List<BondResponse> bonds = includeUnpriced
+                ? bondQueryService.getAllIncludingUnpriced()
+                : bondQueryService.getAll();
+        return ResponseEntity.ok(ApiResponse.success(bonds));
     }
 }

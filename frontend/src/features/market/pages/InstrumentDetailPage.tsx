@@ -1,9 +1,13 @@
 import { Box, Typography } from "@mui/material";
 import { KapitalShell } from "../../../components/layout";
+import { BondMetricsSection } from "../components/BondMetricsSection";
+import { FundAllocationChart } from "../components/FundAllocationChart";
+import { FxRatesSection } from "../components/FxRatesSection";
 import { InstrumentChart } from "../components/InstrumentChart";
 import { InstrumentHero } from "../components/InstrumentHero";
 import { InstrumentMetrics } from "../components/InstrumentMetrics";
 import { InstrumentNewsSection } from "../components/InstrumentNewsSection";
+import { StockInfoSection } from "../components/StockInfoSection";
 import { useInstrumentDetailPage } from "../hooks/useInstrumentDetailPage";
 
 export default function InstrumentDetailPage() {
@@ -19,6 +23,9 @@ export default function InstrumentDetailPage() {
         chartSeries,
         metricCards,
         updateRange,
+        stockData,
+        fxData,
+        bondData,
     } = useInstrumentDetailPage();
 
     if (!instrumentType || !code) {
@@ -58,6 +65,12 @@ export default function InstrumentDetailPage() {
                         summaryError={summaryError}
                     />
                     <InstrumentMetrics metricCards={metricCards} />
+                    {instrumentType === "funds" && <FundAllocationChart code={code} />}
+                    {(instrumentType === "stocks" || instrumentType === "indexes") && (
+                        <StockInfoSection summary={summary} stockData={stockData} />
+                    )}
+                    {instrumentType === "fx" && <FxRatesSection fxData={fxData} />}
+                    {instrumentType === "bonds" && <BondMetricsSection bondData={bondData} />}
                     <InstrumentChart
                         dates={chartDates}
                         series={chartSeries}

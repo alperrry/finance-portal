@@ -21,6 +21,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -82,6 +84,32 @@ class FundControllerTest {
                     .andExpect(jsonPath("$.data[0].name").value(
                             "Ak Portföy Yeni Teknolojiler Yabancı Hisse Senedi Fonu"))
                     .andExpect(jsonPath("$.data[0].price").value(0.245678));
+
+            verify(fundQueryService).getAll();
+            verify(fundQueryService, never()).getAllIncludingUnpriced();
+        }
+
+        @Test
+        @DisplayName("includeUnpriced=true fiyatı olmayan fonları da isteyen servis metodunu çağırır")
+        void includeUnpricedUsesAllFundsService() throws Exception {
+            List<FundResponse> mockResponse = List.of(
+                    FundResponse.builder()
+                            .code("YAS")
+                            .name("Fiyatı Olmayan Fon")
+                            .fundType("YAT")
+                            .build());
+
+            when(fundQueryService.getAllIncludingUnpriced()).thenReturn(mockResponse);
+
+            mockMvc.perform(get("/api/v1/funds").param("includeUnpriced", "true"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.length()").value(1))
+                    .andExpect(jsonPath("$.data[0].code").value("YAS"))
+                    .andExpect(jsonPath("$.data[0].price").value(org.hamcrest.Matchers.nullValue()));
+
+            verify(fundQueryService).getAllIncludingUnpriced();
+            verify(fundQueryService, never()).getAll();
         }
 
         @Test

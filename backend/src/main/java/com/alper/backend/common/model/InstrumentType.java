@@ -5,5 +5,6 @@ public enum InstrumentType {
     CURRENCY,
     FUND,
     BOND,
-    VIOP
+    VIOP,
+    DEPOSIT
 }

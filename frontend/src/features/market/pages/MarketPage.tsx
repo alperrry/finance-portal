@@ -6,6 +6,7 @@ import { MARKET_TABS } from "../types";
 import { MarketSummaryCards } from "../components/MarketSummaryCards";
 import { MarketSearchBar } from "../components/MarketSearchBar";
 import { FxTable } from "../components/FxTable";
+import { CurrencyConverterCard } from "../components/CurrencyConverterCard";
 import { BondsTable } from "../components/BondsTable";
 import { FundsTable } from "../components/FundsTable";
 import { StocksTable } from "../components/StocksTable";
@@ -127,12 +128,17 @@ export default function MarketPage() {
                                 )}
 
                                 {activeTab === "fx" && (
-                                    <FxTable
-                                        rows={fxRows}
-                                        sortConfig={sortState.fx}
-                                        onSort={(key) => toggleSort("fx", key)}
-                                        onRowClick={(code) => openDetail("fx", code)}
-                                    />
+                                    <>
+                                        <FxTable
+                                            rows={fxRows}
+                                            sortConfig={sortState.fx}
+                                            onSort={(key) => toggleSort("fx", key)}
+                                            onRowClick={(code) => openDetail("fx", code)}
+                                        />
+                                        <Box sx={{ mt: 2 }}>
+                                            <CurrencyConverterCard fxRows={fxRows} />
+                                        </Box>
+                                    </>
                                 )}
                                 {activeTab === "bonds" && (
                                     <BondsTable

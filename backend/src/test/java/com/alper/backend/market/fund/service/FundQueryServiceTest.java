@@ -2,7 +2,9 @@ package com.alper.backend.market.fund.service;
 
 import com.alper.backend.market.fund.model.Fund;
 import com.alper.backend.market.fund.model.FundPrice;
+import com.alper.backend.market.fund.repository.FundAllocationRepository;
 import com.alper.backend.market.fund.repository.FundPriceRepository;
+import com.alper.backend.market.fund.repository.FundRepository;
 import com.alper.backend.market.fund.dto.FundResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,11 +26,13 @@ import static org.mockito.Mockito.when;
 class FundQueryServiceTest {
 
     @Mock private FundPriceRepository repository;
+    @Mock private FundRepository fundRepository;
+    @Mock private FundAllocationRepository fundAllocationRepository;
     private FundQueryService service;
 
     @BeforeEach
     void setUp() {
-        service = new FundQueryService(repository);
+        service = new FundQueryService(repository, fundRepository, fundAllocationRepository);
     }
 
     private Fund fund(String code, String name, String type) {
@@ -135,5 +139,32 @@ class FundQueryServiceTest {
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getCode()).isEqualTo("MAC");
+    }
+
+    @Test
+    @DisplayName("Fiyatı olmayan fonlar includeUnpriced listesinde null fiyat alanlarıyla döner")
+    void unpricedFundsAreIncludedWithNullPriceFields() {
+        Fund priced = fund("MAC", "Fiyatlı Fon", "YAT");
+        Fund unpriced = fund("YAS", "Fiyatsız Fon", "YAT");
+        FundPrice price = price(priced, LocalDate.of(2026, 4, 24), "12.34", "1000", 100, "12340.00");
+
+        when(fundRepository.findAllWithLatestPrice()).thenReturn(List.of(
+                new Object[] { priced, price },
+                new Object[] { unpriced, null }
+        ));
+
+        List<FundResponse> result = service.getAllIncludingUnpriced();
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getCode()).isEqualTo("MAC");
+        assertThat(result.get(0).getPrice()).isEqualByComparingTo("12.34");
+        assertThat(result.get(1).getCode()).isEqualTo("YAS");
+        assertThat(result.get(1).getName()).isEqualTo("Fiyatsız Fon");
+        assertThat(result.get(1).getFundType()).isEqualTo("YAT");
+        assertThat(result.get(1).getPrice()).isNull();
+        assertThat(result.get(1).getPriceDate()).isNull();
+        assertThat(result.get(1).getTotalShares()).isNull();
+        assertThat(result.get(1).getInvestorCount()).isNull();
+        assertThat(result.get(1).getPortfolioSize()).isNull();
     }
 }

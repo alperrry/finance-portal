@@ -22,6 +22,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -82,6 +84,34 @@ class BondControllerTest {
                     .andExpect(jsonPath("$.data[0].evdsSeriesCode").value("TRB080328T15"))
                     .andExpect(jsonPath("$.data[0].interestRate").value(42.15))
                     .andExpect(jsonPath("$.data[0].bondType").value("DEVLET_TAHVIL"));
+
+            verify(bondQueryService).getAll();
+            verify(bondQueryService, never()).getAllIncludingUnpriced();
+        }
+
+        @Test
+        @DisplayName("includeUnpriced=true rate kaydı olmayan tahvilleri de isteyen servis metodunu çağırır")
+        void includeUnpricedUsesAllBondsService() throws Exception {
+            List<BondResponse> mockResponse = List.of(
+                    BondResponse.builder()
+                            .evdsSeriesCode("TP.UNPRICED.ORAN")
+                            .name("Fiyatsız Tahvil")
+                            .bondType(BondType.HAZINE_BONOSU)
+                            .maturityDays(180)
+                            .currency("TRY")
+                            .build());
+
+            when(bondQueryService.getAllIncludingUnpriced()).thenReturn(mockResponse);
+
+            mockMvc.perform(get("/api/v1/bonds").param("includeUnpriced", "true"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.length()").value(1))
+                    .andExpect(jsonPath("$.data[0].evdsSeriesCode").value("TP.UNPRICED.ORAN"))
+                    .andExpect(jsonPath("$.data[0].interestRate").value(org.hamcrest.Matchers.nullValue()));
+
+            verify(bondQueryService).getAllIncludingUnpriced();
+            verify(bondQueryService, never()).getAll();
         }
 
         @Test

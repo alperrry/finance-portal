@@ -80,6 +80,7 @@ public class TefasService {
     }
 
     @Transactional
+    @CacheEvict(value = "funds", allEntries = true)
     public TefasFetchResult fetchAndSaveForDate(String fundCode, LocalDate startDate, LocalDate endDate) {
         Fund fund = fundRepository.findByCode(fundCode)
                 .orElseThrow(() -> new ExternalApiException("Fon bulunamadı: " + fundCode, ServiceType.TEFAS));

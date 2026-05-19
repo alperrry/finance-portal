@@ -1,6 +1,8 @@
 package com.alper.backend.market.bond.service;
 
+import com.alper.backend.market.bond.model.Bond;
 import com.alper.backend.market.bond.model.BondRateHistory;
+import com.alper.backend.market.bond.repository.BondRepository;
 import com.alper.backend.market.bond.repository.BondRateHistoryRepository;
 import com.alper.backend.market.bond.dto.BondResponse;
 import lombok.RequiredArgsConstructor;
@@ -16,11 +18,21 @@ import java.util.List;
 public class BondQueryService {
 
     private final BondRateHistoryRepository bondRateHistoryRepository;
+    private final BondRepository bondRepository;
 
-    @Cacheable("bonds")
+    @Cacheable(value = "bonds", key = "'priced'")
     public List<BondResponse> getAll() {
         log.debug("Bond verileri DB'den çekiliyor...");
         return bondRateHistoryRepository.findLatestRates()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Cacheable(value = "bonds", key = "'all'")
+    public List<BondResponse> getAllIncludingUnpriced() {
+        log.debug("Tüm aktif bond master verileri son rate kayıtlarıyla DB'den çekiliyor...");
+        return bondRepository.findActiveWithLatestRate()
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -37,6 +49,29 @@ public class BondQueryService {
                 .interestRate(entity.getInterestRate())
                 .compoundedRate(entity.getCompoundedRate())
                 .rateDate(entity.getRateDate())
+                .build();
+    }
+
+    private BondResponse toResponse(Object[] row) {
+        Bond bond = (Bond) row[0];
+        BondRateHistory latestRate = (BondRateHistory) row[1];
+
+        BondResponse.BondResponseBuilder builder = BondResponse.builder()
+                .id(bond.getId())
+                .evdsSeriesCode(bond.getEvdsSeriesCode())
+                .name(bond.getName())
+                .bondType(bond.getBondType())
+                .maturityDays(bond.getMaturityDays())
+                .currency(bond.getCurrency());
+
+        if (latestRate == null) {
+            return builder.build();
+        }
+
+        return builder
+                .interestRate(latestRate.getInterestRate())
+                .compoundedRate(latestRate.getCompoundedRate())
+                .rateDate(latestRate.getRateDate())
                 .build();
     }
 }
