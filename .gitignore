@@ -11,6 +11,9 @@
 **/target/
 **/build/
 **/dist/
+**/dist_keycloak/
+**/node_modules/
+keycloak-theme/public/
 
 # Logs
 *.log

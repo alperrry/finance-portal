@@ -33,7 +33,7 @@ services:
     volumes:
       - fp_keycloak_data:/opt/keycloak/data
       - ./keycloak-theme/realm:/opt/keycloak/data/import:ro
-      - ./keycloak-theme/src/main/resources/theme/finance-portal:/opt/keycloak/themes/finance-portal:ro
+      - ./keycloak-theme/dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar:/opt/keycloak/providers/finance-portal-keycloak-theme.jar:ro
   redis:
     image: redis:7-alpine
     container_name: fp-redis
