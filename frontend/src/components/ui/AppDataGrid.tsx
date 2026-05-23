@@ -120,9 +120,10 @@ export function AppDataGrid<T extends GridValidRowModel>({
         );
     }
 
+    const extraSx = Array.isArray(sx) ? sx : sx ? [sx] : [];
     const containerSx: SxProps<Theme> = autoHeight
-        ? { ...GRID_SX, ...sx }
-        : { height, ...GRID_SX, ...sx };
+        ? [GRID_SX, ...extraSx]
+        : [{ height }, GRID_SX, ...extraSx];
 
     return (
         <DataGrid<T>

@@ -5,7 +5,6 @@ import { PortfolioAllocationChart } from "./PortfolioAllocationChart";
 import { PortfolioMetrics } from "./PortfolioMetrics";
 import { PortfolioTypeChart } from "./PortfolioTypeChart";
 import { PositionsByTypeTable } from "./PositionsByTypeTable";
-import { PositionsTable } from "./PositionsTable";
 
 interface PortfolioDetailContentProps {
     page: PortfolioDetailPageState;
@@ -45,8 +44,6 @@ export function PortfolioDetailContent({ page }: PortfolioDetailContentProps) {
                             <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>Takip Edilen Pozisyonlar</Typography>
                             <Typography variant="h6" sx={{ fontWeight: 800, mb: 2 }}>Portföy Dağılımı</Typography>
                             <PortfolioAllocationChart items={portfolio.items} displayCurrency={portfolio.displayCurrency} />
-                            <Divider sx={{ my: 2 }} />
-                            <PositionsTable items={portfolio.items} displayCurrency={portfolio.displayCurrency} />
                         </SectionPanel>
                     )}
 
@@ -72,6 +69,7 @@ export function PortfolioDetailContent({ page }: PortfolioDetailContentProps) {
                                 onKindChange={handlers.setPositionKindTab}
                                 onDelete={handlers.handlePositionDelete}
                                 onSell={handlers.handleSellOpen}
+                                onSimulate={handlers.handleManualPositionSimulation}
                             />
                         )}
                     </SectionPanel>

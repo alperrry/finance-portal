@@ -32,6 +32,7 @@ class TefasBackfillServiceTest {
     private static final TefasFetchResult EMPTY_RESULT = new TefasFetchResult(0, 0, 0, 0);
 
     @Mock private TefasService tefasService;
+    @Mock private TefasCookieService tefasCookieService;
     @Mock private FundRepository fundRepository;
     @Mock private FundPriceRepository fundPriceRepository;
     @Mock private FundAllocationRepository fundAllocationRepository;

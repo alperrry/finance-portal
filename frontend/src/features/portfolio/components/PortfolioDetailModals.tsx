@@ -3,6 +3,7 @@ import { DeletePortfolioModal } from "./DeletePortfolioModal";
 import { NewTradeModal } from "./NewTradeModal";
 import { PortfolioFormModal } from "./PortfolioFormModal";
 import { SellPositionModal } from "./SellPositionModal";
+import { SimulationResultDialog } from "./SimulationResultDialog";
 
 interface PortfolioDetailModalsProps {
     page: PortfolioDetailPageState;
@@ -48,6 +49,16 @@ export function PortfolioDetailModals({ page }: PortfolioDetailModalsProps) {
                     error={errors.sellError}
                     onClose={handlers.handleSellClose}
                     onSubmit={handlers.handleSellSubmit}
+                />
+            ) : null}
+            {modals.simulationTarget ? (
+                <SimulationResultDialog
+                    target={modals.simulationTarget}
+                    data={page.simulationData}
+                    busy={pending.simulationBusy}
+                    error={errors.simulationError}
+                    onClose={handlers.closeSimulation}
+                    onRetry={handlers.retrySimulation}
                 />
             ) : null}
         </>

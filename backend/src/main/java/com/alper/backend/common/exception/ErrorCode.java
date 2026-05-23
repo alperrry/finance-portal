@@ -25,8 +25,9 @@ public enum ErrorCode {
     PARSE_ERROR             ("4002_FP_PARSE_ERROR",             HttpStatus.INTERNAL_SERVER_ERROR),
 
     // 5xxx — İş kuralı hataları
-    BUSINESS_RULE_VIOLATION ("5001_FP_BUSINESS_RULE_VIOLATION", HttpStatus.UNPROCESSABLE_ENTITY),
-    SETUP_EXPIRED           ("5002_FP_SETUP_EXPIRED",           HttpStatus.GONE);
+    BUSINESS_RULE_VIOLATION  ("5001_FP_BUSINESS_RULE_VIOLATION",  HttpStatus.UNPROCESSABLE_ENTITY),
+    SETUP_EXPIRED            ("5002_FP_SETUP_EXPIRED",            HttpStatus.GONE),
+    HISTORICAL_DATA_MISSING  ("5003_FP_HISTORICAL_DATA_MISSING",  HttpStatus.UNPROCESSABLE_ENTITY);
 
     private final String code;
     private final HttpStatus httpStatus;

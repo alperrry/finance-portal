@@ -15,6 +15,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
@@ -63,7 +64,8 @@ class TefasServiceTest {
                 cookieService,
                 fundRepository,
                 fundPriceRepository,
-                fundAllocationRepository);
+                fundAllocationRepository,
+                mock(ApplicationEventPublisher.class));
         ReflectionTestUtils.setField(service, "baseUrl", server.url("").toString());
         ReflectionTestUtils.setField(service, "portalUrl", server.url("/dummy/tefas/fon-verileri").toString());
         ReflectionTestUtils.setField(service, "requestDelayMs", 0L);

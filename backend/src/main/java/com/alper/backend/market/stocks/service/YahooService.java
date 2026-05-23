@@ -3,6 +3,8 @@ package com.alper.backend.market.stocks.service;
 import com.alper.backend.common.exception.ExternalApiException;
 import com.alper.backend.common.exception.ServiceType;
 import com.alper.backend.market.common.TurkishHolidayUtil;
+import com.alper.backend.market.common.event.MarketDataModule;
+import com.alper.backend.market.common.event.MarketDataUpdatedEvent;
 import com.alper.backend.market.stocks.model.Stock;
 import com.alper.backend.market.stocks.model.StockPriceHistory;
 import com.alper.backend.market.stocks.repository.StockPriceHistoryRepository;
@@ -15,6 +17,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,12 +37,14 @@ public class YahooService {
     private final YahooMapper yahooMapper;
     private final StockRepository stockRepository;
     private final StockPriceHistoryRepository historyRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void fetchAndSaveDailyHistory() {
         log.info("Yahoo Finance günlük history verileri çekiliyor...");
         List<Stock> stocks = stockRepository.findByIsActiveTrue();
         int processed = 0;
+        LocalDate newestUpdatedDate = null;
         for (Stock stock : stocks) {
             try {
                 LocalDate lastCompleted = TurkishHolidayUtil.lastCompletedTradingDay(LocalDate.now());
@@ -49,6 +54,7 @@ public class YahooService {
                 if (latest == null || latest.isBefore(lastCompleted)) {
                     fetchAndSaveHistoryForBackfill(stock);
                     processed++;
+                    newestUpdatedDate = lastCompleted;
                 }
             } catch (Exception e) {
                 log.error("Yahoo günlük history çekme hatası. Sembol: {}, Hata: {}", stock.getSymbol(), e.getMessage(), e);
@@ -56,6 +62,10 @@ public class YahooService {
         }
         log.info("Yahoo Finance günlük history tamamlandı. Eksik olduğu için işlenen enstrüman: {}", processed);
         fetchAndUpdateMarketData(stocks);
+        if (processed > 0) {
+            eventPublisher.publishEvent(MarketDataUpdatedEvent.of(
+                    MarketDataModule.STOCKS, processed, newestUpdatedDate));
+        }
     }
 
     private void fetchAndUpdateMarketData(List<Stock> stocks) {

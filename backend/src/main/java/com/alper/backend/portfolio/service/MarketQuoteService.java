@@ -73,7 +73,7 @@ public class MarketQuoteService {
     }
 
     private Optional<MarketPriceQuote> getFxQuote(Long exchangeRateId) {
-        String currencyCode = exchangeRateRepository.findFirstByIdOrderByRateDateDesc(exchangeRateId)
+        String currencyCode = exchangeRateRepository.findById(exchangeRateId)
                 .map(ExchangeRate::getCurrencyCode)
                 .orElse(null);
         if (currencyCode == null) return Optional.empty();
@@ -97,7 +97,12 @@ public class MarketQuoteService {
     }
 
     private Optional<MarketPriceQuote> getViopQuote(Long contractId) {
-        ViopContractPrice latest = viopContractPriceRepository.findById(contractId).orElse(null);
+        ViopContractPrice original = viopContractPriceRepository.findById(contractId).orElse(null);
+        if (original == null) return Optional.empty();
+        ViopContractPrice latest = viopContractPriceRepository
+                .findFirstByMarketSegmentAndContractNameOrderByTradeDateDesc(
+                        original.getMarketSegment(), original.getContractName())
+                .orElse(original);
         if (latest == null || latest.getLastPrice() == null) return Optional.empty();
         List<ViopContractPrice> desc = viopContractPriceRepository
                 .findTop8ByContractNameOrderByTradeDateDesc(latest.getContractName());

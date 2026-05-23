@@ -29,11 +29,6 @@ public interface ExchangeRateRepository extends JpaRepository<ExchangeRate, Long
             "ORDER BY e.currencyCode ASC")
     List<ExchangeRate> findLatestRates();
 
-    // 1 yıldan eski verileri temizlemek için
-    void deleteByRateDateBefore(LocalDate date);
-
-    Optional<ExchangeRate> findFirstByIdOrderByRateDateDesc(Long id);
-
     Optional<ExchangeRate> findFirstByCurrencyCodeOrderByRateDateDesc(String currencyCode);
 
     List<ExchangeRate> findTop8ByCurrencyCodeOrderByRateDateDesc(String currencyCode);

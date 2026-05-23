@@ -63,6 +63,9 @@ public class RedisConfig {
         // Portfolio
         cacheConfigs.put("portfolioValuation", baseConfig.entryTtl(Duration.ofSeconds(portfolioValuationCacheTtlSeconds)));
 
+        // Simulation — geçmiş kurlar immutable, 7 günlük TTL
+        cacheConfigs.put("historicalRates", baseConfig.entryTtl(Duration.ofDays(7)));
+
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(baseConfig.entryTtl(Duration.ofMinutes(10)))
                 .withInitialCacheConfigurations(cacheConfigs)

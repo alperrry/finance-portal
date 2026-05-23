@@ -6,6 +6,7 @@ import com.alper.backend.common.exception.ErrorCode;
 import com.alper.backend.common.exception.ExternalApiException;
 import com.alper.backend.common.exception.GoneException;
 import com.alper.backend.common.exception.NotFoundException;
+import com.alper.backend.portfolio.simulation.exception.HistoricalDataMissingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -56,6 +57,12 @@ public class GlobalExceptionHandler {
             ExternalApiException ex, HttpServletRequest request) {
         log.error("Dış API hatası [{}] at {}: {}",
                 ex.getServiceType(), request.getRequestURI(), ex.getMessage());
+        return build(ex.getErrorCode(), ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(HistoricalDataMissingException.class)
+    public ResponseEntity<ApiErrorResponse> handleHistoricalDataMissing(
+            HistoricalDataMissingException ex, HttpServletRequest request) {
         return build(ex.getErrorCode(), ex.getMessage(), request.getRequestURI());
     }
 

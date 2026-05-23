@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface ViopContractPriceRepository extends JpaRepository<ViopContractPrice, Long> {
     boolean existsByMarketSegmentAndContractNameAndTradeDate(String marketSegment, String contractName, LocalDate tradeDate);
@@ -23,6 +24,9 @@ public interface ViopContractPriceRepository extends JpaRepository<ViopContractP
 
     @Query("SELECT v FROM ViopContractPrice v WHERE v.tradeDate = (SELECT MAX(v2.tradeDate) FROM ViopContractPrice v2 WHERE v2.contractName = v.contractName) ORDER BY v.marketSegment ASC, v.contractName ASC")
     List<ViopContractPrice> findLatestByContractName();
+
+    Optional<ViopContractPrice> findFirstByMarketSegmentAndContractNameOrderByTradeDateDesc(
+            String marketSegment, String contractName);
 
     List<ViopContractPrice> findTop8ByContractNameOrderByTradeDateDesc(String contractName);
 }

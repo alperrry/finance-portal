@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
+import QueryStatsOutlinedIcon from "@mui/icons-material/QueryStatsOutlined";
 import {
     createColumnHelper,
     flexRender,
@@ -39,6 +40,7 @@ type Props = {
     onKindChange: (kind: PositionKind) => void;
     onDelete: (positionId: number) => void;
     onSell: (position: ManualPositionResponse) => void;
+    onSimulate: (position: ManualPositionResponse) => void;
 };
 
 function PnlBadge({ value, currency, isPercent }: { value: number | null | undefined; currency?: string; isPercent?: boolean }) {
@@ -79,17 +81,46 @@ function PnlBadge({ value, currency, isPercent }: { value: number | null | undef
 
 const col = createColumnHelper<ManualPositionResponse>();
 
-function deleteColumn(onDelete: (id: number) => void): ColumnDef<ManualPositionResponse, unknown> {
+function asPositionColumns(columns: ColumnDef<ManualPositionResponse, never>[]): ColumnDef<ManualPositionResponse, unknown>[] {
+    return columns as ColumnDef<ManualPositionResponse, unknown>[];
+}
+
+function supportsSimulation(position: ManualPositionResponse) {
+    return (
+        ((position.instrumentType === "STOCK" || position.instrumentType === "FUND" || position.instrumentType === "CURRENCY") && position.instrumentId !== null) ||
+        position.instrumentType === "DEPOSIT" ||
+        position.instrumentType === "BOND" ||
+        position.instrumentType === "VIOP"
+    );
+}
+
+function simulationButton(position: ManualPositionResponse, onSimulate: (pos: ManualPositionResponse) => void) {
+    if (!supportsSimulation(position)) {
+        return null;
+    }
+    return (
+        <Tooltip title="USD simülasyonu">
+            <IconButton size="small" color="secondary" onClick={() => onSimulate(position)}>
+                <QueryStatsOutlinedIcon fontSize="small" />
+            </IconButton>
+        </Tooltip>
+    );
+}
+
+function deleteColumn(onDelete: (id: number) => void, onSimulate: (pos: ManualPositionResponse) => void): ColumnDef<ManualPositionResponse, unknown> {
     return col.display({
         id: "actions",
         header: "",
-        size: 48,
+        size: 84,
         cell: ({ row }) => (
-            <Tooltip title="Pozisyonu sil">
-                <IconButton size="small" color="error" onClick={() => onDelete(row.original.id)}>
-                    <DeleteOutlinedIcon fontSize="small" />
-                </IconButton>
-            </Tooltip>
+            <Stack direction="row" sx={{ alignItems: "center", justifyContent: "flex-end", gap: 0.25 }}>
+                {simulationButton(row.original, onSimulate)}
+                <Tooltip title="Pozisyonu sil">
+                    <IconButton size="small" color="error" onClick={() => onDelete(row.original.id)}>
+                        <DeleteOutlinedIcon fontSize="small" />
+                    </IconButton>
+                </Tooltip>
+            </Stack>
         ),
     });
 }
@@ -97,16 +128,20 @@ function deleteColumn(onDelete: (id: number) => void): ColumnDef<ManualPositionR
 function sellColumn(
     type: PortfolioInstrumentType,
     onSell: (pos: ManualPositionResponse) => void,
+    onSimulate: (pos: ManualPositionResponse) => void,
 ): ColumnDef<ManualPositionResponse, unknown> {
     const label = type === "VIOP" || type === "DEPOSIT" ? "Kapat" : "Sat";
     return col.display({
         id: "sell",
         header: "",
-        size: 72,
+        size: 104,
         cell: ({ row }) => (
-            <Button size="small" variant="outlined" color="secondary" onClick={() => onSell(row.original)} sx={{ fontSize: "0.72rem", px: 1 }}>
-                {label}
-            </Button>
+            <Stack direction="row" sx={{ alignItems: "center", justifyContent: "flex-end", gap: 0.5 }}>
+                {simulationButton(row.original, onSimulate)}
+                <Button size="small" variant="outlined" color="secondary" onClick={() => onSell(row.original)} sx={{ fontSize: "0.72rem", px: 1 }}>
+                    {label}
+                </Button>
+            </Stack>
         ),
     });
 }
@@ -116,6 +151,7 @@ function getColumns(
     kind: PositionKind,
     onDelete: (id: number) => void,
     onSell: (pos: ManualPositionResponse) => void,
+    onSimulate: (pos: ManualPositionResponse) => void,
 ): ColumnDef<ManualPositionResponse, unknown>[] {
     const isOpen = kind === "OPEN";
 
@@ -156,6 +192,19 @@ function getColumns(
             const v = getValue();
             return v != null ? (
                 <Typography variant="body2">{formatMoney(v, "TRY", 4)}</Typography>
+            ) : (
+                <Typography variant="caption" color="text.disabled">—</Typography>
+            );
+        },
+    });
+
+    const currentValueColumn = col.accessor("currentValue", {
+        header: "Güncel Değer",
+        size: 120,
+        cell: ({ getValue }) => {
+            const v = getValue();
+            return v != null ? (
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatMoney(v, "TRY")}</Typography>
             ) : (
                 <Typography variant="caption" color="text.disabled">—</Typography>
             );
@@ -241,9 +290,9 @@ function getColumns(
                 );
             },
         });
-        return isOpen
-            ? [underlyingCol, directionCol, qtyColumn, entryPriceColumn, currentPriceColumn, marginCol, unrealizedPnlColumn, pnlPctColumn, entryDateColumn, sellColumn(type, onSell)]
-            : [underlyingCol, directionCol, qtyColumn, exitPriceColumn, marginCol, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(onDelete)];
+        return asPositionColumns(isOpen
+            ? [underlyingCol, directionCol, qtyColumn, entryPriceColumn, currentPriceColumn, marginCol, unrealizedPnlColumn, pnlPctColumn, entryDateColumn, sellColumn(type, onSell, onSimulate)]
+            : [underlyingCol, directionCol, qtyColumn, exitPriceColumn, marginCol, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(onDelete, onSimulate)]);
     }
 
     if (type === "BOND") {
@@ -267,9 +316,9 @@ function getColumns(
                 );
             },
         });
-        return isOpen
-            ? [instrumentCell, qtyColumn, entryPriceColumn, currentPriceColumn, maturityCol, maturityValueCol, unrealizedPnlColumn, pnlPctColumn, sellColumn(type, onSell)]
-            : [instrumentCell, qtyColumn, exitPriceColumn, maturityCol, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(onDelete)];
+        return asPositionColumns(isOpen
+            ? [instrumentCell, qtyColumn, entryPriceColumn, currentPriceColumn, maturityCol, maturityValueCol, unrealizedPnlColumn, pnlPctColumn, sellColumn(type, onSell, onSimulate)]
+            : [instrumentCell, qtyColumn, exitPriceColumn, maturityCol, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(onDelete, onSimulate)]);
     }
 
     if (type === "DEPOSIT") {
@@ -315,15 +364,21 @@ function getColumns(
                 );
             },
         });
-        return isOpen
-            ? [bankCol, entryPriceColumn, qtyColumn, interestCol, maturityDateCol, maturityValueCol, unrealizedPnlColumn, pnlPctColumn, sellColumn(type, onSell)]
-            : [bankCol, entryPriceColumn, qtyColumn, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(onDelete)];
+        return asPositionColumns(isOpen
+            ? [bankCol, entryPriceColumn, qtyColumn, interestCol, maturityDateCol, maturityValueCol, unrealizedPnlColumn, pnlPctColumn, sellColumn(type, onSell, onSimulate)]
+            : [bankCol, entryPriceColumn, qtyColumn, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(onDelete, onSimulate)]);
     }
 
     // STOCK, FUND, CURRENCY — generic
-    return isOpen
-        ? [instrumentCell, qtyColumn, entryPriceColumn, currentPriceColumn, unrealizedPnlColumn, pnlPctColumn, entryDateColumn, sellColumn(type, onSell)]
-        : [instrumentCell, qtyColumn, exitPriceColumn, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(onDelete)];
+    if (type === "CURRENCY") {
+        return asPositionColumns(isOpen
+            ? [instrumentCell, qtyColumn, entryPriceColumn, currentPriceColumn, currentValueColumn, unrealizedPnlColumn, pnlPctColumn, entryDateColumn, sellColumn(type, onSell, onSimulate)]
+            : [instrumentCell, qtyColumn, exitPriceColumn, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(onDelete, onSimulate)]);
+    }
+
+    return asPositionColumns(isOpen
+        ? [instrumentCell, qtyColumn, entryPriceColumn, currentPriceColumn, unrealizedPnlColumn, pnlPctColumn, entryDateColumn, sellColumn(type, onSell, onSimulate)]
+        : [instrumentCell, qtyColumn, exitPriceColumn, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(onDelete, onSimulate)]);
 }
 
 type GroupTableProps = {
@@ -332,10 +387,11 @@ type GroupTableProps = {
     kind: PositionKind;
     onDelete: (id: number) => void;
     onSell: (pos: ManualPositionResponse) => void;
+    onSimulate: (pos: ManualPositionResponse) => void;
 };
 
-function GroupTable({ rows, type, kind, onDelete, onSell }: GroupTableProps) {
-    const columns = useMemo(() => getColumns(type, kind, onDelete, onSell), [type, kind, onDelete, onSell]);
+function GroupTable({ rows, type, kind, onDelete, onSell, onSimulate }: GroupTableProps) {
+    const columns = useMemo(() => getColumns(type, kind, onDelete, onSell, onSimulate), [type, kind, onDelete, onSell, onSimulate]);
     const table = useReactTable({ data: rows, columns, getCoreRowModel: getCoreRowModel() });
     const tableRows = table.getRowModel().rows;
     const useVirtual = tableRows.length >= VIRTUAL_THRESHOLD;
@@ -452,7 +508,7 @@ function GroupTable({ rows, type, kind, onDelete, onSell }: GroupTableProps) {
 
 const TYPE_ORDER: PortfolioInstrumentType[] = ["STOCK", "FUND", "CURRENCY", "BOND", "VIOP", "DEPOSIT"];
 
-export function PositionsByTypeTable({ positions, loading, kind, onKindChange, onDelete, onSell }: Props) {
+export function PositionsByTypeTable({ positions, loading, kind, onKindChange, onDelete, onSell, onSimulate }: Props) {
     const groups = useMemo(() => {
         const map = new Map<PortfolioInstrumentType, ManualPositionResponse[]>();
         for (const pos of positions) {
@@ -506,7 +562,7 @@ export function PositionsByTypeTable({ positions, loading, kind, onKindChange, o
                                 </Stack>
                             </AccordionSummary>
                             <AccordionDetails sx={{ p: 0 }}>
-                                <GroupTable rows={rows} type={type} kind={kind} onDelete={onDelete} onSell={onSell} />
+                                <GroupTable rows={rows} type={type} kind={kind} onDelete={onDelete} onSell={onSell} onSimulate={onSimulate} />
                             </AccordionDetails>
                         </Accordion>
                     ))}

@@ -2,6 +2,8 @@ package com.alper.backend.market.viop.service;
 
 import com.alper.backend.common.exception.ExternalApiException;
 import com.alper.backend.common.exception.ServiceType;
+import com.alper.backend.market.common.event.MarketDataModule;
+import com.alper.backend.market.common.event.MarketDataUpdatedEvent;
 import com.alper.backend.market.viop.model.ViopContractPrice;
 import com.alper.backend.market.viop.repository.ViopContractPriceRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +17,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +40,7 @@ public class ViopScraperService {
 
     private final OkHttpClient okHttpClient;
     private final ViopContractPriceRepository repository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     @CacheEvict(value = "viop", allEntries = true)
@@ -102,6 +106,10 @@ public class ViopScraperService {
         }
         log.info("VİOP günlük veri kaydedildi. candidates={}, saved={}, skipped={}",
                 candidates.size(), saved, skipped);
+        if (saved > 0) {
+            eventPublisher.publishEvent(MarketDataUpdatedEvent.of(
+                    MarketDataModule.VIOP, saved, tradeDate));
+        }
     }
 
     private String fetchHtml() {

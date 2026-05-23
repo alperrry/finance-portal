@@ -36,6 +36,7 @@ export function usePortfolioDashboard() {
         token,
         activePortfolioId: null,
         onPortfolioSignal: reload,
+        onMarketSignal: reload,
         onBalanceSignal: refreshCurrentUser,
     });
 

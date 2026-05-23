@@ -12,6 +12,7 @@ import {
     deletePortfolio,
     fetchManualPositions,
     fetchPortfolio,
+    fetchManualPositionSimulation,
     updatePortfolio,
     type ClosePositionRequest,
     type CreatePortfolioRequest,
@@ -19,10 +20,17 @@ import {
     type ManualPositionResponse,
     type PortfolioResponse,
     type PositionKind,
+    type SimulationResponse,
 } from "../api/portfolioApi";
 import { exportPortfolioPdf } from "../../../utils/portfolioPdfExport";
 import type { DetailState, PortfolioFormState } from "../types";
 import { resolveApiError } from "../utils/portfolioFormatters";
+
+type SimulationTarget = {
+    id: number;
+    title: string;
+    subtitle: string;
+};
 
 export function usePortfolioDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -47,6 +55,10 @@ export function usePortfolioDetailPage() {
     const [sellTarget, setSellTarget] = useState<ManualPositionResponse | null>(null);
     const [sellBusy, setSellBusy] = useState(false);
     const [sellError, setSellError] = useState<string | null>(null);
+    const [simulationTarget, setSimulationTarget] = useState<SimulationTarget | null>(null);
+    const [simulationBusy, setSimulationBusy] = useState(false);
+    const [simulationError, setSimulationError] = useState<string | null>(null);
+    const [simulationData, setSimulationData] = useState<SimulationResponse | null>(null);
 
     // Position state
     const [openPositions, setOpenPositions] = useState<ManualPositionResponse[]>([]);
@@ -224,6 +236,36 @@ export function usePortfolioDetailPage() {
         }
     };
 
+    const loadSimulation = async (target: SimulationTarget) => {
+        setSimulationTarget(target);
+        setSimulationBusy(true);
+        setSimulationError(null);
+        setSimulationData(null);
+        try {
+            const data = await fetchManualPositionSimulation(target.id, ["USD", "INFLATION_ADJUSTED"]);
+            setSimulationData(data);
+        } catch (caughtError) {
+            setSimulationError(resolveApiError(caughtError, "Simülasyon hesaplanamadı. Kur verisi eksik olabilir."));
+        } finally {
+            setSimulationBusy(false);
+        }
+    };
+
+    const handleManualPositionSimulation = (position: ManualPositionResponse) => {
+        void loadSimulation({
+            id: position.id,
+            title: position.instrumentSymbol ?? position.bankName ?? "Pozisyon",
+            subtitle: position.instrumentName ?? position.positionKind,
+        });
+    };
+
+    const closeSimulation = () => {
+        setSimulationTarget(null);
+        setSimulationBusy(false);
+        setSimulationError(null);
+        setSimulationData(null);
+    };
+
     const openDelete = (portfolio: PortfolioResponse) => {
         setDeleteError(null);
         setDeleteTarget(portfolio);
@@ -242,6 +284,7 @@ export function usePortfolioDetailPage() {
             deleteTarget,
             tradeModalOpen,
             sellTarget,
+            simulationTarget,
         },
         pending: {
             formBusy,
@@ -249,13 +292,16 @@ export function usePortfolioDetailPage() {
             tradeBusy,
             pdfBusy,
             sellBusy,
+            simulationBusy,
         },
         errors: {
             formError,
             deleteError,
             tradeError,
             sellError,
+            simulationError,
         },
+        simulationData,
         handlers: {
             backToPortfolios: () => navigate("/portfolios"),
             retryDetail: () => setDetailReloadToken((value) => value + 1),
@@ -274,6 +320,11 @@ export function usePortfolioDetailPage() {
             confirmDelete,
             handlePositionSubmit,
             handlePositionDelete,
+            handleManualPositionSimulation,
+            retrySimulation: () => {
+                if (simulationTarget) void loadSimulation(simulationTarget);
+            },
+            closeSimulation,
             setPositionKindTab: (kind: PositionKind) => setPositionKindTab(kind),
         },
     };

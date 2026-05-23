@@ -34,4 +34,10 @@ public interface MacroObservationRepository extends JpaRepository<MacroObservati
 
     List<MacroObservation> findBySeries_SeriesCodeAndObservationDateBetweenOrderByObservationDateAsc(
             String seriesCode, LocalDate from, LocalDate to);
+    // INFLATION veya DEPOSIT_RATE gibi tipe göre filtreleyip,
+// tarihten geriye doğru en yakın kaydı getiren metot
+    Optional<MacroObservation> findFirstBySeries_DataTypeAndObservationDateLessThanEqualOrderByObservationDateDesc(
+            MacroDataType dataType,
+            LocalDate observationDate
+    );
 }

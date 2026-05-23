@@ -274,17 +274,28 @@ export function NewTradeModal({ portfolio, busy, serverError, onClose, onSubmit 
                             </>
                         )}
 
-                        {/* BOND: Vade Tarihi */}
+                        {/* BOND: Faiz Oranı + Vade Tarihi */}
                         {isBond && (
-                            <TextField
-                                label="Vade Tarihi"
-                                type="date"
-                                value={maturityDate}
-                                onChange={(e) => setMaturityDate(e.target.value)}
-                                slotProps={{ inputLabel: { shrink: true } }}
-                                size="small"
-                                fullWidth
-                            />
+                            <Stack direction="row" sx={{ gap: 1 }}>
+                                <TextField
+                                    label="Faiz Oranı (%)"
+                                    type="number"
+                                    value={interestRate}
+                                    onChange={(e) => setInterestRate(e.target.value)}
+                                    slotProps={{ htmlInput: { min: "0", step: "0.01" } }}
+                                    size="small"
+                                    fullWidth
+                                />
+                                <TextField
+                                    label="Vade Tarihi"
+                                    type="date"
+                                    value={maturityDate}
+                                    onChange={(e) => setMaturityDate(e.target.value)}
+                                    slotProps={{ inputLabel: { shrink: true } }}
+                                    size="small"
+                                    fullWidth
+                                />
+                            </Stack>
                         )}
 
                         {/* Bölüm 4: Pozisyon Bilgileri */}

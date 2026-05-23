@@ -124,6 +124,7 @@ export function useNewTradeForm(
         setInstrumentNameManual("");
         setUnderlyingSymbolInput("");
         setMaturityDate("");
+        setInterestRate("");
 
         // DEPOSIT: no system list, user enters everything manually
         if (instrumentType === "DEPOSIT") {
@@ -181,7 +182,8 @@ export function useNewTradeForm(
     useEffect(() => {
         if (instrumentType !== "BOND" || !selectedOption || selectedOption.id === -1) return;
         if (selectedOption.maturityDate) setMaturityDate(selectedOption.maturityDate);
-    }, [instrumentType, selectedOption]);
+        if (selectedOption.price != null && interestRate === "") setInterestRate(String(selectedOption.price));
+    }, [instrumentType, selectedOption]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Auto-fill entry price from selected instrument's market price.
     // BOND is skipped because it maps interestRate as price, which would mislead the user.
@@ -273,7 +275,7 @@ export function useNewTradeForm(
             underlyingSymbol: instrumentType === "VIOP"
                 ? (isManualEntry ? (underlyingSymbolInput.trim() || null) : (selectedOption?.name ?? null))
                 : null,
-            interestRate: instrumentType === "DEPOSIT" ? (Number(interestRate) || null) : null,
+            interestRate: (instrumentType === "DEPOSIT" || instrumentType === "BOND") ? (Number(interestRate) || null) : null,
             bankName: instrumentType === "DEPOSIT" ? (bankName.trim() || null) : null,
             notes: notes.trim() || null,
         };

@@ -109,7 +109,10 @@ export function FundAllocationChart({ code }: Props) {
                         ))}
                     </Pie>
                     <Tooltip
-                        formatter={(value: number) => [`%${value.toFixed(2)}`, ""]}
+                        formatter={(value) => {
+                            const numericValue = typeof value === "number" ? value : Number(value ?? 0);
+                            return [`%${numericValue.toFixed(2)}`, ""];
+                        }}
                         contentStyle={{ borderRadius: 8, fontSize: 13 }}
                     />
                     <Legend

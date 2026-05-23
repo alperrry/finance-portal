@@ -26,6 +26,15 @@ public final class WebSocketTopics {
     /** Tüm aboneler: hisse fiyatı güncellemeleri (full push). */
     public static final String STOCKS_PRICES = "/topic/market/stocks/prices";
 
+    /** Tüm aboneler: fon fiyatı güncellemeleri (thin push). */
+    public static final String FUNDS_PRICES = "/topic/market/funds/prices";
+
+    /** Tüm aboneler: VİOP fiyatı güncellemeleri (thin push). */
+    public static final String VIOP_PRICES = "/topic/market/viop/prices";
+
+    /** Tüm aboneler: tahvil oranı güncellemeleri (thin push). */
+    public static final String BONDS_RATES = "/topic/market/bonds/rates";
+
     /** Tüm aboneler: TCMB döviz kuru güncellemeleri (full push). */
     public static final String FX_RATES = "/topic/market/fx/rates";
 

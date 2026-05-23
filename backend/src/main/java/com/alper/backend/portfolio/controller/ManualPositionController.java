@@ -1,11 +1,15 @@
 package com.alper.backend.portfolio.controller;
 
+import com.alper.backend.common.model.InstrumentType;
 import com.alper.backend.common.web.ApiResponse;
 import com.alper.backend.portfolio.dto.ClosePositionRequest;
 import com.alper.backend.portfolio.dto.ManualPositionRequest;
 import com.alper.backend.portfolio.dto.ManualPositionResponse;
 import com.alper.backend.portfolio.model.PositionKind;
 import com.alper.backend.portfolio.service.ManualPositionService;
+import com.alper.backend.portfolio.simulation.model.LensType;
+import com.alper.backend.portfolio.simulation.model.SimulationResponse;
+import com.alper.backend.portfolio.simulation.service.SimulationService;
 import com.alper.backend.user.model.User;
 import com.alper.backend.user.security.CurrentUser;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,7 +29,7 @@ import java.util.List;
 @Log4j2
 @Tag(name = "ManualPosition", description = "Manuel pozisyon giriş sistemi")
 public class ManualPositionController {
-
+    private final SimulationService simulationService;
     private final ManualPositionService manualPositionService;
 
     @PostMapping
@@ -80,4 +84,5 @@ public class ManualPositionController {
         log.info("Manuel pozisyon silme isteği. portfolioId={}, positionId={}, userId={}", portfolioId, positionId, user.getId());
         manualPositionService.delete(portfolioId, user.getId(), positionId);
     }
+
 }

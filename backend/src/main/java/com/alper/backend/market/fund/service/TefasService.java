@@ -2,6 +2,8 @@ package com.alper.backend.market.fund.service;
 
 import com.alper.backend.common.exception.ExternalApiException;
 import com.alper.backend.common.exception.ServiceType;
+import com.alper.backend.market.common.event.MarketDataModule;
+import com.alper.backend.market.common.event.MarketDataUpdatedEvent;
 import com.alper.backend.market.fund.dto.TefasHistoryAllocation;
 import com.alper.backend.market.fund.dto.TefasHistoryInfo;
 import com.alper.backend.market.fund.dto.TefasResponse;
@@ -22,6 +24,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,6 +67,7 @@ public class TefasService {
     private final FundRepository fundRepository;
     private final FundPriceRepository fundPriceRepository;
     private final FundAllocationRepository fundAllocationRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     @CacheEvict(value = "funds", allEntries = true)
@@ -87,6 +91,10 @@ public class TefasService {
 
         FetchStats infoStats = fetchAndSaveInfo(fund, startDate, endDate);
         FetchStats allocationStats = fetchAndSaveAllocation(fund, startDate, endDate);
+        if (infoStats.savedCount() > 0) {
+            eventPublisher.publishEvent(MarketDataUpdatedEvent.of(
+                    MarketDataModule.FUNDS, infoStats.savedCount(), endDate));
+        }
 
         log.debug("TEFAS verisi kaydedildi. Fon: {}, {} - {}", fundCode, startDate, endDate);
         return new TefasFetchResult(

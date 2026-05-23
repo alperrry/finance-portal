@@ -31,6 +31,7 @@ public record ManualPositionResponse(
         BigDecimal realizedPnl,
         BigDecimal unrealizedPnl,
         BigDecimal currentPrice,
+        BigDecimal currentValue,
         BigDecimal pnlPercent,
         String notes,
         Instant createdAt

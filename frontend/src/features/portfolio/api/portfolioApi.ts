@@ -7,6 +7,7 @@ export type ApiResponse<T> = {
 
 export type PortfolioInstrumentType = "STOCK" | "FUND" | "CURRENCY" | "BOND" | "VIOP" | "DEPOSIT";
 export type DisplayCurrency = "TRY" | "USD" | "EUR";
+export type SimulationLensType = "NOMINAL_TRY" | "USD" | "INFLATION_ADJUSTED";
 
 export type PortfolioItemResponse = {
     id: number;
@@ -191,6 +192,7 @@ export type ManualPositionResponse = {
     realizedPnl: number | null;
     unrealizedPnl: number | null;
     currentPrice: number | null;
+    currentValue: number | null;
     pnlPercent: number | null;
     notes: string | null;
     createdAt: string | null;
@@ -249,4 +251,67 @@ export async function closeManualPosition(portfolioId: number, positionId: numbe
         body: JSON.stringify(payload),
     });
     return parseApiResponse<ManualPositionResponse[]>(response, "Pozisyon kapatılamadı.");
+}
+
+// ── Simülasyon ───────────────────────────────────────────────────────────────
+
+export type SimulationPositionSummary = {
+    id: number;
+    instrumentSymbol: string | null;
+    instrumentName: string | null;
+    instrumentType: PortfolioInstrumentType;
+    quantity: number;
+    entryDate: string | null;
+    positionKind: string;
+};
+
+export type SimulationLensResult = {
+    type: SimulationLensType;
+    costBasis: number;
+    currentValue: number;
+    absolutePnl: number;
+    percentagePnl: number;
+    currency: string;
+    purchaseRate: number | null;
+    referenceRate: number | null;
+    referenceDate: string | null;
+};
+
+export type SimulationResponse = {
+    summary: SimulationPositionSummary;
+    baseline: SimulationLensResult;
+    lenses: Partial<Record<SimulationLensType, SimulationLensResult>>;
+};
+
+function buildSimulationQuery(lenses: SimulationLensType[]) {
+    const params = new URLSearchParams();
+    lenses.forEach((lens) => params.append("lens", lens));
+    return params.toString();
+}
+
+export async function fetchManualPositionSimulation(positionId: number, lenses: SimulationLensType[] = ["USD", "INFLATION_ADJUSTED"]): Promise<SimulationResponse> {
+    const response = await apiFetch(`/api/v1/portfolio/manual-positions/${positionId}/simulation?${buildSimulationQuery(lenses)}`, {
+        errorMessage: "Simülasyon hesaplanamadı.",
+    });
+    return parseApiResponse<SimulationResponse>(response, "Simülasyon hesap lanamadı.");
+}
+// Alternatif Senaryo (What-If / Gölge Pozisyon) için yeni API çağrısı
+export async function fetchWhatIfSimulation(
+    positionId: number,
+    targetType: string,
+    targetSymbol: string,
+    lenses: SimulationLensType[] = ["NOMINAL_TRY"]
+): Promise<SimulationResponse> {
+    const params = new URLSearchParams();
+    params.append("targetType", targetType);
+    params.append("targetSymbol", targetSymbol);
+
+    lenses.forEach(lens => params.append("lens", lens));
+
+    const response = await apiFetch(
+        `/api/v1/portfolio/manual-positions/${positionId}/what-if?${params.toString()}`,
+        { errorMessage: "Alternatif senaryo hesaplanamadı." }
+    );
+
+    return parseApiResponse<SimulationResponse>(response, "Alternatif senaryo hesaplanamadı.");
 }

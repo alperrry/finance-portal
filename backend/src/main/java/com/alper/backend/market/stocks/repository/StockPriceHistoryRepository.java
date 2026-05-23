@@ -20,6 +20,9 @@ public interface StockPriceHistoryRepository extends JpaRepository<StockPriceHis
     // Duplicate kontrolü — aynı gün aynı hisse tekrar eklenmesin
     Optional<StockPriceHistory> findByStockIdAndTradeDate(Long stockId, LocalDate tradeDate);
 
+    // What-if simülasyonu — symbol ile tarihe göre fiyat çek
+    Optional<StockPriceHistory> findByStock_SymbolAndTradeDate(String symbol, LocalDate tradeDate);
+
     // Bootstrap için — en son çekilen tarihi bul
     Optional<StockPriceHistory> findTopByStockIdOrderByTradeDateDesc(Long stockId);
 

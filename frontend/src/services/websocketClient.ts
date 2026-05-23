@@ -8,7 +8,11 @@ export type WebSocketEventType =
     | "TRADE_CANCELLED"
     | "PORTFOLIO_UPDATED"
     | "USER_BALANCE_UPDATED"
+    | "STOCK_PRICES_UPDATED"
     | "FX_RATES_UPDATED"
+    | "FUND_PRICES_UPDATED"
+    | "VIOP_PRICES_UPDATED"
+    | "BOND_RATES_UPDATED"
     | "NEWS_PUBLISHED"
     | "ADMIN_AUDIT_LOGGED"
     | "ADMIN_USER_UPDATED"
@@ -31,6 +35,14 @@ type PendingSubscription = {
 type ConnectionEventDetail = {
     reconnected: boolean;
 };
+
+export const MARKET_UPDATE_TOPICS = [
+    "/topic/market/stocks/prices",
+    "/topic/market/funds/prices",
+    "/topic/market/viop/prices",
+    "/topic/market/bonds/rates",
+    "/topic/market/fx/rates",
+] as const;
 
 function emitToast(message: string, tone: "success" | "error" | "info" = "info") {
     window.dispatchEvent(new CustomEvent("app:toast", { detail: { message, tone } }));

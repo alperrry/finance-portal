@@ -131,6 +131,7 @@ export type TypeGroupEntry = {
 };
 
 function computePositionValue(pos: ManualPositionResponse): number {
+    if (pos.currentValue != null) return pos.currentValue;
     const price = pos.currentPrice ?? pos.entryPrice;
     const multiplier = pos.contractMultiplier ?? 1;
     return price * pos.quantity * multiplier;

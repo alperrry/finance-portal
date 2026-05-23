@@ -10,7 +10,8 @@ import java.time.temporal.ChronoUnit;
 /**
  * Mevduat (DEPOSIT) P&L hesabı:
  * exitDate = position.exitDate != null ? position.exitDate : LocalDate.now()
- * days = ChronoUnit.DAYS.between(entryDate, exitDate)
+ * valuationDate = min(exitDate, maturityDate) when maturityDate exists
+ * days = ChronoUnit.DAYS.between(entryDate, valuationDate)
  * rate = interestRate != null ? interestRate : 0
  * P&L = quantity * (rate / 100) * (days / 365.0)
  *
@@ -20,8 +21,11 @@ public class DepositPnlCalculator implements PnlCalculator {
 
     @Override
     public BigDecimal calculate(ManualPosition position, BigDecimal exitOrCurrentPrice) {
-        LocalDate exitDate = position.getExitDate() != null ? position.getExitDate() : LocalDate.now();
-        long days = ChronoUnit.DAYS.between(position.getEntryDate(), exitDate);
+        LocalDate valuationDate = position.getExitDate() != null ? position.getExitDate() : LocalDate.now();
+        if (position.getMaturityDate() != null && valuationDate.isAfter(position.getMaturityDate())) {
+            valuationDate = position.getMaturityDate();
+        }
+        long days = Math.max(0, ChronoUnit.DAYS.between(position.getEntryDate(), valuationDate));
         BigDecimal rate = position.getInterestRate() != null ? position.getInterestRate() : BigDecimal.ZERO;
 
         return position.getQuantity()

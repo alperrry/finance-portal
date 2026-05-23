@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 
 @Log4j2
 @Service
@@ -31,7 +32,7 @@ public class StockIndicatorQueryService {
     public StockIndicatorResponse getLatest(String symbol) {
         log.debug("Indikatör latest sorgusu: {}", symbol);
         StockTechnicalIndicator entity = indicatorRepository
-                .findTopByStock_SymbolOrderByTradeDateDesc(symbol.toUpperCase())
+                .findTopByStock_SymbolOrderByTradeDateDesc(symbol.toUpperCase(Locale.ROOT))
                 .orElseThrow(() -> new NotFoundException(
                         "Indikatör verisi bulunamadı: " + symbol));
         return mapper.toDto(entity);
@@ -55,7 +56,7 @@ public class StockIndicatorQueryService {
 
         List<StockTechnicalIndicator> rows = indicatorRepository
                 .findByStock_SymbolAndTradeDateBetweenOrderByTradeDateAsc(
-                        symbol.toUpperCase(), from, to);
+                        symbol.toUpperCase(Locale.ROOT), from, to);
 
         return rows.stream().map(mapper::toDto).toList();
     }

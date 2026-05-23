@@ -16,6 +16,9 @@ public interface FundPriceRepository extends JpaRepository<FundPrice, Long> {
             List<String> codes, LocalDate from, LocalDate to);
     boolean existsByFundIdAndPriceDate(Long fundId, LocalDate priceDate);
 
+    // What-if simülasyonu — code ile tarihe göre fiyat çek
+    Optional<FundPrice> findByFund_CodeAndPriceDate(String code, LocalDate priceDate);
+
     Optional<FundPrice> findTopByFundIdOrderByPriceDateDesc(Long fundId);
     Optional<FundPrice> findTopByFundIdOrderByPriceDateAsc(Long fundId);
 

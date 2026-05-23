@@ -100,8 +100,8 @@ public class ManualPositionService {
             BigDecimal currentPrice = null;
             BigDecimal unrealizedPnl = null;
 
-            if (kind == PositionKind.OPEN && pos.getInstrumentId() != null) {
-                var info = priceResolver.resolve(pos.getInstrumentType(), pos.getInstrumentId());
+            if (kind == PositionKind.OPEN && (pos.getInstrumentId() != null || pos.getInstrumentSymbol() != null)) {
+                var info = priceResolver.resolve(pos.getInstrumentType(), pos.getInstrumentId(), pos.getInstrumentSymbol());
                 currentPrice = info.currentPrice();
                 if (currentPrice != null) {
                     unrealizedPnl = pnlRegistry.get(pos.getInstrumentType()).calculate(pos, currentPrice);
@@ -120,8 +120,8 @@ public class ManualPositionService {
 
         BigDecimal currentPrice = null;
         BigDecimal unrealizedPnl = null;
-        if (pos.getPositionKind() == PositionKind.OPEN && pos.getInstrumentId() != null) {
-            var info = priceResolver.resolve(pos.getInstrumentType(), pos.getInstrumentId());
+        if (pos.getPositionKind() == PositionKind.OPEN && (pos.getInstrumentId() != null || pos.getInstrumentSymbol() != null)) {
+            var info = priceResolver.resolve(pos.getInstrumentType(), pos.getInstrumentId(), pos.getInstrumentSymbol());
             currentPrice = info.currentPrice();
             if (currentPrice != null) {
                 unrealizedPnl = pnlRegistry.get(pos.getInstrumentType()).calculate(pos, currentPrice);
@@ -218,6 +218,10 @@ public class ManualPositionService {
         BigDecimal pnlPercent = null;
         BigDecimal pnl = pos.getPositionKind() == PositionKind.CLOSED ? pos.getRealizedPnl() : unrealizedPnl;
         BigDecimal costBasis = pos.getEntryPrice().multiply(pos.getQuantity());
+        BigDecimal multiplier = pos.getContractMultiplier() != null ? pos.getContractMultiplier() : BigDecimal.ONE;
+        BigDecimal currentValue = currentPrice != null
+                ? currentPrice.multiply(pos.getQuantity()).multiply(multiplier).setScale(2, RoundingMode.HALF_UP)
+                : null;
         if (pnl != null && costBasis != null && costBasis.compareTo(BigDecimal.ZERO) != 0) {
             pnlPercent = pnl.multiply(BigDecimal.valueOf(100))
                     .divide(costBasis, 2, RoundingMode.HALF_UP);
@@ -229,7 +233,7 @@ public class ManualPositionService {
                 pos.getDirection(), pos.getQuantity(), pos.getEntryPrice(), pos.getEntryDate(),
                 pos.getExitPrice(), pos.getExitDate(), pos.getContractMultiplier(), pos.getMaturityDate(),
                 pos.getMarginAmount(), pos.getUnderlyingSymbol(), pos.getInterestRate(), pos.getBankName(),
-                pos.getRealizedPnl(), unrealizedPnl, currentPrice, pnlPercent,
+                pos.getRealizedPnl(), unrealizedPnl, currentPrice, currentValue, pnlPercent,
                 pos.getNotes(), pos.getCreatedAt()
         );
     }
