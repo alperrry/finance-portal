@@ -15,12 +15,18 @@ import {
     InputLabel,
     Select,
     MenuItem,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+    Autocomplete,
+    TextField,
 } from "@mui/material";
-
-import type { SimulationLensResult, SimulationResponse } from "../api/portfolioApi";
-import { formatMoney, formatPercent, formatQuantity, formatSignedMoney, getProfitTone } from "../utils/portfolioFormatters";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import type { SimulationResponse } from "../api/portfolioApi";
 import { fetchWhatIfSimulation } from "../api/portfolioApi";
-import { fetchFx, fetchFunds,fetchStocks } from "../../market/api/marketApi";
+import { fetchFx, fetchFunds, fetchStocks } from "../../market/api/marketApi";
+// YENİ COMPONENT IMPORTU
+import { SimulationCardGroup } from "./SimulationCardGroup";
 
 type SimulationTarget = {
     id: number;
@@ -37,19 +43,11 @@ type Props = {
     onRetry: () => void;
 };
 
-// KATEGORİ SÖZLÜĞÜ (İleride STOCK, FUND eklemek için burada kalıyor)
 const OPPORTUNITY_CATEGORIES = [
     { id: "CURRENCY", label: "Döviz" },
     { id: "FUND", label: "Yatırım Fonu" },
     { id: "STOCK", label: "Hisse Senedi" }
 ];
-
-const toneColor = (value: number | null | undefined) => {
-    const tone = getProfitTone(value);
-    if (tone === "up") return "success.main";
-    if (tone === "down") return "error.main";
-    return "text.secondary";
-};
 
 function formatLocalDate(value: string | null | undefined) {
     if (!value) return "-";
@@ -58,77 +56,39 @@ function formatLocalDate(value: string | null | undefined) {
     return new Intl.DateTimeFormat("tr-TR", { day: "2-digit", month: "short", year: "numeric" }).format(date);
 }
 
-function RateRow({ label, value }: { label: string; value: number | string | null | undefined }) {
-    return (
-        <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
-            <Typography variant="caption" color="text.secondary">{label}</Typography>
-            <Typography variant="caption" sx={{ fontWeight: 700, textAlign: "right" }}>
-                {typeof value === "number" ? formatMoney(value, "TRY", 4) : value ?? "-"}
-            </Typography>
-        </Box>
-    );
-}
-
-function ResultBlock({ title, result }: { title: string; result: SimulationLensResult }) {
-    return (
-        <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, p: 2, minWidth: 0, flex: 1 }}>
-            <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>{title}</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 900, color: toneColor(result.absolutePnl), mt: 0.5 }}>
-                {formatSignedMoney(result.absolutePnl, result.currency)}
-            </Typography>
-            <Typography variant="body2" color={toneColor(result.percentagePnl)} sx={{ fontWeight: 700, mb: 1.5 }}>
-                {formatPercent(result.percentagePnl)}
-            </Typography>
-            <Stack sx={{ gap: 0.75 }}>
-                <RateRow label="Maliyet (Sanal)" value={formatMoney(result.costBasis, result.currency)} />
-                <RateRow label="Güncel Değer" value={formatMoney(result.currentValue, result.currency)} />
-                {result.purchaseRate !== null ? <RateRow label="O Günkü Fiyat" value={result.purchaseRate} /> : null}
-            </Stack>
-        </Box>
-    );
+function formatQuantity(value: number | null | undefined) {
+    if (value === null || value === undefined) return "-";
+    return new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 4 }).format(value);
 }
 
 export function SimulationResultDialog({ target, data, busy, error, onClose, onRetry }: Props) {
-    const usdResult = data?.lenses.USD ?? null;
-    const inflationResult = data?.lenses.INFLATION_ADJUSTED ?? null;
-
-    // WHAT-IF STATE YÖNETİMİ
     const [targetType, setTargetType] = useState<string>("CURRENCY");
     const [targetSymbol, setTargetSymbol] = useState<string>("");
-
-    // YENİ: DİNAMİK LİSTE STATE'İ
+    const [isExpanded, setIsExpanded] = useState<boolean>(false);
     const [availableSymbols, setAvailableSymbols] = useState<{value: string, label: string}[]>([]);
 
-    const [whatIfResult, setWhatIfResult] = useState<SimulationLensResult | null>(null);
+    const [whatIfData, setWhatIfData] = useState<SimulationResponse | null>(null);
     const [whatIfBusy, setWhatIfBusy] = useState<boolean>(false);
     const [whatIfError, setWhatIfError] = useState<string | null>(null);
 
-    // Kategori değiştiğinde listeyi ve seçimi temizle
     const handleCategoryChange = (newCategory: string) => {
         setTargetType(newCategory);
         setTargetSymbol("");
         setAvailableSymbols([]);
     };
 
-    // 1. ADIM: DİNAMİK LİSTEYİ BACKEND'DEN ÇEKME MOTORU
     useEffect(() => {
         let isMounted = true;
-
         const loadSymbols = async () => {
             try {
                 let formatted: { value: string, label: string }[] = [];
-
                 if (targetType === "CURRENCY") {
                     const fxData = await fetchFx();
                     formatted = fxData.map(c => ({ value: c.currencyCode, label: `${c.currencyCode} — ${c.currencyName}` }));
-                }
-                // YENİ: FON LİSTESİ
-                else if (targetType === "FUND") {
+                } else if (targetType === "FUND") {
                     const fundData = await fetchFunds({ includeUnpriced: true });
                     formatted = fundData.map(f => ({ value: f.code, label: `${f.code} — ${f.name}` }));
-                }
-                // YENİ: HİSSE LİSTESİ
-                else if (targetType === "STOCK") {
+                } else if (targetType === "STOCK") {
                     const stockData = await fetchStocks();
                     formatted = stockData.map(s => ({ value: s.symbol, label: `${s.symbol} — ${s.shortName ?? 'Hisse'}` }));
                 }
@@ -136,44 +96,35 @@ export function SimulationResultDialog({ target, data, busy, error, onClose, onR
                 if (isMounted) {
                     formatted.sort((a, b) => a.label.localeCompare(b.label, "tr-TR"));
                     setAvailableSymbols(formatted);
-
-                    if (formatted.length > 0 && !targetSymbol) {
-                        setTargetSymbol(formatted[0].value);
-                    }
+                    if (formatted.length > 0 && !targetSymbol) setTargetSymbol(formatted[0].value);
                 }
             } catch (err) {
                 console.error("Semboller yüklenemedi", err);
             }
         };
-
         loadSymbols();
         return () => { isMounted = false; };
-    }, [targetType]); // Sadece kategori değiştiğinde çalışır
+    }, [targetType]);
 
-    // 2. ADIM: SİMÜLASYON VERİSİNİ ÇEKME MOTORU
     useEffect(() => {
         let isMounted = true;
-        if (!targetType || !targetSymbol) {
-            setWhatIfResult(null);
-            return;
-        }
+        if (!isExpanded || !targetType || !targetSymbol) return;
 
         const loadWhatIfData = async () => {
             setWhatIfBusy(true);
             setWhatIfError(null);
             try {
-                const res = await fetchWhatIfSimulation(target.id, targetType, targetSymbol, []);
-                if (isMounted) setWhatIfResult(res.baseline);
+                const res = await fetchWhatIfSimulation(target.id, targetType, targetSymbol, ["USD", "INFLATION_ADJUSTED"]);
+                if (isMounted) setWhatIfData(res);
             } catch (err: any) {
                 if (isMounted) setWhatIfError("Bu senaryo için geçmiş fiyat verisi bulunamadı.");
             } finally {
                 if (isMounted) setWhatIfBusy(false);
             }
         };
-
         loadWhatIfData();
         return () => { isMounted = false; };
-    }, [target.id, targetType, targetSymbol]);
+    }, [target.id, targetType, targetSymbol, isExpanded]);
 
     return (
         <Dialog open onClose={onClose} maxWidth="md" fullWidth aria-modal>
@@ -184,78 +135,111 @@ export function SimulationResultDialog({ target, data, busy, error, onClose, onR
             </DialogTitle>
 
             <DialogContent>
-                {busy ? (
+                {busy && (
                     <Stack sx={{ alignItems: "center", py: 5, gap: 1 }}>
                         <CircularProgress size={28} />
                         <Typography variant="body2" color="text.secondary">Orijinal simülasyon hesaplanıyor...</Typography>
                     </Stack>
-                ) : null}
+                )}
 
-                {!busy && error ? (
+                {!busy && error && (
                     <Alert severity="error" action={<Button color="inherit" size="small" onClick={onRetry}>Tekrar dene</Button>}>
                         {error}
                     </Alert>
-                ) : null}
+                )}
 
                 {!busy && data ? (
                     <Stack sx={{ gap: 2, mt: 2 }}>
-                        {/* 1. KATMAN: MEVCUT DURUM */}
-                        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                            <ResultBlock title="Nominal TRY" result={data.baseline} />
-                            {usdResult ? <ResultBlock title="USD Bazlı" result={usdResult} /> : null}
-                            {inflationResult ? <ResultBlock title="Enflasyon Bazlı" result={inflationResult} /> : null}
-                        </Box>
+                        {/* 1. MEVCUT DURUM */}
+                        <SimulationCardGroup data={data} />
 
                         <Divider sx={{ my: 1 }} />
 
-                        {/* 2. KATMAN: WHAT-IF (GÖLGE POZİSYON) */}
-                        <Typography variant="overline" color="secondary" sx={{ fontWeight: 800, display: 'block' }}>
-                            Alternatif Senaryolar (Sanal Pozisyon)
-                        </Typography>
+                        {/* 2. ALTERNATİF SENARYOLAR */}
+                        <Accordion
+                            expanded={isExpanded}
+                            onChange={(_, expanded) => setIsExpanded(expanded)}
+                            sx={{ boxShadow: "none", border: "1px solid", borderColor: "divider", "&:before": { display: "none" } }}
+                        >
+                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>
+                                    Alternatif Senaryolar (Sanal Pozisyon)
+                                </Typography>
+                            </AccordionSummary>
 
-                        <Stack direction={{ xs: "column", md: "row" }} sx={{ gap: 2, alignItems: "stretch" }}>
-                            {/* KONTROL PANELİ */}
-                            <Box sx={{ minWidth: 220, flexShrink: 0, display: "flex", flexDirection: "column", gap: 2, justifyContent: "center" }}>
-                                <FormControl fullWidth size="small">
-                                    <InputLabel id="category-label">Enstrüman Türü</InputLabel>
-                                    <Select labelId="category-label" value={targetType} label="Enstrüman Türü" onChange={(e) => handleCategoryChange(e.target.value)}>
-                                        {OPPORTUNITY_CATEGORIES.map(cat => <MenuItem key={cat.id} value={cat.id}>{cat.label}</MenuItem>)}
-                                    </Select>
-                                </FormControl>
+                            <AccordionDetails>
+                                <Stack direction="column" sx={{ gap: 3, pt: 1 }}>
+                                    {/* ÜST BÖLÜM: KONTROL MENÜLERİ YAN YANA */}
+                                    <Stack direction={{ xs: "column", sm: "row" }} sx={{ gap: 2 }}>
+                                        <FormControl fullWidth size="small">
+                                            <InputLabel id="category-label">Enstrüman Türü</InputLabel>
+                                            <Select
+                                                labelId="category-label"
+                                                value={targetType}
+                                                label="Enstrüman Türü"
+                                                onChange={(e) => handleCategoryChange(e.target.value)}
+                                            >
+                                                {OPPORTUNITY_CATEGORIES.map(cat => <MenuItem key={cat.id} value={cat.id}>{cat.label}</MenuItem>)}
+                                            </Select>
+                                        </FormControl>
 
-                                {/* YENİ: DİNAMİK LİSTE KULLANIMI */}
-                                <FormControl fullWidth size="small" disabled={availableSymbols.length === 0}>
-                                    <InputLabel id="symbol-label">Bunun Yerine...</InputLabel>
-                                    <Select labelId="symbol-label" value={targetSymbol} label="Bunun Yerine..." onChange={(e) => setTargetSymbol(e.target.value)}>
-                                        {availableSymbols.map(inst => <MenuItem key={inst.value} value={inst.value}>{inst.label}</MenuItem>)}
-                                    </Select>
-                                </FormControl>
-                            </Box>
+                                        <Autocomplete
+                                            size="small"
+                                            fullWidth
+                                            disabled={availableSymbols.length === 0}
+                                            options={availableSymbols}
+                                            getOptionLabel={(option) => option.label}
+                                            value={availableSymbols.find(s => s.value === targetSymbol) || undefined}
+                                            onChange={(_, newValue) => setTargetSymbol(newValue ? newValue.value : "")}
+                                            disableClearable
+                                            renderInput={(params) => <TextField {...params} label="Bunun Yerine..." />}
+                                        />
+                                    </Stack>
 
-                            {/* DİNAMİK SONUÇ EKRANI */}
-                            {whatIfBusy ? (
-                                <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <CircularProgress size={24} />
-                                </Box>
-                            ) : whatIfError ? (
-                                <Alert severity="warning" sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>{whatIfError}</Alert>
-                            ) : whatIfResult ? (
-                                <ResultBlock
-                                    title={`${availableSymbols.find(i => i.value === targetSymbol)?.label || targetSymbol} Senaryosu`}
-                                    result={whatIfResult}
-                                />
-                            ) : (
-                                <Alert severity="info" sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>Simülasyon seçin.</Alert>
-                            )}
-                        </Stack>
+                                    {/* ALT BÖLÜM: 3'LÜ KART GRUBU (TAM GENİŞLİKTE) */}
+                                    <Box sx={{ position: 'relative', minHeight: 165 }}>
+                                        {whatIfBusy && (
+                                            <Box sx={{
+                                                position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                bgcolor: 'background.paper', opacity: 0.8, zIndex: 2, borderRadius: 1
+                                            }}>
+                                                <CircularProgress size={28} />
+                                            </Box>
+                                        )}
+
+                                        {whatIfError ? (
+                                            <Alert severity="warning" sx={{ height: '100%' }}>{whatIfError}</Alert>
+                                        ) : whatIfData ? (
+                                            <SimulationCardGroup
+                                                data={whatIfData}
+                                                baselineTitle={`${availableSymbols.find(i => i.value === targetSymbol)?.label || targetSymbol} (TRY)`}
+                                            />
+                                        ) : (
+                                            <Alert severity="info" sx={{ height: '100%', display: 'flex', alignItems: 'center' }}>
+                                                Karşılaştırmak istediğiniz enstrümanı seçin.
+                                            </Alert>
+                                        )}
+                                    </Box>
+                                </Stack>
+                            </AccordionDetails>
+                        </Accordion>
 
                         <Divider sx={{ my: 1 }} />
 
-                        {/* 3. KATMAN: ORİJİNAL ÖZET */}
+                        {/* 3. ORİJİNAL ÖZET */}
                         <Stack direction={{ xs: "column", sm: "row" }} sx={{ gap: 1.5, flexWrap: "wrap" }}>
-                            <RateRow label="Miktar" value={formatQuantity(data.summary.quantity)} />
-                            <RateRow label="Giriş tarihi" value={formatLocalDate(data.summary.entryDate)} />
-                            <RateRow label="Pozisyon" value={data.summary.positionKind} />
+                            <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, flex: 1, minWidth: 120 }}>
+                                <Typography variant="caption" color="text.secondary">Miktar</Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 700 }}>{formatQuantity(data.summary.quantity)}</Typography>
+                            </Box>
+                            <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, flex: 1, minWidth: 140 }}>
+                                <Typography variant="caption" color="text.secondary">Giriş tarihi</Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 700 }}>{formatLocalDate(data.summary.entryDate)}</Typography>
+                            </Box>
+                            <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, flex: 1, minWidth: 120 }}>
+                                <Typography variant="caption" color="text.secondary">Pozisyon</Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 700 }}>{data.summary.positionKind}</Typography>
+                            </Box>
                         </Stack>
                     </Stack>
                 ) : null}
