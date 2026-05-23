@@ -86,7 +86,7 @@ public class ValuationContextBuilder {
 
         if (isViop(pos.getInstrumentType())) {
             BigDecimal currentPrice = null;
-            if (pos.getInstrumentId() != null) {
+            if (pos.getInstrumentId() != null || pos.getInstrumentSymbol() != null) {
                 var info = priceResolver.resolve(pos.getInstrumentType(), pos.getInstrumentId(), pos.getInstrumentSymbol());
                 currentPrice = info.currentPrice();
             }
@@ -106,7 +106,7 @@ public class ValuationContextBuilder {
         }
 
         BigDecimal currentPrice = null;
-        if (pos.getInstrumentId() != null) {
+        if (pos.getInstrumentId() != null || pos.getInstrumentSymbol() != null) {
             var info = priceResolver.resolve(pos.getInstrumentType(), pos.getInstrumentId(), pos.getInstrumentSymbol());
             currentPrice = info.currentPrice();
         }
