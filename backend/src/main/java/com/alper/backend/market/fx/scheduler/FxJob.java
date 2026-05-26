@@ -3,6 +3,7 @@ package com.alper.backend.market.fx.scheduler;
 import com.alper.backend.market.fx.service.TcmbService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +15,7 @@ public class FxJob {
     private final TcmbService tcmbService;
 
     // TCMB her iş günü 15:30'da günceller
+    @CacheEvict(value = "fx", allEntries = true)
     @Scheduled(cron = "${tcmb.cron}")
     public void fetchDailyRates() {
         log.info("TcmbJob başladı.");

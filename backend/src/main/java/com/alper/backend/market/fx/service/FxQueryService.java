@@ -5,6 +5,7 @@ import com.alper.backend.market.fx.repository.ExchangeRateRepository;
 import com.alper.backend.market.fx.dto.FxResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,6 +17,7 @@ public class FxQueryService {
 
     private final ExchangeRateRepository exchangeRateRepository;
 
+    @Cacheable(value = "fx", key = "'all'")
     public List<FxResponse> getAll() {
         log.debug("FX verileri DB'den çekiliyor...");
         return exchangeRateRepository.findLatestRates()

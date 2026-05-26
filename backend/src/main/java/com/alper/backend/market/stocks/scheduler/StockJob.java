@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,7 @@ public class StockJob {
     @Value("${app.startup-tasks.enabled:true}")
     private boolean startupTasksEnabled = true;
 
+    @CacheEvict(value = "stocks", allEntries = true)
     @EventListener(ApplicationReadyEvent.class)
     @Scheduled(cron = "${market.daily.stocks.cron}")
     public void fetchDailyHistory() {

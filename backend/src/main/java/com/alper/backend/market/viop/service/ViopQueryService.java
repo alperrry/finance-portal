@@ -20,6 +20,7 @@ public class ViopQueryService {
         return repository.findLatestByContractName().stream().map(this::toResponse).toList();
     }
 
+    @Cacheable(value = "viop", key = "'all-unfiltered'", condition = "#segment == null && #from == null && #to == null")
     public List<ViopContractPriceResponse> getAll(String segment, LocalDate from, LocalDate to) {
         LocalDate effectiveTo = to != null ? to : LocalDate.now();
         LocalDate effectiveFrom = from != null ? from : effectiveTo.minusDays(7);

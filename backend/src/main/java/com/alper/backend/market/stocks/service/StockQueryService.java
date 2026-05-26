@@ -6,6 +6,7 @@ import com.alper.backend.market.stocks.model.StockPriceHistory;
 import com.alper.backend.market.stocks.repository.StockPriceHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -18,11 +19,13 @@ public class StockQueryService {
 
     private final StockPriceHistoryRepository historyRepository;
 
+    @Cacheable(value = "stocks", key = "'STOCK'")
     public List<StockResponse> getAll() {
         log.debug("Günlük hisse verileri DB'den çekiliyor...");
         return getByInstrumentType(InstrumentType.STOCK);
     }
 
+    @Cacheable(value = "stocks", key = "#instrumentType.name()")
     public List<StockResponse> getByInstrumentType(InstrumentType instrumentType) {
         log.debug("Günlük enstrüman verileri DB'den çekiliyor. type={}", instrumentType);
         return historyRepository.findLatestPerActiveInstrumentType(instrumentType)

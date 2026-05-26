@@ -3,12 +3,13 @@ package com.alper.backend.market.fx.dto;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Getter
 @Builder
-public class FxResponse {
+public class FxResponse implements Serializable {
 
     private Long id;
     private String currencyCode;

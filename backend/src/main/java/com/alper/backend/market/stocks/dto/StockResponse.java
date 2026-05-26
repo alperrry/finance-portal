@@ -3,13 +3,14 @@ package com.alper.backend.market.stocks.dto;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
 @Builder
-public class StockResponse {
+public class StockResponse implements Serializable {
 
     private Long id;
     private String symbol;
