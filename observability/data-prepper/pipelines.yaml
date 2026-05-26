@@ -1,0 +1,25 @@
+# Data Prepper — Finans Portalı log hattı
+# Görev: Kafka'daki app-logs topic'inden logları okuyup OpenSearch'e yazmak.
+# NOT: Trace/metrik bu dosyadan KALDIRILDI. Telemetri OTel Collector üzerinden
+#      Tempo (trace) ve Prometheus'a (metrik) gidiyor. Data Prepper SADECE log taşır.
+
+logs-pipeline:
+  source:
+    kafka:
+      bootstrap_servers:
+        - "kafka:9092"
+      topics:
+        - name: "app-logs"
+          group_id: "data-prepper-logs"
+          max_poll_interval: "PT5M"
+          session_timeout: "PT45S"
+          heart_beat_interval: "PT15S"
+      encryption:
+        type: "none"
+  processor:
+    - parse_json:
+  sink:
+    - opensearch:
+        hosts: [ "http://opensearch:9200" ]
+        index: "finance-portal-logs"
+        insecure: true
