@@ -1,12 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="WARN" monitorInterval="30">
+<Configuration status="WARN">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <JsonTemplateLayout eventTemplateUri="classpath:EcsLayout.json"/>
+            <JsonTemplateLayout/>
         </Console>
+
+        <Kafka name="Kafka" topic="app-logs" syncSend="false">
+            <JsonTemplateLayout eventTemplateUri="classpath:LogstashJsonEventLayoutV1.json">
+                <EventTemplateAdditionalField key="serviceName" value="finance-portal-backend"/>
+            </JsonTemplateLayout>
+            <Property name="bootstrap.servers">kafka:9092</Property>
+        </Kafka>
+
+        <Failover name="Failover" primary="Kafka">
+            <Failovers>
+                <AppenderRef ref="Console"/>
+            </Failovers>
+        </Failover>
+
+        <Async name="Async" bufferSize="512">
+            <AppenderRef ref="Failover"/>
+        </Async>
     </Appenders>
+
     <Loggers>
-        <Logger name="com.alper.backend" level="DEBUG" additivity="false">
+        <Logger name="org.apache.kafka" level="WARN" additivity="false">
             <AppenderRef ref="Console"/>
         </Logger>
         <Root level="INFO">
