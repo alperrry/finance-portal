@@ -56,6 +56,8 @@ public class RedisConfig {
         cacheConfigs.put("bonds", baseConfig.entryTtl(Duration.ofHours(24)));
 
         // Market — günlük veri modeli
+        cacheConfigs.put("stocks", baseConfig.entryTtl(Duration.ofHours(24)));
+        cacheConfigs.put("fx",     baseConfig.entryTtl(Duration.ofHours(24)));
         cacheConfigs.put("funds",  baseConfig.entryTtl(Duration.ofHours(24)));
         cacheConfigs.put("macro",  baseConfig.entryTtl(Duration.ofHours(24)));
         cacheConfigs.put("viop",   baseConfig.entryTtl(Duration.ofHours(24)));
