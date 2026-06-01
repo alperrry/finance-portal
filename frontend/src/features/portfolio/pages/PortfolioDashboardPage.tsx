@@ -1,5 +1,6 @@
 import { Box, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { KapitalShell } from "../../../components/layout";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { SectionPanel } from "../../../components/ui/SectionPanel";
@@ -11,6 +12,7 @@ import { usePortfolioModals } from "../hooks/usePortfolioModals";
 
 export default function PortfolioDashboardPage() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { portfolios, listState, reload, isEmpty } = usePortfolioDashboard();
     const {
         formState, formBusy, formError,
@@ -25,12 +27,12 @@ export default function PortfolioDashboardPage() {
             <Box sx={{ p: { xs: 2, md: 3 } }}>
                 <SectionPanel sx={{ mb: 3 }}>
                     <PageHeader
-                        kicker="Kişisel Yatırım Merkezi"
-                        title="Portföylerim"
-                        subtitle="Limit emirlerini, pozisyon dağılımını ve gerçekleşen işlemleri tek panelden yönetin."
+                        kicker={t("portfolio.dashboard.overline")}
+                        title={t("portfolio.dashboard.title")}
+                        subtitle={t("portfolio.dashboard.description")}
                         actions={
                             <Button variant="contained" color="secondary" onClick={openCreate}>
-                                + Yeni Portföy
+                                {t("portfolio.dashboard.newPortfolio")}
                             </Button>
                         }
                     />

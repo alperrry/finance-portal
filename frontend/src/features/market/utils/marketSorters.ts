@@ -1,3 +1,4 @@
+import i18n from "../../../i18n";
 import type {
     BondResponse,
     FundResponse,
@@ -276,24 +277,25 @@ export function buildFxMarketCards(rows: FxResponse[]): SummaryCard[] {
     const narrowest = [...rows]
         .filter((r) => getFxSpread(r) !== null)
         .sort((l, r) => compareNullableNumbersAsc(getFxSpread(l), getFxSpread(r)))[0];
+    const noData = i18n.t("market.summaryCards.noData");
 
     return [
         {
-            label: "USD/TRY satis",
+            label: i18n.t("market.summaryCards.usdSell"),
             value: formatRate(usd?.forexSelling),
-            note: usd ? `${formatLocalDate(usd.rateDate)} · ${formatUnitLabel(usd.unit, usd.currencyCode)}` : "Veri yok",
+            note: usd ? `${formatLocalDate(usd.rateDate)} · ${formatUnitLabel(usd.unit, usd.currencyCode)}` : noData,
         },
         {
-            label: "EUR/TRY satis",
+            label: i18n.t("market.summaryCards.eurSell"),
             value: formatRate(eur?.forexSelling),
-            note: eur ? `${formatLocalDate(eur.rateDate)} · ${formatUnitLabel(eur.unit, eur.currencyCode)}` : "Veri yok",
+            note: eur ? `${formatLocalDate(eur.rateDate)} · ${formatUnitLabel(eur.unit, eur.currencyCode)}` : noData,
         },
         {
-            label: "En dar makas",
+            label: i18n.t("market.summaryCards.narrowestSpread"),
             value: narrowest ? formatRate(getFxSpread(narrowest)) : "-",
             note: narrowest
                 ? `${formatUnitLabel(narrowest.unit, narrowest.currencyCode)} · ${narrowest.currencyName}`
-                : "Veri yok",
+                : noData,
         },
     ];
 }
@@ -302,22 +304,25 @@ export function buildBondMarketCards(rows: BondResponse[]): SummaryCard[] {
     const highestInterest = [...rows].sort((l, r) => compareNullableNumbersDesc(l.interestRate, r.interestRate))[0];
     const highestCompounded = [...rows].sort((l, r) => compareNullableNumbersDesc(l.compoundedRate, r.compoundedRate))[0];
     const shortestMaturity = [...rows].sort((l, r) => compareNullableNumbersAsc(l.maturityDays, r.maturityDays))[0];
+    const noData = i18n.t("market.summaryCards.noData");
 
     return [
         {
-            label: "En yuksek faiz",
+            label: i18n.t("market.summaryCards.highestInterest"),
             value: highestInterest?.interestRate != null ? `%${formatNumber(highestInterest.interestRate, 2)}` : "-",
-            note: highestInterest ? highestInterest.name : "Veri yok",
+            note: highestInterest ? highestInterest.name : noData,
         },
         {
-            label: "En yuksek bileşik",
+            label: i18n.t("market.summaryCards.highestCompound"),
             value: highestCompounded?.compoundedRate != null ? `%${formatNumber(highestCompounded.compoundedRate, 2)}` : "-",
-            note: highestCompounded ? highestCompounded.name : "Veri yok",
+            note: highestCompounded ? highestCompounded.name : noData,
         },
         {
-            label: "En kisa vade",
-            value: shortestMaturity?.maturityDays != null ? `${formatWholeNumber(shortestMaturity.maturityDays)} gun` : "-",
-            note: shortestMaturity ? shortestMaturity.name : "Veri yok",
+            label: i18n.t("market.summaryCards.shortestMaturity"),
+            value: shortestMaturity?.maturityDays != null
+                ? `${formatWholeNumber(shortestMaturity.maturityDays)} ${i18n.t("market.bond.days")}`
+                : "-",
+            note: shortestMaturity ? shortestMaturity.name : noData,
         },
     ];
 }
@@ -327,55 +332,61 @@ export function buildFundMarketCards(rows: FundResponse[]): SummaryCard[] {
     const byInvestors = [...rows].sort((l, r) => compareNullableNumbersDesc(l.investorCount, r.investorCount))[0];
     const averagePrice =
         rows.length > 0 ? rows.reduce((sum, r) => sum + (toSafeNumber(r.price) ?? 0), 0) / rows.length : null;
+    const noData = i18n.t("market.summaryCards.noData");
 
     return [
         {
-            label: "En buyuk portfoy",
+            label: i18n.t("market.summaryCards.largestFund"),
             value: bySize ? formatCompactMoney(bySize.portfolioSize, "TRY") : "-",
-            note: bySize ? `${bySize.code} · ${bySize.name}` : "Veri yok",
+            note: bySize ? `${bySize.code} · ${bySize.name}` : noData,
         },
         {
-            label: "En cok yatirimci",
+            label: i18n.t("market.summaryCards.mostInvestors"),
             value: byInvestors ? formatCompactNumber(byInvestors.investorCount) : "-",
-            note: byInvestors ? `${byInvestors.code} · ${byInvestors.name}` : "Veri yok",
+            note: byInvestors ? `${byInvestors.code} · ${byInvestors.name}` : noData,
         },
         {
-            label: "Ortalama fiyat",
+            label: i18n.t("market.summaryCards.avgPrice"),
             value: averagePrice === null ? "-" : formatMoney(averagePrice, "TRY", 4),
-            note: rows.length > 0 ? `${formatWholeNumber(rows.length)} fon kaydi` : "Veri yok",
+            note: rows.length > 0
+                ? `${formatWholeNumber(rows.length)} ${i18n.t("market.summaryCards.fundUnit")}`
+                : noData,
         },
     ];
 }
 
 export function buildStockMarketCards(rows: StockResponse[]): SummaryCard[] {
+    const noData = i18n.t("market.summaryCards.noData");
+
     if (rows.length === 0) {
         return [
-            { label: "Hisse verisi", value: "Veri yok", note: "Günlük kapanış verisi henüz gelmemiş olabilir." },
-            { label: "Güncelleme", value: "-", note: "Yeni günlük fiyatlar yenileme ile alınır." },
-            { label: "Durum", value: "Bekleniyor", note: "Boş liste backend contract'ına uygun bir durumdur." },
+            { label: i18n.t("market.summaryCards.stockEmpty"), value: noData, note: i18n.t("market.summaryCards.stockWaitingNote") },
+            { label: i18n.t("market.summaryCards.stockUpdate"), value: "-", note: i18n.t("market.summaryCards.stockUpdateNote") },
+            { label: i18n.t("market.summaryCards.stockStatus"), value: i18n.t("market.summaryCards.stockWaiting"), note: i18n.t("market.summaryCards.stockStatusNote") },
         ];
     }
 
     const topGainer = [...rows].sort((l, r) => compareNullableNumbersDesc(l.changePercent, r.changePercent))[0];
     const topVolume = [...rows].sort((l, r) => compareNullableNumbersDesc(l.volume, r.volume))[0];
     const topMarketCap = [...rows].sort((l, r) => compareNullableNumbersDesc(l.marketCap, r.marketCap))[0];
+    const stockLabel = i18n.t("market.stock.label");
 
     return [
         {
-            label: "Gün lideri",
+            label: i18n.t("market.summaryCards.dayLeader"),
             value: formatPercent(topGainer?.changePercent),
-            note: topGainer ? `${topGainer.symbol} · ${formatMoney(topGainer.price, topGainer.currency ?? "TRY")}` : "Veri yok",
+            note: topGainer ? `${topGainer.symbol} · ${formatMoney(topGainer.price, topGainer.currency ?? "TRY")}` : noData,
             tone: toSafeNumber(topGainer?.changePercent) !== null && (topGainer?.changePercent ?? 0) < 0 ? "down" : "up",
         },
         {
-            label: "En yuksek hacim",
+            label: i18n.t("market.summaryCards.highestVolume"),
             value: topVolume ? formatCompactNumber(topVolume.volume) : "-",
-            note: topVolume ? `${topVolume.symbol} · ${topVolume.shortName ?? topVolume.longName ?? "Hisse"}` : "Veri yok",
+            note: topVolume ? `${topVolume.symbol} · ${topVolume.shortName ?? topVolume.longName ?? stockLabel}` : noData,
         },
         {
-            label: "Piyasa değeri lideri",
+            label: i18n.t("market.summaryCards.highestMarketCap"),
             value: topMarketCap ? formatCompactMoney(topMarketCap.marketCap, topMarketCap.currency ?? "TRY") : "-",
-            note: topMarketCap ? `${topMarketCap.symbol} · ${topMarketCap.indexName ?? "BIST"}` : "Veri yok",
+            note: topMarketCap ? `${topMarketCap.symbol} · ${topMarketCap.indexName ?? "BIST"}` : noData,
         },
     ];
 }
@@ -397,23 +408,26 @@ export function buildMacroMarketCards(inflationRows: MacroObservationResponse[],
     const latestInflation = getLatestBySeries(inflationRows).sort((l, r) => compareNullableDatesAsc(r.date, l.date))[0];
     const latestDeposits = getLatestBySeries(depositRows);
     const highestDeposit = [...latestDeposits].sort((l, r) => compareNullableNumbersDesc(l.value, r.value))[0];
+    const noData = i18n.t("market.summaryCards.noData");
 
     return [
         {
-            label: "Son TÜFE",
+            label: i18n.t("market.summaryCards.latestInflation"),
             value: latestInflation?.value != null ? formatNumber(latestInflation.value, 2) : "-",
-            note: latestInflation ? `${formatLocalDate(latestInflation.date)} · ${latestInflation.unit ?? "Endeks"}` : "Veri yok",
+            note: latestInflation
+                ? `${formatLocalDate(latestInflation.date)} · ${latestInflation.unit ?? i18n.t("market.summaryCards.inflationUnit")}`
+                : noData,
         },
         {
-            label: "Yıllık değişim",
+            label: i18n.t("market.summaryCards.annualChange"),
             value: formatPercent(latestInflation?.annualChangePercent),
-            note: latestInflation?.name ?? "TÜFE serisi",
+            note: latestInflation?.name ?? i18n.t("market.summaryCards.inflationSeriesFallback"),
             tone: toSafeNumber(latestInflation?.annualChangePercent) !== null && (latestInflation?.annualChangePercent ?? 0) < 0 ? "down" : "up",
         },
         {
-            label: "En yüksek TL mevduat",
+            label: i18n.t("market.summaryCards.highestDeposit"),
             value: highestDeposit?.value != null ? `%${formatNumber(highestDeposit.value, 2)}` : "-",
-            note: highestDeposit ? `${highestDeposit.name} · ${formatLocalDate(highestDeposit.date)}` : "Veri yok",
+            note: highestDeposit ? `${highestDeposit.name} · ${formatLocalDate(highestDeposit.date)}` : noData,
         },
     ];
 }
@@ -421,22 +435,23 @@ export function buildMacroMarketCards(inflationRows: MacroObservationResponse[],
 export function buildViopMarketCards(rows: ViopContractPriceResponse[]): SummaryCard[] {
     const highestVolume = [...rows].sort((l, r) => compareNullableNumbersDesc(l.volumeTry, r.volumeTry))[0];
     const strongest = [...rows].sort((l, r) => compareNullableNumbersDesc(l.changePercent, r.changePercent))[0];
+    const noData = i18n.t("market.summaryCards.noData");
 
     return [
         {
-            label: "Kontrat sayısı",
+            label: i18n.t("market.summaryCards.contractCount"),
             value: formatWholeNumber(rows.length),
-            note: rows.length > 0 ? "Son 7 günlük varsayılan aralık" : "Veri yok",
+            note: rows.length > 0 ? i18n.t("market.summaryCards.viopDefault") : noData,
         },
         {
-            label: "En yüksek hacim",
+            label: i18n.t("market.summaryCards.highestVolume"),
             value: highestVolume ? formatCompactMoney(highestVolume.volumeTry, "TRY") : "-",
-            note: highestVolume?.contractName ?? "Veri yok",
+            note: highestVolume?.contractName ?? noData,
         },
         {
-            label: "En güçlü değişim",
+            label: i18n.t("market.summaryCards.strongestChange"),
             value: formatPercent(strongest?.changePercent),
-            note: strongest?.contractName ?? "Veri yok",
+            note: strongest?.contractName ?? noData,
             tone: toSafeNumber(strongest?.changePercent) !== null && (strongest?.changePercent ?? 0) < 0 ? "down" : "up",
         },
     ];

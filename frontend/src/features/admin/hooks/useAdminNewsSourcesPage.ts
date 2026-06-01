@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useToast } from "../../../components/ToastContext";
+import i18n from "../../../i18n";
 import {
     createAdminNewsSource,
     deleteAdminNewsSource,
@@ -22,10 +23,10 @@ export type SourceDialogState =
 
 export function sourceAuditTitle(item: AuditLogItem) {
     const titles: Record<string, string> = {
-        SOURCE_CREATED: "Kaynak oluşturuldu",
-        SOURCE_UPDATED: "Kaynak güncellendi",
-        SOURCE_DELETED: "Kaynak silindi",
-        NEWS_FETCH_TRIGGERED: "Haber çekimi tetiklendi",
+        SOURCE_CREATED: i18n.t("admin.sources.created"),
+        SOURCE_UPDATED: i18n.t("admin.sources.updated"),
+        SOURCE_DELETED: i18n.t("admin.sources.deleted"),
+        NEWS_FETCH_TRIGGERED: i18n.t("admin.sources.fetchTriggered"),
     };
     return titles[item.action] ?? item.action;
 }
@@ -51,16 +52,16 @@ export function useAdminNewsSourcesPage() {
         try {
             if (dialog?.type === "edit") {
                 await updateAdminNewsSource(dialog.source.id, payload);
-                showToast("RSS kaynağı güncellendi.", "success");
+                showToast(i18n.t("admin.sources.updated"), "success");
             } else {
                 await createAdminNewsSource(payload);
-                showToast("RSS kaynağı oluşturuldu.", "success");
+                showToast(i18n.t("admin.sources.created"), "success");
             }
             invalidateAdminQuery({ scope: "news-sources" });
             invalidateAdminQuery({ scope: "news-audit" });
             closeDialog();
         } catch (caughtError) {
-            showToast(resolveAdminError(caughtError, "RSS kaynağı kaydedilemedi."), "error");
+            showToast(resolveAdminError(caughtError, i18n.t("admin.sources.saveError")), "error");
         } finally {
             setPendingAction(null);
         }
@@ -70,12 +71,12 @@ export function useAdminNewsSourcesPage() {
         setPendingAction(`delete-${source.id}`);
         try {
             await deleteAdminNewsSource(source.id);
-            showToast("RSS kaynağı silindi.", "success");
+            showToast(i18n.t("admin.sources.deleted"), "success");
             invalidateAdminQuery({ scope: "news-sources" });
             invalidateAdminQuery({ scope: "news-audit" });
             closeDialog();
         } catch (caughtError) {
-            showToast(resolveAdminError(caughtError, "RSS kaynağı silinemedi."), "error");
+            showToast(resolveAdminError(caughtError, i18n.t("admin.sources.deleteError")), "error");
         } finally {
             setPendingAction(null);
         }
@@ -89,7 +90,7 @@ export function useAdminNewsSourcesPage() {
             showToast(response.message, response.status === "ALREADY_RUNNING" ? "info" : "success");
             invalidateAdminQuery({ scope: "news-audit" });
         } catch (caughtError) {
-            showToast(resolveAdminError(caughtError, "Haber çekimi başlatılamadı."), "error");
+            showToast(resolveAdminError(caughtError, i18n.t("admin.sources.fetchError")), "error");
         } finally {
             setPendingAction(null);
         }

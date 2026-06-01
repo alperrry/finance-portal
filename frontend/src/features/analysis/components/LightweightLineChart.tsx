@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useUiPreferences } from "../../../app/providers/UiPreferencesContext";
 import {
     ColorType,
     CrosshairMode,
@@ -60,8 +62,6 @@ type LineTooltipState = {
     rows: TooltipRow[];
 };
 
-const AXIS_COLOR = "rgba(17, 17, 17, 0.52)";
-const GRID_COLOR = "rgba(17, 17, 17, 0.07)";
 const CROSSHAIR_COLOR = "rgba(193, 98, 47, 0.42)";
 
 function toSafeNumber(value: number | null | undefined) {
@@ -137,6 +137,12 @@ export function AnalysisLineChart({
     valueFormatter,
     volumeFormatter = formatCompactNumber,
 }: AnalysisLineChartProps) {
+    const { t } = useTranslation();
+    const { resolvedTheme } = useUiPreferences();
+    const isDark = resolvedTheme === "dark";
+    const GRID_COLOR = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(17, 17, 17, 0.07)";
+    const AXIS_COLOR = isDark ? "rgba(255, 255, 255, 0.52)" : "rgba(17, 17, 17, 0.52)";
+
     const frameRef = useRef<HTMLDivElement | null>(null);
     const chartRef = useRef<HTMLDivElement | null>(null);
     const [tooltip, setTooltip] = useState<LineTooltipState | null>(null);
@@ -350,12 +356,12 @@ export function AnalysisLineChart({
             }
             setTooltip(null);
         };
-    }, [dates, domainValues.length, fixedDomain, formatTooltipValue, preparedSeries, referenceLines, series, yFormatter]);
+    }, [dates, domainValues.length, fixedDomain, formatTooltipValue, preparedSeries, referenceLines, series, yFormatter, resolvedTheme]);
 
     if (domainValues.length === 0) {
         return (
             <div className="analysis-chart-empty">
-                <strong>Grafik hazır değil</strong>
+                <strong>{t("analysis.chart.notReady")}</strong>
                 <span>{emptyLabel}</span>
             </div>
         );

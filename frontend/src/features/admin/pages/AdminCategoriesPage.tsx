@@ -1,4 +1,5 @@
 import { Box } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { AdminAuditPanel } from "../components/AdminAuditPanel";
 import { AdminCategoriesPanel } from "../components/AdminCategoriesPanel";
 import { AdminCategoryDialog } from "../components/AdminCategoryDialog";
@@ -9,6 +10,7 @@ import {
 } from "../hooks/useAdminCategoriesPage";
 
 export function AdminCategoriesPage() {
+    const { t } = useTranslation();
     const { categories, categoriesQuery, auditTrail, search, dialogs, handlers, pending } =
         useAdminCategoriesPage();
 
@@ -28,7 +30,7 @@ export function AdminCategoriesPage() {
             />
 
             <AdminAuditPanel
-                title="Kategori audit geçmişi"
+                title={t("admin.categories.audit")}
                 loading={auditTrail.loading}
                 error={auditTrail.error}
                 items={auditTrail.data}

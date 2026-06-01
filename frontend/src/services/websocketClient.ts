@@ -1,6 +1,7 @@
 import { Client, type IMessage, type StompSubscription } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { API_BASE } from "./api/client";
+import i18n from "../i18n";
 
 export type WebSocketEventType =
     | "TRADE_APPROVED"
@@ -93,17 +94,17 @@ class PortfolioWebSocketClient {
                 this.resubscribeAll();
 
                 if (reconnected) {
-                    emitToast("Bağlantı yeniden kuruldu", "success");
+                    emitToast(i18n.t("common.wsReconnected"), "success");
                 }
                 emitConnected(reconnected);
             },
             onWebSocketClose: () => {
                 if (!this.connectedOnce || this.reconnecting) return;
                 this.reconnecting = true;
-                emitToast("Bağlantı kesildi, yeniden bağlanılıyor...", "info");
+                emitToast(i18n.t("common.wsDisconnected"), "info");
             },
             onStompError: () => {
-                emitToast("WebSocket oturumu doğrulanamadı.", "error");
+                emitToast(i18n.t("common.wsAuthFailed"), "error");
             },
         });
 
@@ -169,7 +170,7 @@ class PortfolioWebSocketClient {
                 const envelope = JSON.parse(message.body) as WebSocketEnvelope<unknown>;
                 subscription.handler(envelope);
             } catch {
-                emitToast("WebSocket mesajı okunamadı.", "error");
+                emitToast(i18n.t("common.wsMessageFailed"), "error");
             }
         });
     }

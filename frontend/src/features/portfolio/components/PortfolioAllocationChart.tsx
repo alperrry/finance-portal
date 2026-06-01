@@ -1,5 +1,6 @@
 import { Box, Paper, Stack, Typography } from "@mui/material";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { PortfolioItemResponse } from "../api/portfolioApi";
 import { buildAllocationData, formatMoney, formatPercent, formatQuantity } from "../utils/portfolioFormatters";
@@ -56,6 +57,7 @@ type Props = {
 
 // 2. PASTA GRAFİK BİLEŞENİ
 export function PortfolioAllocationChart({ items, displayCurrency }: Props) {
+    const { t } = useTranslation();
     const data = useMemo(() => buildAllocationData(items ?? []), [items]);
     const total = data.reduce((sum, item) => sum + item.value, 0);
     const [activeSegment, setActiveSegment] = useState<number | null>(null);
@@ -63,7 +65,7 @@ export function PortfolioAllocationChart({ items, displayCurrency }: Props) {
     if (data.length === 0) {
         return (
             <Stack sx={{ alignItems: "center", py: 2, gap: 1 }}>
-                <Typography variant="body2" color="text.secondary">Değer bilgisi olan pozisyon bulunamadı.</Typography>
+                <Typography variant="body2" color="text.secondary">{t("portfolio.allocation.noData")}</Typography>
             </Stack>
         );
     }
@@ -104,7 +106,7 @@ export function PortfolioAllocationChart({ items, displayCurrency }: Props) {
             {/* DEĞERLEME ALT TARAFA TAŞINDI (Jilet gibi bir özet alanı) */}
             <Box sx={{ textAlign: "center", mt: -2, bgcolor: "background.default", py: 1, px: 3, borderRadius: 2 }}>
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
-                    TOPLAM PORTFÖY DEĞERİ
+                    {t("portfolio.allocation.totalValue")}
                 </Typography>
                 <Typography variant="h6" sx={{ fontWeight: 900, color: "text.primary" }}>
                     {formatMoney(total, displayCurrency)}

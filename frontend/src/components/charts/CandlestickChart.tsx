@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useTranslation } from "react-i18next";
+import { useUiPreferences } from "../../app/providers/UiPreferencesContext";
 import {
     CandlestickSeries,
     ColorType,
@@ -136,8 +138,6 @@ type CandlestickChartProps = {
 
 const UP_COLOR = "#5bb870";
 const DOWN_COLOR = "#e05858";
-const GRID_COLOR = "rgba(17, 17, 17, 0.07)";
-const AXIS_COLOR = "rgba(17, 17, 17, 0.46)";
 const CROSSHAIR_COLOR = "rgba(193, 98, 47, 0.42)";
 const EMPTY_TOOLTIP: TooltipState = { visible: false, x: 0, y: 0, point: null, indicators: [] };
 const DEFAULT_DRAWING_COLORS: Record<DrawingType, string> = {
@@ -276,6 +276,12 @@ export function CandlestickChart({
     volumeFormatter = formatPlainVolume,
     className,
 }: CandlestickChartProps) {
+    const { resolvedTheme } = useUiPreferences();
+    const { t } = useTranslation();
+    const isDark = resolvedTheme === "dark";
+    const GRID_COLOR = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(17, 17, 17, 0.07)";
+    const AXIS_COLOR = isDark ? "rgba(255, 255, 255, 0.52)" : "rgba(17, 17, 17, 0.46)";
+
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [tooltip, setTooltip] = useState<TooltipState>(EMPTY_TOOLTIP);
     const [drawingOverlayShapes, setDrawingOverlayShapes] = useState<DrawingOverlayShape[]>([]);
@@ -869,12 +875,13 @@ export function CandlestickChart({
         scheduleTooltip,
         tooltipIndicators,
         valueFormatter,
+        resolvedTheme,
     ]);
 
     if (preparedData.length === 0) {
         return (
             <div className="analysis-chart-empty">
-                <strong>Gösterilecek mum verisi yok</strong>
+                <strong>{t("candlestick.noData")}</strong>
                 <span>{emptyLabel}</span>
             </div>
         );
@@ -947,25 +954,25 @@ export function CandlestickChart({
                     >
                         <strong>{formatFullDateLabel(tooltip.point.date)}</strong>
                         <span>
-                            <b>Açılış (O)</b>
+                            <b>{t("candlestick.open")}</b>
                             <em>{valueFormatter(tooltip.point.open)}</em>
                         </span>
                         <span>
-                            <b>Yüksek (H)</b>
+                            <b>{t("candlestick.high")}</b>
                             <em>{valueFormatter(tooltip.point.high)}</em>
                         </span>
                         <span>
-                            <b>Düşük (L)</b>
+                            <b>{t("candlestick.low")}</b>
                             <em>{valueFormatter(tooltip.point.low)}</em>
                         </span>
                         <span>
-                            <b>Kapanış (C)</b>
+                            <b>{t("candlestick.close")}</b>
                             <em className={tooltip.point.close >= tooltip.point.open ? "up" : "down"}>
                                 {valueFormatter(tooltip.point.close)}
                             </em>
                         </span>
                         <span>
-                            <b>Hacim</b>
+                            <b>{t("candlestick.volume")}</b>
                             <em>{volumeFormatter(tooltip.point.volume ?? 0)}</em>
                         </span>
                         {tooltip.indicators.length > 0 ? <i className="analysis-tooltip-divider" /> : null}

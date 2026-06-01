@@ -19,6 +19,7 @@ import {
     Typography,
 } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material/Select";
+import { useTranslation } from "react-i18next";
 import type { ManualPositionRequest, PortfolioInstrumentType, PortfolioResponse, PositionDirection, PositionKind } from "../api/portfolioApi";
 import { formatMoney, formatSignedMoney } from "../utils/portfolioFormatters";
 import { useNewTradeForm } from "../hooks/useNewTradeForm";
@@ -32,6 +33,7 @@ type Props = {
 };
 
 export function NewTradeModal({ portfolio, busy, serverError, onClose, onSubmit }: Props) {
+    const { t } = useTranslation();
     const {
         positionKind, setPositionKind,
         instrumentType, setInstrumentType,
@@ -68,9 +70,9 @@ export function NewTradeModal({ portfolio, busy, serverError, onClose, onSubmit 
     const hasSentinel = !isDeposit && options.some(o => o.id === -1);
 
     const entryPriceLabel =
-        instrumentType === "CURRENCY" ? "Alış Kuru" :
-        instrumentType === "VIOP"     ? "Kontrat Fiyatı (TL)" :
-                                        "Alış Fiyatı (TL)";
+        instrumentType === "CURRENCY" ? t("portfolio.newTrade.buyRate") :
+        instrumentType === "VIOP"     ? t("portfolio.newTrade.contractPrice") :
+                                        t("portfolio.newTrade.buyPrice");
 
     const totalCost = (() => {
         const qty = Number(quantity);
@@ -114,36 +116,36 @@ export function NewTradeModal({ portfolio, busy, serverError, onClose, onSubmit 
 
                         {/* Bölüm 2: Enstrüman Tipi */}
                         <FormControl size="small" fullWidth>
-                            <InputLabel id="instrument-type-label">Enstrüman Tipi</InputLabel>
+                            <InputLabel id="instrument-type-label">{t("portfolio.newTrade.instrumentType")}</InputLabel>
                             <Select
                                 labelId="instrument-type-label"
                                 value={instrumentType}
-                                label="Enstrüman Tipi"
+                                label={t("portfolio.newTrade.instrumentType")}
                                 onChange={(e: SelectChangeEvent) => setInstrumentType(e.target.value as PortfolioInstrumentType)}
                             >
-                                <MenuItem value="STOCK">Hisse</MenuItem>
-                                <MenuItem value="FUND">Fon</MenuItem>
-                                <MenuItem value="CURRENCY">Döviz</MenuItem>
-                                <MenuItem value="BOND">Tahvil</MenuItem>
-                                <MenuItem value="VIOP">VİOP</MenuItem>
-                                <MenuItem value="DEPOSIT">Vadeli Mevduat</MenuItem>
+                                <MenuItem value="STOCK">{t("portfolio.types.stock")}</MenuItem>
+                                <MenuItem value="FUND">{t("portfolio.types.fund")}</MenuItem>
+                                <MenuItem value="CURRENCY">{t("portfolio.types.currency")}</MenuItem>
+                                <MenuItem value="BOND">{t("portfolio.types.bond")}</MenuItem>
+                                <MenuItem value="VIOP">{t("portfolio.types.viop")}</MenuItem>
+                                <MenuItem value="DEPOSIT">{t("portfolio.types.deposit")}</MenuItem>
                             </Select>
                         </FormControl>
 
                         {/* Enstrüman dropdown — DEPOSIT dışı tipler için */}
                         {!isDeposit && (
                             <FormControl size="small" fullWidth>
-                                <InputLabel id="instrument-label">Enstrüman</InputLabel>
+                                <InputLabel id="instrument-label">{t("portfolio.newTrade.instrument")}</InputLabel>
                                 <Select
                                     labelId="instrument-label"
                                     value={instrumentId}
-                                    label="Enstrüman"
+                                    label={t("portfolio.newTrade.instrument")}
                                     disabled={optionsLoading || options.length === 0}
                                     onChange={(e: SelectChangeEvent) => setInstrumentId(e.target.value)}
                                     startAdornment={optionsLoading ? <CircularProgress size={14} sx={{ mr: 1 }} /> : undefined}
                                 >
                                     <MenuItem value="" disabled>
-                                        {optionsLoading ? "Yükleniyor..." : "Seçiniz"}
+                                        {optionsLoading ? t("portfolio.newTrade.loading") : t("portfolio.newTrade.select")}
                                     </MenuItem>
                                     {realOptions.map((option) => (
                                         <MenuItem key={`${option.type}-${option.id}`} value={String(option.id)}>
@@ -171,7 +173,7 @@ export function NewTradeModal({ portfolio, busy, serverError, onClose, onSubmit 
                                     sx={{ flex: 0.4 }}
                                 />
                                 <TextField
-                                    label="Enstrüman Adı"
+                                    label={t("portfolio.newTrade.instrumentName")}
                                     value={instrumentNameManual}
                                     onChange={(e) => setInstrumentNameManual(e.target.value)}
                                     size="small"
@@ -184,14 +186,14 @@ export function NewTradeModal({ portfolio, busy, serverError, onClose, onSubmit 
                         {isDeposit && (
                             <>
                                 <TextField
-                                    label="Banka / Kurum Adı"
+                                    label={t("portfolio.newTrade.bank")}
                                     value={bankName}
                                     onChange={(e) => setBankName(e.target.value)}
                                     size="small"
                                     fullWidth
                                 />
                                 <TextField
-                                    label="Faiz Oranı (%)"
+                                    label={t("portfolio.newTrade.interestRate")}
                                     type="number"
                                     value={interestRate}
                                     onChange={(e) => setInterestRate(e.target.value)}
@@ -227,7 +229,7 @@ export function NewTradeModal({ portfolio, busy, serverError, onClose, onSubmit 
                                         </ToggleButtonGroup>
                                     </Box>
                                     <TextField
-                                        label="Kontrat Çarpanı"
+                                        label={t("portfolio.newTrade.contractMultiplier")}
                                         type="number"
                                         value={contractMultiplier}
                                         onChange={(e) => setContractMultiplier(e.target.value)}
@@ -263,7 +265,7 @@ export function NewTradeModal({ portfolio, busy, serverError, onClose, onSubmit 
                                 )}
                                 {(isManualEntry || selectedOption) && (
                                     <TextField
-                                        label="Dayanak Enstrüman"
+                                        label={t("portfolio.newTrade.underlying")}
                                         value={isManualEntry ? underlyingSymbolInput : (selectedOption?.name ?? "")}
                                         onChange={isManualEntry ? (e) => setUnderlyingSymbolInput(e.target.value) : undefined}
                                         slotProps={{ input: { readOnly: !isManualEntry } }}
@@ -278,7 +280,7 @@ export function NewTradeModal({ portfolio, busy, serverError, onClose, onSubmit 
                         {isBond && (
                             <Stack direction="row" sx={{ gap: 1 }}>
                                 <TextField
-                                    label="Faiz Oranı (%)"
+                                    label={t("portfolio.newTrade.interestRate")}
                                     type="number"
                                     value={interestRate}
                                     onChange={(e) => setInterestRate(e.target.value)}
@@ -333,7 +335,7 @@ export function NewTradeModal({ portfolio, busy, serverError, onClose, onSubmit 
                         )}
 
                         <TextField
-                            label="Alım Tarihi"
+                            label={t("portfolio.newTrade.buyDate")}
                             type="date"
                             value={entryDate}
                             onChange={(e) => setEntryDate(e.target.value)}
@@ -345,7 +347,7 @@ export function NewTradeModal({ portfolio, busy, serverError, onClose, onSubmit 
                         {isClosed && (
                             <Stack direction="row" sx={{ gap: 1 }}>
                                 <TextField
-                                    label="Satış Fiyatı (TL)"
+                                    label={t("portfolio.newTrade.sellPrice")}
                                     type="number"
                                     value={exitPrice}
                                     onChange={(e) => setExitPrice(e.target.value)}
@@ -354,7 +356,7 @@ export function NewTradeModal({ portfolio, busy, serverError, onClose, onSubmit 
                                     fullWidth
                                 />
                                 <TextField
-                                    label="Satım Tarihi"
+                                    label={t("portfolio.newTrade.sellDate")}
                                     type="date"
                                     value={exitDate}
                                     onChange={(e) => setExitDate(e.target.value)}
@@ -425,7 +427,7 @@ export function NewTradeModal({ portfolio, busy, serverError, onClose, onSubmit 
             </DialogContent>
 
             <DialogActions>
-                <Button onClick={onClose}>İptal</Button>
+                <Button onClick={onClose}>{t("portfolio.deleteModal.cancel")}</Button>
                 <Button
                     type="submit"
                     form="position-form"
@@ -434,7 +436,7 @@ export function NewTradeModal({ portfolio, busy, serverError, onClose, onSubmit 
                     disabled={busy || optionsLoading}
                     startIcon={busy ? <CircularProgress size={14} color="inherit" /> : undefined}
                 >
-                    {busy ? "Kaydediliyor..." : "Pozisyon Kaydet"}
+                    {busy ? t("portfolio.form.saving") : "Pozisyon Kaydet"}
                 </Button>
             </DialogActions>
         </Dialog>

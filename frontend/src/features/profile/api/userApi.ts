@@ -1,4 +1,5 @@
 import { apiFetch } from "../../../services/api/client";
+import i18n from "../../../i18n";
 
 type ApiResponse<T> = {
     success: boolean;
@@ -41,7 +42,7 @@ async function readUserResponse(response: Response, fallbackMessage: string): Pr
     const raw = (await response.json()) as ApiResponse<UserResponse>;
 
     if (raw?.success !== true || !raw.data) {
-        throw new Error(`${fallbackMessage} Geçersiz API cevabı alındı.`);
+        throw new Error(`${fallbackMessage} ${i18n.t("profile.errors.invalidApiResponse")}`);
     }
 
     return raw.data;
@@ -51,39 +52,42 @@ async function readSecurityStatusResponse(response: Response, fallbackMessage: s
     const raw = (await response.json()) as ApiResponse<SecurityStatusResponse>;
 
     if (raw?.success !== true || !raw.data) {
-        throw new Error(`${fallbackMessage} Geçersiz API cevabı alındı.`);
+        throw new Error(`${fallbackMessage} ${i18n.t("profile.errors.invalidApiResponse")}`);
     }
 
     return raw.data;
 }
 
 export async function fetchCurrentUser(): Promise<UserResponse> {
+    const msg = i18n.t("profile.errors.profileLoadFailed");
     const response = await apiFetch("/api/v1/users/me", {
-        errorMessage: "Profil bilgileri yüklenemedi.",
+        errorMessage: msg,
     });
 
-    return readUserResponse(response, "Profil bilgileri yüklenemedi.");
+    return readUserResponse(response, msg);
 }
 
 export async function updateCurrentUser(data: UpdateUserRequest): Promise<UserResponse> {
+    const msg = i18n.t("profile.errors.profileUpdateFailed");
     const response = await apiFetch("/api/v1/users/me", {
         method: "PUT",
         headers: {
             "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
-        errorMessage: "Profil güncellenemedi.",
+        errorMessage: msg,
     });
 
-    return readUserResponse(response, "Profil güncellenemedi.");
+    return readUserResponse(response, msg);
 }
 
 export async function fetchSecurityStatus(): Promise<SecurityStatusResponse> {
+    const msg = i18n.t("profile.errors.securityLoadFailed");
     const response = await apiFetch("/api/v1/users/me/security", {
-        errorMessage: "Güvenlik bilgileri yüklenemedi.",
+        errorMessage: msg,
     });
 
-    return readSecurityStatusResponse(response, "Güvenlik bilgileri yüklenemedi.");
+    return readSecurityStatusResponse(response, msg);
 }
 
 export async function changeCurrentUserPassword(newPassword: string): Promise<void> {
@@ -93,41 +97,44 @@ export async function changeCurrentUserPassword(newPassword: string): Promise<vo
             "Content-Type": "application/json",
         },
         body: JSON.stringify({ newPassword }),
-        errorMessage: "Şifre güncellenemedi.",
+        errorMessage: i18n.t("profile.errors.passwordUpdateFailed"),
     });
 }
 
 export async function setupOtp(): Promise<OtpSetupResponse> {
+    const msg = i18n.t("profile.errors.otpSetupFailed");
     const response = await apiFetch("/api/v1/users/me/security/otp/setup", {
         method: "POST",
-        errorMessage: "TOTP kurulumu baslatılamadı.",
+        errorMessage: msg,
     });
 
     const raw = (await response.json()) as ApiResponse<OtpSetupResponse>;
     if (raw?.success !== true || !raw.data) {
-        throw new Error("TOTP kurulumu baslatılamadı. Geçersiz API cevabı alındı.");
+        throw new Error(`${msg} ${i18n.t("profile.errors.invalidApiResponse")}`);
     }
     return raw.data;
 }
 
 export async function verifyOtp(code: string): Promise<SecurityStatusResponse> {
+    const msg = i18n.t("profile.errors.otpVerifyFailed");
     const response = await apiFetch("/api/v1/users/me/security/otp/verify", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
         body: JSON.stringify({ code }),
-        errorMessage: "Kod dogrulanamadı.",
+        errorMessage: msg,
     });
 
-    return readSecurityStatusResponse(response, "Kod dogrulanamadı.");
+    return readSecurityStatusResponse(response, msg);
 }
 
 export async function deleteOtpCredential(credentialId: string): Promise<SecurityStatusResponse> {
+    const msg = i18n.t("profile.errors.otpDeleteFailed");
     const response = await apiFetch(`/api/v1/users/me/security/otp/${encodeURIComponent(credentialId)}`, {
         method: "DELETE",
-        errorMessage: "İki aşamalı doğrulama kaldırılamadı.",
+        errorMessage: msg,
     });
 
-    return readSecurityStatusResponse(response, "İki aşamalı doğrulama kaldırılamadı.");
+    return readSecurityStatusResponse(response, msg);
 }

@@ -1,6 +1,6 @@
 import type { FxResponse } from "../../market/api/marketApi";
 import type { DisplayCurrency, ManualPositionResponse, PortfolioInstrumentType, PortfolioItemResponse } from "../api/portfolioApi";
-import { CHART_PALETTE, INSTRUMENT_LABELS, TYPE_COLORS, type FxRateMap } from "../types";
+import { CHART_PALETTE, getInstrumentLabels, TYPE_COLORS, type FxRateMap } from "../types";
 
 export function toNumber(value: number | null | undefined): number | null {
     return typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -148,7 +148,7 @@ export function buildTypeGroupData(positions: ManualPositionResponse[]): TypeGro
         if (!map.has(type)) {
             map.set(type, {
                 type,
-                label: INSTRUMENT_LABELS[type],
+                label: getInstrumentLabels()[type],
                 value: 0,
                 fill: TYPE_COLORS[type],
                 totalPnl: null,
@@ -166,7 +166,7 @@ export function buildTypeGroupData(positions: ManualPositionResponse[]): TypeGro
 
         entry.positions.push({
             id: pos.id,
-            name: pos.instrumentSymbol || pos.instrumentName || `${INSTRUMENT_LABELS[type]} #${pos.id}`,
+            name: pos.instrumentSymbol || pos.instrumentName || `${getInstrumentLabels()[type]} #${pos.id}`,
             value,
             fill: TYPE_COLORS[type],
         });
@@ -189,7 +189,7 @@ export function buildAllocationData(items: PortfolioItemResponse[]): Array<{ id:
     return items
         .map((item, index) => ({
             id: item.id,
-            name: item.instrumentSymbol || `${INSTRUMENT_LABELS[item.instrumentType]} #${item.instrumentId}`,
+            name: item.instrumentSymbol || `${getInstrumentLabels()[item.instrumentType]} #${item.instrumentId}`,
             quantity: item.quantity,
             type: item.instrumentType,
             value: toNumber(item.currentValue) ?? 0,

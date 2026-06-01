@@ -1,4 +1,5 @@
 import { Box, Button, Card, CardActions, CardContent, CardMedia, Chip, Stack, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { Link as RouterLink } from "react-router-dom";
 import type { NewsItem } from "../api/newsApi";
 import { buildDynamicTags, createExcerpt, formatDate } from "../utils/newsFormatters";
@@ -6,6 +7,7 @@ import { buildDynamicTags, createExcerpt, formatDate } from "../utils/newsFormat
 type Props = { news: NewsItem };
 
 export function NewsCard({ news }: Props) {
+    const { t } = useTranslation();
     const tags = buildDynamicTags(news);
 
     return (
@@ -25,7 +27,7 @@ export function NewsCard({ news }: Props) {
             <CardContent sx={{ flexGrow: 1 }}>
                 <Stack direction="row" sx={{ justifyContent: "space-between", mb: 1 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
-                        {news.source?.name ?? "Bilinmeyen Kaynak"}
+                        {news.source?.name ?? t("news.card.unknownSource")}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                         {formatDate(news.publishedAt)}
@@ -47,11 +49,11 @@ export function NewsCard({ news }: Props) {
             </CardContent>
             <CardActions sx={{ px: 2, pb: 2, gap: 1 }}>
                 <Button component={RouterLink} to={`/news/${news.id}`} variant="contained" color="secondary" size="small">
-                    Detayı Aç
+                    {t("news.card.openDetail")}
                 </Button>
                 {news.canonicalUrl ? (
                     <Button href={news.canonicalUrl} target="_blank" rel="noopener noreferrer" variant="outlined" size="small">
-                        Kaynak
+                        {t("news.card.source")}
                     </Button>
                 ) : null}
             </CardActions>

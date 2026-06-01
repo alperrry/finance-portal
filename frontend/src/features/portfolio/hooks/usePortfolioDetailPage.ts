@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../app/auth/AuthContext";
 import { useToast } from "../../../components/ToastContext";
 import { useTradeNotifications } from "../../../hooks/useTradeNotifications";
@@ -35,6 +36,7 @@ type SimulationTarget = {
 export function usePortfolioDetailPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { token } = useAuth();
     const { showToast } = useToast();
     const portfolioId = Number(id);
@@ -70,7 +72,7 @@ export function usePortfolioDetailPage() {
 
     useEffect(() => {
         if (!validPortfolioId) {
-            setDetailState({ loading: false, error: "Geçersiz portföy ID.", data: null });
+            setDetailState({ loading: false, error: t("portfolio.errors.invalidId"), data: null });
             return undefined;
         }
         let active = true;
@@ -80,7 +82,7 @@ export function usePortfolioDetailPage() {
                 if (active) setDetailState({ loading: false, error: null, data });
             })
             .catch((caughtError) => {
-                if (active) setDetailState({ loading: false, error: resolveApiError(caughtError, "Portföy detayı yüklenemedi."), data: null });
+                if (active) setDetailState({ loading: false, error: resolveApiError(caughtError, t("portfolio.errors.detailFailed")), data: null });
             });
         return () => { active = false; };
     }, [detailReloadToken, validPortfolioId]);
@@ -106,7 +108,7 @@ export function usePortfolioDetailPage() {
                 setClosedPositions(closedPage.content);
             })
             .catch((caughtError) => {
-                if (active) setPositionsError(resolveApiError(caughtError, "Pozisyonlar yüklenemedi."));
+                if (active) setPositionsError(resolveApiError(caughtError, t("portfolio.errors.positionsFailed")));
             })
             .finally(() => {
                 if (active) setPositionsLoading(false);
@@ -136,11 +138,11 @@ export function usePortfolioDetailPage() {
         setFormError(null);
         try {
             await updatePortfolio(formState.portfolio.id, { name: payload.name });
-            showToast("Portföy güncellendi.", "success");
+            showToast(t("portfolio.errors.updated"), "success");
             setFormState(null);
             refreshPortfolio(formState.portfolio.id);
         } catch (caughtError) {
-            setFormError(resolveApiError(caughtError, "Portföy kaydedilemedi."));
+            setFormError(resolveApiError(caughtError, t("portfolio.errors.saveFailed")));
         } finally {
             setFormBusy(false);
         }
@@ -152,14 +154,14 @@ export function usePortfolioDetailPage() {
         setDeleteError(null);
         try {
             await deletePortfolio(deleteTarget.id);
-            showToast("Portföy silindi.", "success");
+            showToast(t("portfolio.errors.deleted"), "success");
             setDeleteTarget(null);
             navigate("/portfolios");
         } catch (caughtError) {
             const message =
                 caughtError instanceof ApiError && caughtError.status === 409
-                    ? "Bu portföyde pozisyon var. Önce pozisyonları kapatman gerekir."
-                    : resolveApiError(caughtError, "Portföy silinemedi.");
+                    ? t("portfolio.errors.hasPositions")
+                    : resolveApiError(caughtError, t("portfolio.errors.deleteFailed"));
             setDeleteError(message);
         } finally {
             setDeleteBusy(false);
@@ -173,10 +175,10 @@ export function usePortfolioDetailPage() {
         try {
             await createManualPosition(validPortfolioId, payload);
             setTradeModalOpen(false);
-            showToast("Pozisyon kaydedildi.", "success");
+            showToast(t("portfolio.errors.positionSaved"), "success");
             setPositionReloadToken((v) => v + 1);
         } catch (caughtError) {
-            setTradeError(resolveApiError(caughtError, "Pozisyon kaydedilemedi."));
+            setTradeError(resolveApiError(caughtError, t("portfolio.errors.positionSaveFailed")));
         } finally {
             setTradeBusy(false);
         }
@@ -186,10 +188,10 @@ export function usePortfolioDetailPage() {
         if (!validPortfolioId) return;
         try {
             await deleteManualPosition(validPortfolioId, positionId);
-            showToast("Pozisyon silindi.", "info");
+            showToast(t("portfolio.errors.positionDeleted"), "info");
             setPositionReloadToken((v) => v + 1);
         } catch (caughtError) {
-            showToast(resolveApiError(caughtError, "Pozisyon silinemedi."), "error");
+            showToast(resolveApiError(caughtError, t("portfolio.errors.positionDeleteFailed")), "error");
         }
     };
 
@@ -217,10 +219,10 @@ export function usePortfolioDetailPage() {
         try {
             await closeManualPosition(validPortfolioId, sellTarget.id, payload);
             setSellTarget(null);
-            showToast("Pozisyon kapatıldı.", "success");
+            showToast(t("portfolio.errors.positionClosed"), "success");
             setPositionReloadToken((v) => v + 1);
         } catch (caughtError) {
-            setSellError(resolveApiError(caughtError, "Pozisyon kapatılamadı."));
+            setSellError(resolveApiError(caughtError, t("portfolio.errors.positionCloseFailed")));
         } finally {
             setSellBusy(false);
         }
@@ -245,7 +247,7 @@ export function usePortfolioDetailPage() {
             const data = await fetchManualPositionSimulation(target.id, ["USD", "INFLATION_ADJUSTED"]);
             setSimulationData(data);
         } catch (caughtError) {
-            setSimulationError(resolveApiError(caughtError, "Simülasyon hesaplanamadı. Kur verisi eksik olabilir."));
+            setSimulationError(resolveApiError(caughtError, t("portfolio.errors.simulationFailed")));
         } finally {
             setSimulationBusy(false);
         }

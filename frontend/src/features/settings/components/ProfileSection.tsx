@@ -1,4 +1,5 @@
 import { Alert, Avatar, Box, Button, Card, CardContent, Chip, CircularProgress, Divider, Skeleton, Stack, TextField, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../app/auth/AuthContext";
 import {
     KEYCLOAK_ACCOUNT_URL,
@@ -7,7 +8,7 @@ import {
     getRoleLabel,
     openExternal,
 } from "../utils/settingsFormatters";
-import {useProfileSectionForm} from "../hooks/useProfileSectionForm.ts";
+import { useProfileSectionForm } from "../hooks/useProfileSectionForm.ts";
 
 
 
@@ -18,8 +19,7 @@ export function ProfileSection() {
         hasChanges, canSubmit,
         updateField, resetForm, handleSubmit,
     } = useProfileSectionForm();
-
-    // geri kalan JSX aynı kalıyor
+    const { t } = useTranslation();
 
     if (userLoading && !currentUser) {
         return (
@@ -45,9 +45,9 @@ export function ProfileSection() {
         return (
             <Alert
                 severity="error"
-                action={<Button size="small" color="inherit" onClick={() => void refreshCurrentUser()}>Tekrar dene</Button>}
+                action={<Button size="small" color="inherit" onClick={() => void refreshCurrentUser()}>{t("common.retry")}</Button>}
             >
-                Profil bilgileri alınamadı. {userError}
+                {t("settings.profile.loadError")} {userError}
             </Alert>
         );
     }
@@ -60,10 +60,10 @@ export function ProfileSection() {
                 <CardContent>
                     <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mb: 2 }}>
                         <Box>
-                            <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>Kimlik Bilgileri</Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>Hesap Özeti</Typography>
+                            <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>{t("settings.profile.overline")}</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>{t("settings.profile.heading")}</Typography>
                         </Box>
-                        <Chip label={currentUser.isActive ? "Aktif" : "Pasif"} size="small" color={currentUser.isActive ? "success" : "default"} />
+                        <Chip label={currentUser.isActive ? t("common.active") : t("common.passive")} size="small" color={currentUser.isActive ? "success" : "default"} />
                     </Stack>
 
                     <Stack direction="row" sx={{ alignItems: "center", gap: 1.5, mb: 2 }}>
@@ -80,10 +80,10 @@ export function ProfileSection() {
 
                     <Divider sx={{ mb: 1 }} />
                     {[
-                        { label: "Kullanıcı adı", value: currentUser.username || "-" },
-                        { label: "E-posta", value: currentUser.email || "-" },
-                        { label: "Kayıt tarihi", value: formatDate(currentUser.createdAt) },
-                        { label: "Son giriş", value: formatDate(currentUser.lastLoginAt) },
+                        { label: t("settings.profile.username"), value: currentUser.username || "-" },
+                        { label: t("settings.profile.email"), value: currentUser.email || "-" },
+                        { label: t("settings.profile.registeredAt"), value: formatDate(currentUser.createdAt) },
+                        { label: t("settings.profile.lastLogin"), value: formatDate(currentUser.lastLoginAt) },
                     ].map(({ label, value }, i) => (
                         <Box key={label}>
                             <Box sx={{ display: "flex", justifyContent: "space-between", py: 0.75 }}>
@@ -94,7 +94,7 @@ export function ProfileSection() {
                         </Box>
                     ))}
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 0.75 }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>Rol</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>{t("settings.profile.role")}</Typography>
                         <Chip label={getRoleLabel(currentUser.role)} size="small" variant="outlined" color={currentUser.role === "ADMIN" ? "secondary" : "default"} />
                     </Box>
                 </CardContent>
@@ -103,14 +103,14 @@ export function ProfileSection() {
             <Card sx={{ flex: 1 }}>
                 <CardContent>
                     <Box sx={{ mb: 2 }}>
-                        <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>Profil Güncelleme</Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>Düzenlenebilir alanlar</Typography>
+                        <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>{t("settings.profile.updateOverline")}</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>{t("settings.profile.updateHeading")}</Typography>
                     </Box>
 
                     <Box component="form" onSubmit={handleSubmit} noValidate>
                         <Stack sx={{ gap: 2 }}>
                             <TextField
-                                label="Ad"
+                                label={t("settings.profile.firstName")}
                                 value={form.firstName}
                                 onChange={updateField("firstName")}
                                 error={Boolean(touched.firstName && errors.firstName)}
@@ -120,7 +120,7 @@ export function ProfileSection() {
                                 fullWidth
                             />
                             <TextField
-                                label="Soyad"
+                                label={t("settings.profile.lastName")}
                                 value={form.lastName}
                                 onChange={updateField("lastName")}
                                 error={Boolean(touched.lastName && errors.lastName)}
@@ -130,13 +130,13 @@ export function ProfileSection() {
                                 fullWidth
                             />
                             <TextField
-                                label="E-posta"
+                                label={t("settings.profile.email")}
                                 type="email"
                                 value={currentUser.email}
                                 disabled
                                 size="small"
                                 fullWidth
-                                helperText="E-posta adresi Keycloak Account Console üzerinden değiştirilir."
+                                helperText={t("settings.profile.emailHelp")}
                             />
 
                             <Alert
@@ -148,7 +148,7 @@ export function ProfileSection() {
                                 }
                                 sx={{ fontSize: "0.75rem" }}
                             >
-                                Email'i değiştirmek için Account Console'u kullanın.
+                                {t("settings.profile.emailAlert")}
                             </Alert>
 
                             {serverError ? <Alert severity="error">{serverError}</Alert> : null}
@@ -161,10 +161,10 @@ export function ProfileSection() {
                                     disabled={!canSubmit}
                                     startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
                                 >
-                                    {saving ? "Güncelleniyor..." : "Profili güncelle"}
+                                    {saving ? t("settings.profile.updatingButton") : t("settings.profile.updateButton")}
                                 </Button>
                                 <Button type="button" variant="outlined" onClick={resetForm} disabled={!hasChanges || saving}>
-                                    Değişiklikleri al
+                                    {t("settings.profile.resetButton")}
                                 </Button>
                             </Stack>
                         </Stack>

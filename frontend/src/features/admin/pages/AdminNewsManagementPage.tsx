@@ -1,4 +1,5 @@
 import { Box } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { AdminAuditPanel } from "../components/AdminAuditPanel";
 import {
     AdminNewsCategoryOverrideDialog,
@@ -12,6 +13,7 @@ import {
 } from "../hooks/useAdminNewsManagementPage";
 
 export function AdminNewsManagementPage() {
+    const { t } = useTranslation();
     const { query, newsQuery, categoriesQuery, sourcesQuery, auditTrail, dialogs, handlers, pending } =
         useAdminNewsManagementPage();
 
@@ -30,7 +32,7 @@ export function AdminNewsManagementPage() {
             />
 
             <AdminAuditPanel
-                title="Haber audit geçmişi"
+                title={t("admin.news.audit")}
                 loading={auditTrail.loading}
                 error={auditTrail.error}
                 items={auditTrail.data}

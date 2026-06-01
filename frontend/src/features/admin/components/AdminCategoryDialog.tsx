@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Alert, Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, TextField, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import type { CategoryDialogState } from "../hooks/useAdminCategoriesPage";
 import type { AdminCategory, AdminCategoryRequest } from "../types/admin.types";
 
@@ -12,6 +13,7 @@ interface AdminCategoryDialogProps {
 }
 
 export function AdminCategoryDialog({ state, pending, onClose, onSubmit, onDelete }: AdminCategoryDialogProps) {
+    const { t } = useTranslation();
     const initialValue = useMemo(() => ({
         name: state?.type === "edit" ? state.category.name : "",
         isActive: state?.type === "edit" ? state.category.active : true,
@@ -26,17 +28,17 @@ export function AdminCategoryDialog({ state, pending, onClose, onSubmit, onDelet
         return (
             <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
                 <DialogTitle>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Kategori</Typography>
-                    Kategoriyi sil
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>{t("admin.categories.cols.category")}</Typography>
+                    {t("admin.categories.dialog.deleteTitle")}
                 </DialogTitle>
                 <DialogContent>
                     <Alert severity="warning" sx={{ fontSize: "0.8rem" }}>
-                        {state.category.name} kategorisi silinecek.
+                        {t("admin.categories.dialog.deleteAlert", { name: state.category.name })}
                     </Alert>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={onClose} variant="outlined" size="small">Vazgeç</Button>
-                    <Button variant="contained" color="error" size="small" onClick={() => void onDelete(state.category)}>Sil</Button>
+                    <Button onClick={onClose} variant="outlined" size="small">{t("admin.dialogs.cancel")}</Button>
+                    <Button variant="contained" color="error" size="small" onClick={() => void onDelete(state.category)}>{t("admin.categories.actions.delete")}</Button>
                 </DialogActions>
             </Dialog>
         );
@@ -52,13 +54,13 @@ export function AdminCategoryDialog({ state, pending, onClose, onSubmit, onDelet
     return (
         <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
             <DialogTitle>
-                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Kategori</Typography>
-                {state.type === "edit" ? "Kategoriyi düzenle" : "Kategori ekle"}
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>{t("admin.categories.cols.category")}</Typography>
+                {state.type === "edit" ? t("admin.categories.dialog.editTitle") : t("admin.categories.dialog.addTitle")}
             </DialogTitle>
             <Box component="form" onSubmit={submit}>
                 <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                     <TextField
-                        label="Kategori adı"
+                        label={t("admin.categories.dialog.nameLabel")}
                         value={form.name}
                         onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
                         required
@@ -73,13 +75,13 @@ export function AdminCategoryDialog({ state, pending, onClose, onSubmit, onDelet
                                 onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))}
                             />
                         }
-                        label="Aktif"
+                        label={t("admin.categories.dialog.activeLabel")}
                     />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={onClose} variant="outlined" size="small">Vazgeç</Button>
+                    <Button onClick={onClose} variant="outlined" size="small">{t("admin.dialogs.cancel")}</Button>
                     <Button type="submit" variant="contained" color="secondary" size="small" disabled={pending}>
-                        {pending ? "Kaydediliyor..." : "Kaydet"}
+                        {pending ? t("admin.dialogs.saving") : t("admin.dialogs.save")}
                     </Button>
                 </DialogActions>
             </Box>

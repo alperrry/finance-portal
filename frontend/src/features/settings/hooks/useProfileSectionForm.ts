@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../app/auth/AuthContext";
 import { useToast } from "../../../components/ToastContext";
 import { updateCurrentUser } from "../../profile/api/userApi";
@@ -14,6 +15,7 @@ import {
 export function useProfileSectionForm() {
     const { currentUser, setCurrentUser } = useAuth();
     const { showToast } = useToast();
+    const { t } = useTranslation();
 
     const [form, setForm] = useState<ProfileForm>({ firstName: "", lastName: "" });
     const [touched, setTouched] = useState<FieldTouched>({});
@@ -60,7 +62,7 @@ export function useProfileSectionForm() {
             setCurrentUser(updatedUser);
             setForm(buildForm(updatedUser));
             setTouched({});
-            showToast("Profil güncellendi", "success");
+            showToast(t("settings.profile.updateSuccess"), "success");
         } catch (caughtError) {
             const message = resolveProfileError(caughtError);
             setServerError(message);

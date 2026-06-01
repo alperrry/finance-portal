@@ -1,16 +1,8 @@
 import { Box, Button, Container, Grid, List, ListItem, ListItemIcon, ListItemText, Typography } from "@mui/material";
 import TaskAltOutlinedIcon from "@mui/icons-material/TaskAltOutlined";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../app/auth/AuthContext";
-
-const CAPABILITIES = [
-    "Mum ve çizgi grafik görünümü",
-    "SMA, EMA, Bollinger Bantları, Ichimoku",
-    "RSI, MACD, Stokastik indikatörler",
-    "Trend çizgisi ve dikdörtgen çizim araçları",
-    "Enstrüman karşılaştırma modu",
-    "Tam ekran analiz paneli",
-];
 
 const INDICATOR_PREVIEW = [
     { label: "RSI", val: "58.4", color: "#2f8f58" },
@@ -19,8 +11,18 @@ const INDICATOR_PREVIEW = [
 ];
 
 export default function AnalysisSection() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { authenticated, login } = useAuth();
+
+    const CAPABILITIES = [
+        t("home.analysisPromo.features.chartTypes"),
+        t("home.analysisPromo.features.overlayIndicators"),
+        t("home.analysisPromo.features.oscillators"),
+        t("home.analysisPromo.features.drawings"),
+        t("home.analysisPromo.features.comparison"),
+        t("home.analysisPromo.features.fullscreen"),
+    ];
 
     return (
         <Box sx={{ bgcolor: "#111111", py: { xs: 6, md: 10 } }}>
@@ -28,13 +30,13 @@ export default function AnalysisSection() {
                 <Grid container spacing={6} sx={{ alignItems: "center" }}>
                     <Grid size={{ xs: 12, md: 6 }}>
                         <Typography variant="overline" sx={{ color: "#c1622f", fontWeight: 700, letterSpacing: 2 }}>
-                            Analiz Araçları
+                            {t("home.analysisPromo.title")}
                         </Typography>
                         <Typography variant="h4" sx={{ fontWeight: 800, color: "#fff", mt: 0.5, mb: 2 }}>
-                            Profesyonel Teknik Analiz
+                            {t("home.analysisPromo.heading")}
                         </Typography>
                         <Typography variant="body1" sx={{ color: "#999", mb: 4, lineHeight: 1.8 }}>
-                            Gelişmiş grafik araçları ve teknik indikatörlerle piyasaları derinlemesine analiz edin.
+                            {t("home.analysisPromo.description")}
                         </Typography>
                         <List dense disablePadding sx={{ mb: 4 }}>
                             {CAPABILITIES.map((cap) => (
@@ -55,7 +57,7 @@ export default function AnalysisSection() {
                             onClick={() => (authenticated ? navigate("/analysis") : login())}
                             sx={{ bgcolor: "#c1622f", "&:hover": { bgcolor: "#a8512a" }, px: 4, fontWeight: 700 }}
                         >
-                            Analiz Sayfasına Git
+                            {t("home.analysisPromo.goButton")}
                         </Button>
                     </Grid>
                     <Grid size={{ xs: 12, md: 6 }}>

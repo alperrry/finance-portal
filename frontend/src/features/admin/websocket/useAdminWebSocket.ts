@@ -3,6 +3,7 @@ import { useAuth } from "../../../app/auth/AuthContext";
 import { websocketClient } from "../../../services/websocketClient";
 import { useToast } from "../../../components/ToastContext";
 import { invalidateAdminQuery } from "../api/adminQueryBus";
+import i18n from "../../../i18n";
 import type {
     AdminAuditEventPayload,
     AdminEvent,
@@ -34,13 +35,14 @@ function eventId(envelope: WebSocketEnvelope<unknown>) {
 }
 
 function auditEvent(envelope: WebSocketEnvelope<unknown>, payload: AdminAuditEventPayload): AdminEvent {
-    const target = payload.targetType && payload.targetId ? `${payload.targetType} #${payload.targetId}` : "Sistem";
+    const system = i18n.t("admin.audit.system");
+    const target = payload.targetType && payload.targetId ? `${payload.targetType} #${payload.targetId}` : system;
     return {
         id: eventId(envelope),
         type: envelope.type,
         timestamp: envelope.timestamp,
-        title: payload.action ?? "Audit kaydı",
-        description: `${payload.actorUsername ?? "Sistem"} -> ${target}${payload.reason ? `: ${payload.reason}` : ""}`,
+        title: payload.action ?? i18n.t("admin.audit.auditRecord"),
+        description: `${payload.actorUsername ?? system} -> ${target}${payload.reason ? `: ${payload.reason}` : ""}`,
         unread: true,
     };
 }
@@ -50,8 +52,8 @@ function userEvent(envelope: WebSocketEnvelope<unknown>, payload: AdminUserChang
         id: eventId(envelope),
         type: envelope.type,
         timestamp: envelope.timestamp,
-        title: "Kullanıcı güncellendi",
-        description: `Kullanıcı #${payload.userId}${payload.changedBy ? `, ${payload.changedBy} tarafından` : ""} güncellendi.`,
+        title: i18n.t("admin.audit.userUpdated"),
+        description: `#${payload.userId} ${i18n.t("admin.audit.userUpdated")}`,
         unread: true,
     };
 }
@@ -115,7 +117,7 @@ export function useAdminWebSocket({ onEvent, watchedUserId }: UseAdminWebSocketO
             invalidateAdminQuery({ scope: "users" });
             invalidateAdminQuery({ scope: "user-detail", userId: payload.userId });
             onEvent?.(userEvent(adminEnvelope, payload));
-            showToast(`Kullanıcı #${payload.userId} güncellendi.`, "info");
+            showToast(`#${payload.userId} ${i18n.t("admin.audit.userUpdated")}`, "info");
         });
 
         return () => {

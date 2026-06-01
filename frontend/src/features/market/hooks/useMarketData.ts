@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import i18n from "../../../i18n";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../../app/auth/AuthContext";
 import { MARKET_UPDATE_TOPICS, websocketClient } from "../../../services/websocketClient";
@@ -59,7 +60,7 @@ export function useMarketData() {
     return {
         data: data ?? null,
         loading: isLoading,
-        error: error ? (error instanceof Error ? error.message : "Piyasa verileri yüklenemedi.") : null,
+        error: error ? (error instanceof Error ? error.message : i18n.t("market.errors.marketData")) : null,
         lastSyncedAt: dataUpdatedAt ? new Date(dataUpdatedAt) : null,
         reload: () => void refetch(),
     };

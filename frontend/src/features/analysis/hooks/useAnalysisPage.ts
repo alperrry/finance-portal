@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import type {
     CandlestickTooltipIndicator,
@@ -26,6 +27,7 @@ import {
 } from "../utils/analysisFormatters";
 
 export function useAnalysisPage() {
+    const { t } = useTranslation();
     const [searchParams, setSearchParams] = useSearchParams();
     const currentSearch = searchParams.toString();
     const chartPanelRef = useRef<HTMLElement | null>(null);
@@ -142,11 +144,11 @@ export function useAnalysisPage() {
     const supportsCandlestick = resolvedType === "stocks";
     const effectiveChartType = supportsCandlestick ? chartType : "line";
     const chartLegendSeries = useMemo(() => [
-        { key: "price", label: "Fiyat", color: CHART_COLORS.price },
+        { key: "price", label: t("analysis.chart.price"), color: CHART_COLORS.price },
         ...OVERLAY_INDICATOR_OPTIONS
             .filter((option) => activeOverlayIndicators.includes(option.key))
             .map((option) => ({ key: option.key, label: option.label, color: option.color })),
-    ], [activeOverlayIndicators]);
+    ], [activeOverlayIndicators, t]);
     const drawingBusy = drawingsLoading || drawingsMutating;
     const drawingToolsDisabled = !supportsCandlestick || !resolvedCode || history.isHistoryLoading || history.enrichedHistory.length === 0;
 
@@ -212,7 +214,7 @@ export function useAnalysisPage() {
 
     const handleClearDrawings = async () => {
         if (drawingBusy || drawings.length === 0) return;
-        if (!window.confirm("Tüm çizimleri silmek istediğinize emin misiniz?")) return;
+        if (!window.confirm(t("analysis.drawings.deleteAllConfirm"))) return;
         setDrawingDraft(null);
         try {
             await clearAllInstrumentDrawings();

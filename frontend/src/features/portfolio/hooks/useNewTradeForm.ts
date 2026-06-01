@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { fetchBonds, fetchFunds, fetchFx, fetchStocks, fetchViopLatest } from "../../market/api/marketApi";
 import type { BondResponse, FundResponse, FxResponse, StockResponse, ViopContractPriceResponse } from "../../market/api/marketApi";
 import {
@@ -93,6 +94,7 @@ export function useNewTradeForm(
     portfolio: PortfolioResponse,
     onSubmit: (payload: ManualPositionRequest) => Promise<void>,
 ) {
+    const { t } = useTranslation();
     const [positionKind, setPositionKind] = useState<PositionKind>("OPEN");
     const [instrumentType, setInstrumentType] = useState<PortfolioInstrumentType>("STOCK");
     const [instrumentId, setInstrumentId] = useState("");
@@ -158,7 +160,7 @@ export function useNewTradeForm(
                     .sort((a, b) => collator.compare(a.symbol, b.symbol));
                 setOptions([...sorted, makeManualSentinel(instrumentType)]);
             } catch (err) {
-                if (active) setOptionsError(resolveApiError(err, "Enstrüman listesi yüklenemedi."));
+                if (active) setOptionsError(resolveApiError(err, t("portfolio.errors.instrumentsFailed")));
             } finally {
                 if (active) setOptionsLoading(false);
             }
@@ -224,26 +226,26 @@ export function useNewTradeForm(
 
     const validate = (): string | null => {
         if (instrumentType !== "DEPOSIT") {
-            if (!isManualEntry && !instrumentId) return "Enstrüman seçmelisin.";
+            if (!isManualEntry && !instrumentId) return t("portfolio.validation.selectInstrument");
             if (isManualEntry && !instrumentSymbolManual.trim() && !instrumentNameManual.trim()) {
-                return "Sembol veya enstrüman adı girilmeli.";
+                return t("portfolio.validation.enterSymbolOrName");
             }
         }
         if (instrumentType === "DEPOSIT") {
             const rate = Number(interestRate);
-            if (!Number.isFinite(rate) || rate <= 0) return "Faiz oranı 0'dan büyük olmalı.";
+            if (!Number.isFinite(rate) || rate <= 0) return t("portfolio.validation.interestRatePositive");
         }
         const qty = Number(quantity);
-        if (!Number.isFinite(qty) || qty <= 0) return "Miktar 0'dan büyük olmalı.";
+        if (!Number.isFinite(qty) || qty <= 0) return t("portfolio.validation.quantityPositive");
         if (instrumentType !== "DEPOSIT") {
             const entry = Number(entryPrice);
-            if (!Number.isFinite(entry) || entry <= 0) return "Alış fiyatı 0'dan büyük olmalı.";
+            if (!Number.isFinite(entry) || entry <= 0) return t("portfolio.validation.buyPricePositive");
         }
-        if (!entryDate) return "Alım tarihi gerekli.";
+        if (!entryDate) return t("portfolio.validation.buyDateRequired");
         if (positionKind === "CLOSED") {
             const exit = Number(exitPrice);
-            if (!Number.isFinite(exit) || exit <= 0) return "Satış fiyatı 0'dan büyük olmalı.";
-            if (!exitDate) return "Satım tarihi gerekli.";
+            if (!Number.isFinite(exit) || exit <= 0) return t("portfolio.validation.sellPricePositive");
+            if (!exitDate) return t("portfolio.validation.sellDateRequired");
         }
         return null;
     };

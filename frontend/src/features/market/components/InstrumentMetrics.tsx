@@ -8,12 +8,12 @@ type Props = {
 const CARD_SX = {
     border: "1px solid",
     borderColor: "divider",
-    bgcolor: "rgba(255, 255, 255, 0.76)",
-    boxShadow: "0 16px 48px rgba(17, 17, 17, 0.06)",
+    bgcolor: (theme: { palette: { mode: string } }) => theme.palette.mode === "dark" ? "rgba(33, 28, 24, 0.76)" : "rgba(255, 255, 255, 0.76)",
+    boxShadow: (theme: { palette: { mode: string } }) => theme.palette.mode === "dark" ? "0 16px 48px rgba(0, 0, 0, 0.32)" : "0 16px 48px rgba(17, 17, 17, 0.06)",
     backdropFilter: "blur(16px)",
     borderRadius: "24px",
     p: "22px",
-} as const;
+};
 
 export function InstrumentMetrics({ metricCards }: Props) {
     if (metricCards.length === 0) return null;

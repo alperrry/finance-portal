@@ -1,4 +1,5 @@
 import { Alert, Button, Card, CardContent, Skeleton, Stack } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import type { UserResponse } from "../api/userApi";
 import { ProfileEditForm } from "./ProfileEditForm";
 import { ProfileInfoPanel } from "./ProfileInfoPanel";
@@ -12,13 +13,14 @@ interface ProfileErrorAlertProps {
 }
 
 export function ProfileErrorAlert({ error, onRetry }: ProfileErrorAlertProps) {
+    const { t } = useTranslation();
     return (
         <Alert
             severity="error"
             sx={{ mb: 2 }}
-            action={<Button size="small" color="inherit" onClick={onRetry}>Tekrar dene</Button>}
+            action={<Button size="small" color="inherit" onClick={onRetry}>{t("common.retry")}</Button>}
         >
-            Profil bilgileri alınamadı. {error}
+            {t("profile.errors.loadFailed")} {error}
         </Alert>
     );
 }

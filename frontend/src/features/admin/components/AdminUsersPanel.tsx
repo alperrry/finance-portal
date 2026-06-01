@@ -1,4 +1,5 @@
 import { Alert, Avatar, Box, Button, Chip, FormControl, NativeSelect, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { PANEL_HEAD_SX, PANEL_SX } from "../constants/adminStyles";
 import type { AdminDialogState } from "./AdminDialogs";
 import type { AdminUserListItem, AdminUsersFilter } from "../types/admin.types";
@@ -32,18 +33,19 @@ export function AdminUsersPanel({
     onDialog,
     isHighlighted,
 }: AdminUsersPanelProps) {
+    const { t } = useTranslation();
     return (
         <Paper sx={PANEL_SX}>
             <Box sx={PANEL_HEAD_SX}>
                 <Box>
                     <Typography sx={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "text.secondary" }}>
-                        Kullanıcı Yönetimi
+                        {t("admin.users.overline")}
                     </Typography>
                     <Typography variant="h6" sx={{ mt: 0.5, fontSize: 24, letterSpacing: 0, fontWeight: 700 }}>
-                        Kullanıcılar
+                        {t("admin.users.title")}
                     </Typography>
                 </Box>
-                <Typography sx={{ fontWeight: 700 }}>{users.length} kayıt</Typography>
+                <Typography sx={{ fontWeight: 700 }}>{t("admin.users.records", { count: users.length })}</Typography>
             </Box>
 
             <Box sx={{ display: "grid", gridTemplateColumns: "1fr 160px 160px", gap: 1.25, p: "16px 22px", borderBottom: "1px solid", borderColor: "divider" }}>
@@ -51,41 +53,41 @@ export function AdminUsersPanel({
                     size="small"
                     value={filters.search}
                     onChange={(event) => onFilterChange("search", event.target.value)}
-                    placeholder="İsim, kullanıcı adı veya e-posta ara"
+                    placeholder={t("admin.users.searchPlaceholder")}
                 />
                 <FormControl size="small">
                     <NativeSelect value={filters.role} onChange={(event) => onFilterChange("role", event.target.value)}>
-                        <option value="">Tüm roller</option>
-                        <option value="ADMIN">Admin</option>
-                        <option value="NORMAL_USER">Normal kullanıcı</option>
+                        <option value="">{t("admin.users.allRoles")}</option>
+                        <option value="ADMIN">{t("admin.users.roleAdmin")}</option>
+                        <option value="NORMAL_USER">{t("admin.users.roleUser")}</option>
                     </NativeSelect>
                 </FormControl>
                 <FormControl size="small">
                     <NativeSelect value={filters.status} onChange={(event) => onFilterChange("status", event.target.value)}>
-                        <option value="">Tüm durumlar</option>
-                        <option value="ACTIVE">Aktif</option>
-                        <option value="PASSIVE">Pasif</option>
+                        <option value="">{t("admin.users.allStatuses")}</option>
+                        <option value="ACTIVE">{t("admin.users.statusActive")}</option>
+                        <option value="PASSIVE">{t("admin.users.statusPassive")}</option>
                     </NativeSelect>
                 </FormControl>
             </Box>
 
-            {loading ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Kullanıcılar yükleniyor...</Typography> : null}
+            {loading ? <Typography sx={{ p: "22px", color: "text.secondary" }}>{t("admin.users.loading")}</Typography> : null}
             {!loading && error ? <Alert severity="error" sx={{ m: 2 }}>{error}</Alert> : null}
-            {!loading && !error && users.length === 0 ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Bu filtrede kullanıcı yok.</Typography> : null}
+            {!loading && !error && users.length === 0 ? <Typography sx={{ p: "22px", color: "text.secondary" }}>{t("admin.users.empty")}</Typography> : null}
 
             {!loading && !error && users.length > 0 ? (
                 <TableContainer sx={{ overflowX: "auto" }}>
                     <Table size="small" sx={{ minWidth: 900 }}>
                         <TableHead>
                             <TableRow>
-                                <TableCell>Kullanıcı</TableCell>
-                                <TableCell>E-posta</TableCell>
-                                <TableCell>Rol</TableCell>
-                                <TableCell>Durum</TableCell>
-                                <TableCell>Son giriş</TableCell>
-                                <TableCell>2FA</TableCell>
-                                <TableCell>Portföy</TableCell>
-                                <TableCell>Aksiyon</TableCell>
+                                <TableCell>{t("admin.users.cols.user")}</TableCell>
+                                <TableCell>{t("admin.users.cols.email")}</TableCell>
+                                <TableCell>{t("admin.users.cols.role")}</TableCell>
+                                <TableCell>{t("admin.users.cols.status")}</TableCell>
+                                <TableCell>{t("admin.users.cols.lastLogin")}</TableCell>
+                                <TableCell>{t("admin.users.cols.tfa")}</TableCell>
+                                <TableCell>{t("admin.users.cols.portfolio")}</TableCell>
+                                <TableCell>{t("admin.users.cols.action")}</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -99,7 +101,7 @@ export function AdminUsersPanel({
                                 >
                                     <TableCell>
                                         <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
-                                            <Avatar sx={{ width: 32, height: 32, bgcolor: "#111", color: "#fff", fontSize: 11, fontWeight: 800 }}>
+                                            <Avatar sx={{ width: 32, height: 32, bgcolor: "primary.main", color: "primary.contrastText", fontSize: 11, fontWeight: 800 }}>
                                                 {displayName(user).slice(0, 2).toLocaleUpperCase("tr-TR")}
                                             </Avatar>
                                             <Box>
@@ -112,20 +114,20 @@ export function AdminUsersPanel({
                                     <TableCell>
                                         <Chip
                                             size="small"
-                                            label={user.role === "ADMIN" ? "Admin" : "Normal"}
+                                            label={user.role === "ADMIN" ? t("admin.users.roleAdmin") : "Normal"}
                                             sx={{
                                                 height: 22,
                                                 fontSize: 11,
                                                 fontWeight: 700,
-                                                bgcolor: user.role === "ADMIN" ? "rgba(193, 98, 47, 0.12)" : "rgba(17, 17, 17, 0.07)",
-                                                color: user.role === "ADMIN" ? "#7f3d1d" : "text.primary",
+                                                bgcolor: user.role === "ADMIN" ? "rgba(193, 98, 47, 0.12)" : (theme) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(17, 17, 17, 0.07)",
+                                                color: user.role === "ADMIN" ? "secondary.main" : "text.primary",
                                             }}
                                         />
                                     </TableCell>
                                     <TableCell>
                                         <Chip
                                             size="small"
-                                            label={user.status === "ACTIVE" ? "Aktif" : "Pasif"}
+                                            label={user.status === "ACTIVE" ? t("admin.users.statusActive") : t("admin.users.statusPassive")}
                                             sx={{
                                                 height: 22,
                                                 fontSize: 11,
@@ -136,14 +138,14 @@ export function AdminUsersPanel({
                                         />
                                     </TableCell>
                                     <TableCell>{formatDate(user.lastLoginAt)}</TableCell>
-                                    <TableCell>{user.twoFactorEnabled ? "Aktif" : "Kapalı"}</TableCell>
+                                    <TableCell>{user.twoFactorEnabled ? t("admin.users.statusActive") : t("admin.users.statusPassive")}</TableCell>
                                     <TableCell>{user.portfolioCount ?? "-"}</TableCell>
                                     <TableCell>
                                         <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-                                            <Button size="small" variant="outlined" onClick={() => onDetail(user.id)}>Detay</Button>
-                                            <Button size="small" variant="outlined" onClick={() => onDialog({ type: "role", user })}>Rol</Button>
-                                            <Button size="small" variant="outlined" onClick={() => onDialog({ type: "status", user })}>Durum</Button>
-                                            <Button size="small" variant="outlined" onClick={() => onDialog({ type: "reset-2fa", user })}>2FA</Button>
+                                            <Button size="small" variant="outlined" onClick={() => onDetail(user.id)}>{t("admin.users.actions.detail")}</Button>
+                                            <Button size="small" variant="outlined" onClick={() => onDialog({ type: "role", user })}>{t("admin.users.actions.role")}</Button>
+                                            <Button size="small" variant="outlined" onClick={() => onDialog({ type: "status", user })}>{t("admin.users.actions.status")}</Button>
+                                            <Button size="small" variant="outlined" onClick={() => onDialog({ type: "reset-2fa", user })}>{t("admin.users.actions.tfa")}</Button>
                                         </Box>
                                     </TableCell>
                                 </TableRow>

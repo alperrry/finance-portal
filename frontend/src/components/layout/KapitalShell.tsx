@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { AppBar, Avatar, Box, Button, Chip, Stack, Toolbar, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { fetchCategories, type NewsCategory } from "../../features/news/api/newsApi";
 import { useAuth } from "../../app/auth/AuthContext";
-import KapitalTicker from "./KapitalTicker";
+import { useUiPreferences } from "../../app/providers/UiPreferencesContext";
 
-type ActivePage = "portfolio" | "portfolios" | "news" | "analysis" | "tools" | "profile" | "settings";
+
+type ActivePage = "portfolio" | "portfolios" | "news" | "analysis" | "profile" | "settings";
 
 type KapitalShellProps = {
     activePage: ActivePage;
@@ -13,27 +15,6 @@ type KapitalShellProps = {
     selectedCategoryId?: string;
     showCategories?: boolean;
 };
-
-const formatDate = (value: Date) =>
-    new Intl.DateTimeFormat("tr-TR", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-    }).format(value);
-
-const formatTime = (value: Date) =>
-    new Intl.DateTimeFormat("tr-TR", {
-        hour: "2-digit",
-        minute: "2-digit",
-    }).format(value);
-
-const navItems: Array<{ id: ActivePage; label: string; to: string }> = [
-    { id: "portfolio", label: "Piyasalar", to: "/portfolio" },
-    { id: "portfolios", label: "Portföyüm", to: "/portfolios" },
-    { id: "news", label: "Haberler", to: "/news" },
-    { id: "analysis", label: "Analiz", to: "/analysis" },
-    { id: "tools", label: "Araclar", to: "/portfolio" },
-];
 
 export default function KapitalShell({
     activePage,
@@ -43,6 +24,17 @@ export default function KapitalShell({
 }: KapitalShellProps) {
     const navigate = useNavigate();
     const { logout, currentUser } = useAuth();
+    const { t } = useTranslation();
+    const { locale } = useUiPreferences();
+
+    const dateLocale = locale === "tr" ? "tr-TR" : "en-US";
+
+    const navItems: Array<{ id: ActivePage; label: string; to: string }> = [
+        { id: "portfolio", label: t("nav.markets"), to: "/portfolio" },
+        { id: "portfolios", label: t("nav.portfolio"), to: "/portfolios" },
+        { id: "news", label: t("nav.news"), to: "/news" },
+        { id: "analysis", label: t("nav.analysis"), to: "/analysis" },
+    ];
 
     const [categories, setCategories] = useState<NewsCategory[]>([]);
     const [loadingCategories, setLoadingCategories] = useState(showCategories);
@@ -84,22 +76,28 @@ export default function KapitalShell({
         };
     }, [showCategories]);
 
-    const navDate = useMemo(() => formatDate(now), [now]);
-    const navTime = useMemo(() => formatTime(now), [now]);
+    const navDate = useMemo(
+        () => new Intl.DateTimeFormat(dateLocale, { day: "2-digit", month: "short", year: "numeric" }).format(now),
+        [now, dateLocale]
+    );
+    const navTime = useMemo(
+        () => new Intl.DateTimeFormat(dateLocale, { hour: "2-digit", minute: "2-digit" }).format(now),
+        [now, dateLocale]
+    );
     const userDisplayName = useMemo(() => {
         const fullName = [currentUser?.firstName, currentUser?.lastName]
             .map((value) => value?.trim())
             .filter(Boolean)
             .join(" ");
 
-        return fullName || currentUser?.username || currentUser?.email || "Kullanıcı";
-    }, [currentUser]);
+        return fullName || currentUser?.username || currentUser?.email || t("nav.user");
+    }, [currentUser, t]);
     const userGreetingName = currentUser?.firstName?.trim() || userDisplayName;
     const userInitials = useMemo(() => {
         const parts = userDisplayName.split(" ").filter(Boolean);
         const initials = parts.length > 1 ? `${parts[0][0]}${parts[1][0]}` : userDisplayName.slice(0, 2);
-        return initials.toLocaleUpperCase("tr-TR");
-    }, [userDisplayName]);
+        return initials.toLocaleUpperCase(dateLocale);
+    }, [userDisplayName, dateLocale]);
 
     const openCategory = (categoryId?: string) => {
         if (categoryId && categoryId.length > 0) {
@@ -111,8 +109,8 @@ export default function KapitalShell({
     };
 
     return (
-        <Box sx={{ minHeight: "100vh", background: "radial-gradient(circle at 15% -10%, rgba(193, 98, 47, 0.09), transparent 40%), #edeae4" }}>
-            <KapitalTicker />
+        <Box sx={{ minHeight: "100vh", background: (theme) => theme.palette.mode === "dark" ? "radial-gradient(circle at 15% -10%, rgba(193, 98, 47, 0.09), transparent 40%), #181512" : "radial-gradient(circle at 15% -10%, rgba(193, 98, 47, 0.09), transparent 40%), #edeae4" }}>
+
 
             <AppBar
                 position="sticky"
@@ -123,7 +121,7 @@ export default function KapitalShell({
                 sx={{
                     borderBottom: "1px solid",
                     borderColor: "divider",
-                    backgroundColor: "rgba(255, 255, 255, 0.94)",
+                    backgroundColor: (theme) => theme.palette.mode === "dark" ? "rgba(24, 21, 18, 0.94)" : "rgba(255, 255, 255, 0.94)",
                     backdropFilter: "blur(18px)",
                     zIndex: (theme) => theme.zIndex.appBar,
                 }}
@@ -153,7 +151,7 @@ export default function KapitalShell({
                     <Stack
                         component="nav"
                         direction="row"
-                        aria-label="Ana menü"
+                        aria-label={t("nav.mainMenu")}
                         sx={{
                             gap: 1,
                             flexWrap: "wrap",
@@ -193,7 +191,7 @@ export default function KapitalShell({
                                 type="button"
                                 onClick={() => navigate("/admin/users")}
                             >
-                                Admin Paneli
+                                {t("nav.adminPanel")}
                             </Button>
                         ) : null}
                         <Button
@@ -201,27 +199,27 @@ export default function KapitalShell({
                             color="inherit"
                             type="button"
                             onClick={() => navigate("/settings/profile")}
-                            aria-label="Ayarlar"
+                            aria-label={t("nav.settings")}
                             startIcon={<Avatar sx={{ width: 28, height: 28, fontSize: 12 }}>{userInitials}</Avatar>}
                             sx={{ maxWidth: { xs: "100%", sm: 260 }, justifyContent: "flex-start" }}
                         >
                             <Stack sx={{ alignItems: "flex-start", gap: 0, minWidth: 0 }}>
                                 <Typography variant="caption" noWrap sx={{ fontWeight: 800 }}>
-                                    Merhaba, {userGreetingName}
+                                    {t("nav.greeting", { name: userGreetingName })}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary" noWrap>
-                                    Ayarlar{currentUser?.role === "ADMIN" ? " · Admin" : ""}
+                                    {currentUser?.role === "ADMIN" ? t("nav.settingsAdmin") : t("nav.settings")}
                                 </Typography>
                             </Stack>
                         </Button>
-                        <Button variant="contained" size="small" type="button" onClick={logout}>Çıkış</Button>
+                        <Button variant="contained" size="small" type="button" onClick={logout}>{t("nav.logout")}</Button>
                     </Stack>
                 </Toolbar>
 
                 {showCategories ? (
                     <Stack
                         direction="row"
-                        aria-label="Haber kategorileri"
+                        aria-label={t("nav.newsCategories")}
                         sx={{ gap: 1, px: { xs: 2, lg: 4 }, pb: 1.5, overflow: "auto" }}
                     >
                         <Button
@@ -232,12 +230,12 @@ export default function KapitalShell({
                             onClick={() => openCategory()}
                             sx={{ flex: "0 0 auto" }}
                         >
-                            Tüm kategoriler
+                            {t("nav.allCategories")}
                         </Button>
 
                         {loadingCategories ? (
                             <Typography variant="body2" color="text.secondary" sx={{ alignSelf: "center" }}>
-                                Kategoriler yükleniyor...
+                                {t("nav.categoriesLoading")}
                             </Typography>
                         ) : (
                             categories.map((category) => {

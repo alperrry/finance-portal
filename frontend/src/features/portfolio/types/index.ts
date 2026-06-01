@@ -3,6 +3,7 @@ import type {
     PortfolioInstrumentType,
     PortfolioResponse,
 } from "../api/portfolioApi";
+import i18n from "../../../i18n";
 
 export type PortfolioLoadState = {
     loading: boolean;
@@ -44,13 +45,15 @@ export const TYPE_COLORS: Record<PortfolioInstrumentType, string> = {
     DEPOSIT: "#64748b",
 };
 
-export const INSTRUMENT_LABELS: Record<PortfolioInstrumentType, string> = {
-    STOCK: "Hisse",
-    FUND: "Fon",
-    CURRENCY: "Döviz",
-    BOND: "Tahvil",
-    VIOP: "VİOP",
-    DEPOSIT: "Vadeli Mevduat",
-};
+export function getInstrumentLabels(): Record<PortfolioInstrumentType, string> {
+    return {
+        STOCK: i18n.t("portfolio.types.stock"),
+        FUND: i18n.t("portfolio.types.fund"),
+        CURRENCY: i18n.t("portfolio.types.currency"),
+        BOND: i18n.t("portfolio.types.bond"),
+        VIOP: i18n.t("portfolio.types.viop"),
+        DEPOSIT: i18n.t("portfolio.types.deposit"),
+    };
+}
 
 export const CURRENCIES: DisplayCurrency[] = ["TRY", "USD", "EUR"];

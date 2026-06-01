@@ -20,15 +20,6 @@ const sharedComponents = {
         defaultProps: { disableElevation: true },
         styleOverrides: { root: { borderRadius: 8 } },
     },
-    MuiCard: {
-        styleOverrides: {
-            root: {
-                borderRadius: 8,
-                boxShadow: "0 14px 40px rgba(17, 17, 17, 0.08)",
-                border: "1px solid rgba(17, 17, 17, 0.08)",
-            },
-        },
-    },
     MuiPaper: {
         styleOverrides: { rounded: { borderRadius: 8 } },
     },
@@ -76,6 +67,15 @@ export const kapitalTheme = createTheme({
     shape: { borderRadius: 8 },
     components: {
         ...sharedComponents,
+        MuiCard: {
+            styleOverrides: {
+                root: {
+                    borderRadius: 8,
+                    boxShadow: "0 14px 40px rgba(17, 17, 17, 0.08)",
+                    border: "1px solid rgba(17, 17, 17, 0.08)",
+                },
+            },
+        },
         MuiCssBaseline: {
             styleOverrides: {
                 body: { backgroundColor: "#f7f6f2" },
@@ -112,6 +112,15 @@ export const kapitalDarkTheme = createTheme({
     shape: { borderRadius: 8 },
     components: {
         ...sharedComponents,
+        MuiCard: {
+            styleOverrides: {
+                root: {
+                    borderRadius: 8,
+                    boxShadow: "0 14px 40px rgba(0, 0, 0, 0.24)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                },
+            },
+        },
         MuiCssBaseline: {
             styleOverrides: {
                 body: { backgroundColor: "#181512" },

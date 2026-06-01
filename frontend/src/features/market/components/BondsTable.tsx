@@ -1,4 +1,5 @@
 import { Box, Tooltip, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import type { GridColDef, GridSortModel } from "@mui/x-data-grid";
 import { AppDataGrid } from "../../../components/ui/AppDataGrid";
@@ -13,79 +14,77 @@ type Props = {
     onRowClick: (code: string) => void;
 };
 
-const COLUMNS: GridColDef<BondResponse>[] = [
-    {
-        field: "instrument",
-        headerName: "Enstrüman",
-        flex: 1.4,
-        minWidth: 160,
-        renderCell: ({ row }) => (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25, py: 0.5 }}>
-                <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.3 }}>{row.name}</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>{row.evdsSeriesCode}</Typography>
-            </Box>
-        ),
-    },
-    {
-        field: "type",
-        headerName: "Tip",
-        flex: 0.8,
-        minWidth: 90,
-        renderCell: ({ row }) => row.bondType ?? "-",
-    },
-    {
-        field: "maturity",
-        headerName: "Vade",
-        flex: 0.8,
-        minWidth: 90,
-        renderCell: ({ row }) =>
-            row.maturityDays != null ? `${formatWholeNumber(row.maturityDays)} gün` : "-",
-    },
-    {
-        field: "interest",
-        headerName: "Faiz",
-        flex: 0.8,
-        minWidth: 90,
-        renderCell: ({ row }) =>
-            row.interestRate != null ? `%${formatNumber(row.interestRate, 2)}` : "-",
-    },
-    {
-        field: "compounded",
-        headerName: "Bileşik",
-        flex: 0.8,
-        minWidth: 90,
-        renderHeader: () => (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <span>Bileşik</span>
-                <Tooltip
-                    title="Kupon ödemelerinin aynı faiz oranıyla tekrar yatırıma yönlendirildiği varsayılarak hesaplanmış bileşik getiridir."
-                    arrow
-                >
-                    <InfoOutlinedIcon sx={{ fontSize: "0.85rem", color: "text.secondary", cursor: "help" }} />
-                </Tooltip>
-            </Box>
-        ),
-        renderCell: ({ row }) =>
-            row.compoundedRate != null ? `%${formatNumber(row.compoundedRate, 2)}` : "-",
-    },
-    {
-        field: "currency",
-        headerName: "Para Birimi",
-        flex: 0.8,
-        minWidth: 90,
-        renderCell: ({ row }) => row.currency ?? "-",
-    },
-    {
-        field: "date",
-        headerName: "Tarih",
-        flex: 0.9,
-        minWidth: 100,
-        renderCell: ({ row }) => formatLocalDate(row.rateDate),
-    },
-];
-
 export function BondsTable({ rows, sortConfig, onSort, onRowClick }: Props) {
+    const { t } = useTranslation();
     const sortModel: GridSortModel = [{ field: sortConfig.key, sort: sortConfig.direction }];
+
+    const COLUMNS: GridColDef<BondResponse>[] = [
+        {
+            field: "instrument",
+            headerName: t("market.tables.bond.instrument"),
+            flex: 1.4,
+            minWidth: 160,
+            renderCell: ({ row }) => (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25, py: 0.5 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.3 }}>{row.name}</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>{row.evdsSeriesCode}</Typography>
+                </Box>
+            ),
+        },
+        {
+            field: "type",
+            headerName: t("market.tables.bond.type"),
+            flex: 0.8,
+            minWidth: 90,
+            renderCell: ({ row }) => row.bondType ?? "-",
+        },
+        {
+            field: "maturity",
+            headerName: t("market.tables.bond.maturity"),
+            flex: 0.8,
+            minWidth: 90,
+            renderCell: ({ row }) =>
+                row.maturityDays != null ? `${formatWholeNumber(row.maturityDays)} ${t("market.tables.bond.days")}` : "-",
+        },
+        {
+            field: "interest",
+            headerName: t("market.tables.bond.interest"),
+            flex: 0.8,
+            minWidth: 90,
+            renderCell: ({ row }) =>
+                row.interestRate != null ? `%${formatNumber(row.interestRate, 2)}` : "-",
+        },
+        {
+            field: "compounded",
+            headerName: t("market.tables.bond.compound"),
+            flex: 0.8,
+            minWidth: 90,
+            renderHeader: () => (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <span>{t("market.tables.bond.compound")}</span>
+                    <Tooltip title={t("market.tables.bond.compoundTooltip")} arrow>
+                        <InfoOutlinedIcon sx={{ fontSize: "0.85rem", color: "text.secondary", cursor: "help" }} />
+                    </Tooltip>
+                </Box>
+            ),
+            renderCell: ({ row }) =>
+                row.compoundedRate != null ? `%${formatNumber(row.compoundedRate, 2)}` : "-",
+        },
+        {
+            field: "currency",
+            headerName: t("market.tables.bond.currency"),
+            flex: 0.8,
+            minWidth: 90,
+            renderCell: ({ row }) => row.currency ?? "-",
+        },
+        {
+            field: "date",
+            headerName: t("market.tables.bond.date"),
+            flex: 0.9,
+            minWidth: 100,
+            renderCell: ({ row }) => formatLocalDate(row.rateDate),
+        },
+    ];
 
     const handleSortChange = (model: GridSortModel) => {
         const item = model[0];
@@ -100,7 +99,7 @@ export function BondsTable({ rows, sortConfig, onSort, onRowClick }: Props) {
             onRowClick={(row) => onRowClick(row.evdsSeriesCode)}
             sortModel={sortModel}
             onSortModelChange={handleSortChange}
-            emptyMessage="Aramaya uyan tahvil kaydı yok."
+            emptyMessage={t("market.tables.bond.empty")}
             rowHeight={52}
         />
     );

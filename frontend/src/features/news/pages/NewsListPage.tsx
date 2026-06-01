@@ -1,4 +1,5 @@
 import { Box, Stack } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { KapitalShell } from "../../../components/layout";
 import { MetricCard } from "../../../components/ui/MetricCard";
 import { PageHeader } from "../../../components/ui/PageHeader";
@@ -10,6 +11,7 @@ import { NewsPagination } from "../components/NewsPagination";
 import { useNewsList } from "../hooks/useNewsList";
 
 export default function NewsList() {
+    const { t } = useTranslation();
     const {
         loading,
         cards,
@@ -30,14 +32,14 @@ export default function NewsList() {
             <Box sx={{ p: { xs: 2, md: 3 } }}>
                 <SectionPanel sx={{ mb: 3 }}>
                     <PageHeader
-                        kicker="Canlı Haber Akışı"
-                        title="Finans Haber Merkezi"
-                        subtitle="Piyasalardaki son gelişmeleri tek panelde takip edin. Kaynağa bağlı detay, kategori bazlı filtreleme ve hızlı erişimle akışı yönetin."
+                        kicker={t("news.list.title")}
+                        title={t("news.list.pageTitle")}
+                        subtitle={t("news.list.subtitle")}
                     />
                     <Stack direction={{ xs: "column", sm: "row" }} sx={{ gap: 2, mt: 3 }}>
-                        <MetricCard label="Toplam Haber" value={loading ? "—" : totalElements} />
-                        <MetricCard label="Seçili Kategori" value={selectedCategoryName} />
-                        <MetricCard label="Son Kontrol" value={navClock} />
+                        <MetricCard label={t("news.list.totalLabel")} value={loading ? "—" : totalElements} />
+                        <MetricCard label={t("news.list.selectedCategory")} value={selectedCategoryName} />
+                        <MetricCard label={t("news.list.lastCheck")} value={navClock} />
                     </Stack>
                 </SectionPanel>
 
@@ -60,7 +62,7 @@ export default function NewsList() {
 
                 {!loading && cards.length === 0 && (
                     <Box sx={{ py: 6, textAlign: "center", color: "text.secondary" }}>
-                        Bu filtreye uygun haber bulunamadı.
+                        {t("news.list.noResults")}
                     </Box>
                 )}
 

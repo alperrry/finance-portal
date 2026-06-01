@@ -1,5 +1,6 @@
 import { Alert, Box, Button, Chip, FormControl, InputLabel, MenuItem, Select, Stack, Typography } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material/Select";
+import { useTranslation } from "react-i18next";
 import { AnalysisLineChart as LineChart } from "./LightweightLineChart";
 import type { AnalysisPageState } from "../hooks/useAnalysisPage";
 import { formatDecimal } from "../utils/analysisFormatters";
@@ -9,16 +10,17 @@ interface AnalysisComparisonPanelProps {
 }
 
 export function AnalysisComparisonPanel({ page }: AnalysisComparisonPanelProps) {
+    const { t } = useTranslation();
     const { selection, comparison, handlers } = page;
 
     return (
         <Box sx={{ mt: 3, pt: 2, borderTop: "1px solid", borderColor: "divider" }}>
             <Stack direction={{ xs: "column", sm: "row" }} sx={{ alignItems: { sm: "center" }, justifyContent: "space-between", gap: 1, mb: 2 }}>
                 <Box>
-                    <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>Karşılaştırma Paneli</Typography>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>Normalize % bazlı grafik</Typography>
+                    <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>{t("analysis.comparison.title")}</Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{t("analysis.comparison.subtitle")}</Typography>
                 </Box>
-                <Typography variant="caption" color="text.secondary">Ana seri dahil en fazla 3 enstrüman kullanılır.</Typography>
+                <Typography variant="caption" color="text.secondary">{t("analysis.comparison.maxNote")}</Typography>
             </Stack>
 
             <Stack direction="row" sx={{ gap: 1, flexWrap: "wrap", mb: 2 }}>
@@ -28,7 +30,7 @@ export function AnalysisComparisonPanel({ page }: AnalysisComparisonPanelProps) 
                     return (
                         <Chip
                             key={code}
-                            label={`${code} · ${option?.name ?? code}${isPrimary ? " (Ana seri)" : ""}`}
+                            label={`${code} · ${option?.name ?? code}${isPrimary ? ` (${t("analysis.comparison.primaryLabel")})` : ""}`}
                             color={isPrimary ? "secondary" : "default"}
                             variant={isPrimary ? "filled" : "outlined"}
                             onDelete={isPrimary ? undefined : () => handlers.updateSearchParam((params) => {
@@ -43,16 +45,16 @@ export function AnalysisComparisonPanel({ page }: AnalysisComparisonPanelProps) 
 
             <Stack direction={{ xs: "column", sm: "row" }} sx={{ gap: 1, alignItems: { sm: "center" }, mb: 2 }}>
                 <FormControl size="small" sx={{ minWidth: 220 }}>
-                    <InputLabel id="compare-code-label">Yeni enstrüman</InputLabel>
+                    <InputLabel id="compare-code-label">{t("analysis.comparison.newInstrument")}</InputLabel>
                     <Select
                         labelId="compare-code-label"
                         value={comparison.compareDraftCode}
-                        label="Yeni enstrüman"
+                        label={t("analysis.comparison.newInstrument")}
                         onChange={(event: SelectChangeEvent) => handlers.setCompareDraftCode(event.target.value)}
                         disabled={selection.comparisonCodes.length >= 3 || comparison.availableCompareOptions.length === 0}
                     >
                         {comparison.availableCompareOptions.length === 0 ? (
-                            <MenuItem value="" disabled>Eklenebilir enstrüman yok</MenuItem>
+                            <MenuItem value="" disabled>{t("analysis.comparison.noOptions")}</MenuItem>
                         ) : comparison.availableCompareOptions.map((option) => (
                             <MenuItem key={option.code} value={option.code}>{option.code} · {option.name}</MenuItem>
                         ))}
@@ -68,16 +70,16 @@ export function AnalysisComparisonPanel({ page }: AnalysisComparisonPanelProps) 
                         if (nextCompare.length > 0) params.set("compare", nextCompare.join(","));
                     })}
                 >
-                    Ekle
+                    {t("analysis.comparison.add")}
                 </Button>
             </Stack>
 
             {selection.comparisonCodes.length <= 1 ? (
-                <Alert severity="info">Karşılaştırma hazır — grafik için aynı türden en az bir enstrüman daha ekleyin.</Alert>
+                <Alert severity="info">{t("analysis.comparison.readyInfo")}</Alert>
             ) : comparison.comparisonLoading ? (
-                <Alert severity="info">Karşılaştırma yükleniyor — seçili enstrümanlar için normalize seri hazırlanıyor.</Alert>
+                <Alert severity="info">{t("analysis.comparison.loadingInfo")}</Alert>
             ) : comparison.comparisonError ? (
-                <Alert severity="error"><strong>Karşılaştırma verisi alınamadı</strong> {comparison.comparisonError}</Alert>
+                <Alert severity="error"><strong>{t("analysis.comparison.error")}</strong> {comparison.comparisonError}</Alert>
             ) : (
                 <>
                     <Stack direction="row" sx={{ gap: 1.5, flexWrap: "wrap", mb: 1 }}>
@@ -91,7 +93,7 @@ export function AnalysisComparisonPanel({ page }: AnalysisComparisonPanelProps) 
                     <LineChart
                         dates={comparison.comparisonChart.dates}
                         series={comparison.comparisonChart.series}
-                        emptyLabel="Karşılaştırma serileri hazır değil."
+                        emptyLabel={t("analysis.comparison.noData")}
                         yFormatter={(value) => `${value > 0 ? "+" : ""}${formatDecimal(value, 2)}%`}
                         referenceLines={[{ value: 0, label: "0%", color: "rgba(17,17,17,0.28)" }]}
                     />

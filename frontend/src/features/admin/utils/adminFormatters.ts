@@ -1,3 +1,4 @@
+import i18n from "../../../i18n";
 import type { AdminNewsStatus, AdminUserListItem, AuditLogItem } from "../types/admin.types";
 
 export function formatDateTime(value: string | null | undefined): string {
@@ -22,7 +23,7 @@ export function auditTime(item: AuditLogItem): string {
 }
 
 export function newsStatusLabel(status: AdminNewsStatus): string {
-    if (status === "archived") return "Arşiv";
-    if (status === "removed") return "Kaldırıldı";
-    return "Yayında";
+    if (status === "archived") return i18n.t("admin.formatters.archived");
+    if (status === "removed") return i18n.t("admin.formatters.removed");
+    return i18n.t("admin.formatters.published");
 }

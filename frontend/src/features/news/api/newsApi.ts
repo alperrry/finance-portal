@@ -1,4 +1,5 @@
 import { apiFetch } from "../../../services/api/client";
+import i18n from "../../../i18n";
 
 export type NewsSource = {
     id: number;
@@ -212,7 +213,7 @@ export async function fetchGoogleNewsRss(
 ): Promise<GoogleNewsItem[]> {
     const params = new URLSearchParams();
     params.set("q", query);
-    params.set("hl", options?.hl ?? "tr");
+    params.set("hl", options?.hl ?? i18n.language);
     params.set("gl", options?.gl ?? "TR");
     params.set("ceid", options?.ceid ?? "TR:tr");
     params.set("limit", String(options?.limit ?? 8));

@@ -2,8 +2,10 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { ApiError } from "../../services/api/client";
 import { fetchCurrentUser, type UserResponse } from "../../features/profile/api/userApi";
 import { websocketClient } from "../../services/websocketClient";
+import { clearUiPreferencesStorage } from "../providers/UiPreferencesProvider";
 import { AuthContext, type AuthContextType } from "./AuthContext";
 import { keycloak } from "./keycloak";
+import i18n from "../../i18n";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [ready, setReady] = useState(false);
@@ -83,10 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (caughtError) {
             const message =
                 caughtError instanceof ApiError && caughtError.status === 403
-                    ? "Bu işleme yetkiniz yok"
+                    ? i18n.t("auth.noPermission")
                     : caughtError instanceof Error
                       ? caughtError.message
-                      : "Kullanıcı bilgileri yüklenemedi.";
+                      : i18n.t("auth.userLoadError");
 
             setUserError(message);
             return null;
@@ -124,7 +126,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             authenticated,
             login: () => keycloak.login({ redirectUri: window.location.origin + "/portfolio" }),
             register: () => keycloak.register({ redirectUri: window.location.origin + "/portfolio" }),
-            logout: () => keycloak.logout({ redirectUri: window.location.origin + "/" }),
+            logout: () => {
+                clearUiPreferencesStorage();
+                keycloak.logout({ redirectUri: window.location.origin + "/" });
+            },
             currentUser,
             userLoading,
             userError,

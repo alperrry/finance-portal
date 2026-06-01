@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Badge, Box, Divider, IconButton, Paper, Typography } from "@mui/material";
 import type { AdminEvent } from "../types/admin.types";
 
@@ -17,6 +18,7 @@ export function NotificationBell({
     unreadCount: number;
     onOpen: () => void;
 }) {
+    const { t } = useTranslation();
     const [open, setOpen] = useState(false);
 
     const toggle = () => {
@@ -34,11 +36,11 @@ export function NotificationBell({
                     type="button"
                     size="small"
                     onClick={toggle}
-                    aria-label="Admin bildirimleri"
+                    aria-label={t("admin.notifications.ariaLabel")}
                     sx={{
                         border: "1px solid",
                         borderColor: "divider",
-                        bgcolor: "rgba(255, 255, 255, 0.76)",
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(33, 28, 24, 0.76)" : "rgba(255, 255, 255, 0.76)",
                         borderRadius: "999px",
                         width: 38,
                         height: 38,
@@ -65,14 +67,14 @@ export function NotificationBell({
                     }}
                 >
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 1.25, mb: 0.5 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 800 }}>Bildirimler</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 800 }}>{t("admin.notifications.title")}</Typography>
                         <Box component="a" href="/admin/users" sx={{ color: "secondary.main", fontWeight: 800, textDecoration: "none", fontSize: "0.75rem" }}>
-                            Tümünü gör
+                            {t("admin.notifications.seeAll")}
                         </Box>
                     </Box>
                     <Divider sx={{ mb: 1 }} />
                     {events.length === 0 ? (
-                        <Typography variant="body2" color="text.secondary" sx={{ p: 1.5 }}>Yeni admin olayı yok.</Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ p: 1.5 }}>{t("admin.notifications.empty")}</Typography>
                     ) : (
                         events.slice(0, 10).map((event) => (
                             <Box

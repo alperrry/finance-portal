@@ -1,27 +1,9 @@
 import { Box, Skeleton, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { fetchFundAllocation, type FundAllocationResponse } from "../api/marketApi";
 import { formatLocalDate } from "../utils/marketFormatters";
-
-const ALLOCATION_LABELS: Record<keyof Omit<FundAllocationResponse, "allocationDate">, string> = {
-    hs: "Hisse Senedi",
-    yhs: "Yabancı Hisse",
-    kb: "Kamu Borçlanma",
-    ob: "Özel Borçlanma",
-    ykb: "Yabancı Kamu Borç.",
-    yob: "Yabancı Özel Borç.",
-    tpp: "Para Piyasası",
-    vdm: "Vadeli Mevduat",
-    vm: "Vadesiz Mevduat",
-    r: "Repo",
-    t: "Ters Repo",
-    d: "Döviz",
-    gas: "Altın/Gümüş/Emtia",
-    byf: "Borsa Yat. Fonu",
-    vint: "Yabancı Menkul",
-    diger: "Diğer",
-};
 
 const SLICE_COLORS = [
     "#2563eb", "#16a34a", "#dc2626", "#d97706", "#7c3aed",
@@ -30,22 +12,16 @@ const SLICE_COLORS = [
     "#6d28d9",
 ];
 
-type SliceEntry = { name: string; value: number; color: string };
+type AllocationKey = keyof Omit<FundAllocationResponse, "allocationDate">;
+const ALLOCATION_KEYS: AllocationKey[] = ["hs", "yhs", "kb", "ob", "ykb", "yob", "tpp", "vdm", "vm", "r", "t", "d", "gas", "byf", "vint", "diger"];
 
-function buildSlices(data: FundAllocationResponse): SliceEntry[] {
-    const keys = Object.keys(ALLOCATION_LABELS) as Array<keyof typeof ALLOCATION_LABELS>;
-    return keys
-        .map((key, idx) => ({
-            name: ALLOCATION_LABELS[key],
-            value: data[key] ?? 0,
-            color: SLICE_COLORS[idx % SLICE_COLORS.length],
-        }))
-        .filter((s) => s.value > 0);
-}
+type SliceEntry = { name: string; value: number; color: string };
 
 type Props = { code: string };
 
 export function FundAllocationChart({ code }: Props) {
+    const { t } = useTranslation();
+
     const { data, isLoading, isError } = useQuery({
         queryKey: ["fund-allocation", code],
         queryFn: () => fetchFundAllocation(code),
@@ -66,7 +42,14 @@ export function FundAllocationChart({ code }: Props) {
         return null;
     }
 
-    const slices = buildSlices(data);
+    const slices: SliceEntry[] = ALLOCATION_KEYS
+        .map((key, idx) => ({
+            name: t(`market.fund.allocation.${key}` as any) as string,
+            value: data[key] ?? 0,
+            color: SLICE_COLORS[idx % SLICE_COLORS.length],
+        }))
+        .filter((s) => s.value > 0);
+
     if (slices.length === 0) return null;
 
     return (
@@ -81,11 +64,11 @@ export function FundAllocationChart({ code }: Props) {
         >
             <Box sx={{ mb: 2 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: "-0.01em" }}>
-                    Portföy Dağılımı
+                    {t("market.fund.allocationTitle")}
                 </Typography>
                 {data.allocationDate && (
                     <Typography variant="caption" color="text.secondary">
-                        {formatLocalDate(data.allocationDate)} tarihi itibarıyla
+                        {formatLocalDate(data.allocationDate)} {t("market.fund.asOf")}
                     </Typography>
                 )}
             </Box>

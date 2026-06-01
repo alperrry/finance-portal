@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import type { InstrumentType } from "../../analysis/api/historyApi";
@@ -29,7 +30,7 @@ import {
     getSeriesHigh,
     getSeriesLow,
 } from "../utils/instrumentSummary";
-import { CHART_COLORS, DEFAULT_RANGE } from "../types";
+import { CHART_COLORS, DEFAULT_RANGE, RANGE_I18N_KEY } from "../types";
 import type { ChartSeries, InstrumentMetricCard, RangeKey } from "../types";
 
 const parseType = (value: string | undefined): InstrumentType | null =>
@@ -40,6 +41,7 @@ const parseRange = (value: string | null): RangeKey =>
     value === "1A" || value === "3A" || value === "6A" || value === "1Y" ? value : DEFAULT_RANGE;
 
 export function useInstrumentDetailPage() {
+    const { t } = useTranslation();
     const params = useParams();
     const [searchParams, setSearchParams] = useSearchParams();
 
@@ -64,9 +66,9 @@ export function useInstrumentDetailPage() {
     const chartDates = useMemo(() => historyPoints.map((p) => p.date), [historyPoints]);
     const chartSeries = useMemo<ChartSeries[]>(
         () => summary
-            ? [{ key: "close", label: "Kapanış", color: CHART_COLORS.price, values: historyPoints.map((p) => toSafeNumber(p.close)) }]
+            ? [{ key: "close", label: t("market.metrics.close"), color: CHART_COLORS.price, values: historyPoints.map((p) => toSafeNumber(p.close)) }]
             : [],
-        [historyPoints, summary],
+        [historyPoints, summary, t],
     );
 
     const stocksQuery = useQuery({
@@ -123,34 +125,35 @@ export function useInstrumentDetailPage() {
 
     const metricCards = useMemo<InstrumentMetricCard[]>(() => {
         if (!summary) return [];
+        const rangeLabel = t(`market.chart.range.${RANGE_I18N_KEY[range]}` as any) as string;
         return [
             {
-                label: "Son Değer",
+                label: t("market.metrics.lastValue"),
                 value: formatValueByType(summary.type, getDisplayLatestValue(summary, latestClose), summary.currency),
                 note: getDisplayLatestNote(summary, latestClose, history?.to),
             },
             {
-                label: `${range} Değişim`,
+                label: `${rangeLabel} ${t("market.metrics.change")}`,
                 value: formatPercent(periodChange ?? summary.snapshotChange),
                 note: `${formatLocalDate(rangeDates.from)} → ${formatLocalDate(rangeDates.to)}`,
             },
             {
-                label: "Aralık Yüksek",
+                label: t("market.metrics.rangeHigh"),
                 value: formatValueByType(summary.type, highestValue, summary.currency),
-                note: "Seçili periyodun tepe noktası",
+                note: t("market.metrics.rangeHighNote"),
             },
             {
-                label: "Aralık Düşük",
+                label: t("market.metrics.rangeLow"),
                 value: formatValueByType(summary.type, lowestValue, summary.currency),
-                note: "Seçili periyodun dip noktası",
+                note: t("market.metrics.rangeLowNote"),
             },
             {
-                label: summary.type === "stocks" ? "Hacim" : "Son Kayıt",
+                label: summary.type === "stocks" ? t("market.metrics.volume") : t("market.metrics.lastRecord"),
                 value: summary.type === "stocks" ? formatCompactNumber(lastVolume) : formatLocalDate(summary.latestDate),
-                note: summary.type === "stocks" ? "Son işlem günündeki hacim" : "Son güncel veri tarihi",
+                note: summary.type === "stocks" ? t("market.metrics.volumeNote") : t("market.metrics.lastRecordNote"),
             },
         ];
-    }, [history?.to, highestValue, lastVolume, latestClose, lowestValue, periodChange, range, rangeDates, summary]);
+    }, [history?.to, highestValue, lastVolume, latestClose, lowestValue, periodChange, range, rangeDates, summary, t]);
 
     const updateRange = (nextRange: RangeKey) => {
         const nextParams = new URLSearchParams(searchParams);

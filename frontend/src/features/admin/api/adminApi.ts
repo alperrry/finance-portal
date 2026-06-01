@@ -1,4 +1,5 @@
 import { apiFetch } from "../../../services/api/client";
+import i18n from "../../../i18n";
 import type {
     AdminUserRole,
     AdminUserStatus,
@@ -54,9 +55,9 @@ async function readData<T>(response: Response, fallbackMessage: string): Promise
 
 export async function fetchAdminUsers(): Promise<AdminUserListItem[]> {
     const response = await apiFetch("/api/v1/admin/users", {
-        errorMessage: "Kullanıcılar yüklenemedi.",
+        errorMessage: i18n.t("admin.users.loadError"),
     });
-    const raw = await readData<unknown[] | PageResponse<unknown>>(response, "Kullanıcılar yüklenemedi.");
+    const raw = await readData<unknown[] | PageResponse<unknown>>(response, i18n.t("admin.users.loadError"));
     const users = Array.isArray(raw) ? raw : raw.content ?? [];
     return users.map(normalizeUserListItem);
 }
@@ -294,9 +295,9 @@ async function readActionResponse<T>(response: Response, fallbackMessage: string
 
 export async function fetchAdminNewsSources(): Promise<AdminNewsSource[]> {
     const response = await apiFetch("/api/v1/admin/news/sources", {
-        errorMessage: "RSS kaynakları yüklenemedi.",
+        errorMessage: i18n.t("admin.sources.loadError"),
     });
-    const raw = await readData<unknown[] | PageResponse<unknown>>(response, "RSS kaynakları yüklenemedi.");
+    const raw = await readData<unknown[] | PageResponse<unknown>>(response, i18n.t("admin.sources.loadError"));
     const sources = Array.isArray(raw) ? raw : raw.content ?? [];
     return sources.map(normalizeSource);
 }
@@ -324,7 +325,7 @@ export async function updateAdminNewsSource(sourceId: number, payload: AdminNews
 export async function deleteAdminNewsSource(sourceId: number): Promise<void> {
     await apiFetch(`/api/v1/admin/news/sources/${sourceId}`, {
         method: "DELETE",
-        errorMessage: "RSS kaynağı silinemedi.",
+        errorMessage: i18n.t("admin.sources.deleteError"),
     });
 }
 
@@ -332,9 +333,9 @@ export async function triggerAdminNewsFetch(sourceId?: number): Promise<AdminFet
     const path = sourceId ? `/api/v1/admin/news/fetch/${sourceId}` : "/api/v1/admin/news/fetch";
     const response = await apiFetch(path, {
         method: "POST",
-        errorMessage: "Haber çekimi başlatılamadı.",
+        errorMessage: i18n.t("admin.sources.fetchError"),
     });
-    return readActionResponse<AdminFetchResponse>(response, "Haber çekimi başlatılamadı.");
+    return readActionResponse<AdminFetchResponse>(response, i18n.t("admin.sources.fetchError"));
 }
 
 export async function fetchAdminNews(query: AdminNewsQuery): Promise<AdminPageResponse<AdminNewsSummary>> {
@@ -347,9 +348,9 @@ export async function fetchAdminNews(query: AdminNewsQuery): Promise<AdminPageRe
     params.set("size", String(query.size));
     params.set("sort", "createdAt,desc");
     const response = await apiFetch(`/api/v1/admin/news?${params.toString()}`, {
-        errorMessage: "Haberler yüklenemedi.",
+        errorMessage: i18n.t("admin.news.loadError"),
     });
-    const raw = await readData<PageResponse<unknown> | unknown[]>(response, "Haberler yüklenemedi.");
+    const raw = await readData<PageResponse<unknown> | unknown[]>(response, i18n.t("admin.news.loadError"));
     return normalizePage(raw, normalizeNewsSummary, query.size);
 }
 
@@ -358,9 +359,9 @@ export async function updateAdminNewsStatus(newsId: number, status: AdminNewsSta
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
-        errorMessage: "Haber durumu güncellenemedi.",
+        errorMessage: i18n.t("admin.news.statusError"),
     });
-    return normalizeNewsSummary(await readData<unknown>(response, "Haber durumu güncellenemedi."));
+    return normalizeNewsSummary(await readData<unknown>(response, i18n.t("admin.news.statusError")));
 }
 
 export async function updateAdminNewsCategories(newsId: number, categoryIds: number[]): Promise<AdminNewsSummary> {
@@ -368,16 +369,16 @@ export async function updateAdminNewsCategories(newsId: number, categoryIds: num
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ categoryIds }),
-        errorMessage: "Haber kategorileri güncellenemedi.",
+        errorMessage: i18n.t("admin.news.categoriesError"),
     });
-    return normalizeNewsSummary(await readData<unknown>(response, "Haber kategorileri güncellenemedi."));
+    return normalizeNewsSummary(await readData<unknown>(response, i18n.t("admin.news.categoriesError")));
 }
 
 export async function fetchAdminCategories(): Promise<AdminCategory[]> {
     const response = await apiFetch("/api/v1/admin/categories", {
-        errorMessage: "Kategoriler yüklenemedi.",
+        errorMessage: i18n.t("admin.categories.loadError"),
     });
-    const raw = await readData<unknown[] | PageResponse<unknown>>(response, "Kategoriler yüklenemedi.");
+    const raw = await readData<unknown[] | PageResponse<unknown>>(response, i18n.t("admin.categories.loadError"));
     const categories = Array.isArray(raw) ? raw : raw.content ?? [];
     return categories.map(normalizeCategory);
 }
@@ -405,16 +406,16 @@ export async function updateAdminCategory(categoryId: number, payload: AdminCate
 export async function deleteAdminCategory(categoryId: number): Promise<void> {
     await apiFetch(`/api/v1/admin/categories/${categoryId}`, {
         method: "DELETE",
-        errorMessage: "Kategori silinemedi.",
+        errorMessage: i18n.t("admin.categories.deleteError"),
     });
 }
 
 export async function triggerAdminMarketBackfill(module: AdminMarketBackfillModule): Promise<AdminBackfillResponse> {
     const response = await apiFetch(`/api/v1/admin/market/backfill/${module}`, {
         method: "POST",
-        errorMessage: "Backfill başlatılamadı.",
+        errorMessage: i18n.t("admin.marketJobs.backfillError"),
     });
-    return readActionResponse<AdminBackfillResponse>(response, "Backfill başlatılamadı.");
+    return readActionResponse<AdminBackfillResponse>(response, i18n.t("admin.marketJobs.backfillError"));
 }
 
 export async function clearAdminMarketData(module: AdminMarketBackfillModule): Promise<number> {

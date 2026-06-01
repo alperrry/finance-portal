@@ -1,5 +1,6 @@
 import type { ApiResponse } from "../../market/api/marketApi";
 import { apiFetch } from "../../../services/api/client";
+import i18n from "../../../i18n";
 
 export type InstrumentType = "stocks" | "indexes" | "commodities" | "crypto" | "fx" | "funds" | "bonds";
 
@@ -73,7 +74,7 @@ async function fetchPayload<T>(path: string, errorMessage: string): Promise<T> {
 
     const raw = (await response.json()) as ApiResponse<T>;
     if (raw?.success !== true || raw.data === undefined || raw.data === null) {
-        throw new Error(`${errorMessage} Geçersiz API cevabı alındı.`);
+        throw new Error(`${errorMessage} ${i18n.t("analysis.drawings.errors.invalidApi")}`);
     }
 
     return raw.data;
@@ -87,7 +88,7 @@ export async function fetchInstrumentHistory(
 ): Promise<HistoryResponse> {
     const raw = await fetchPayload<RawHistoryResponse>(
         `/api/v1/history/${type}/${encodeURIComponent(code)}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
-        "Tarihsel veri yüklenemedi."
+        i18n.t("analysis.errors.historicalData")
     );
 
     return {
@@ -113,7 +114,7 @@ export async function fetchHistoryCompare(
 
     const raw = await fetchPayload<RawCompareResponse>(
         `/api/v1/history/compare?${params.toString()}`,
-        "Karşılaştırma verisi yüklenemedi."
+        i18n.t("analysis.errors.comparisonData")
     );
 
     const normalizedSeries: Record<string, HistoryPoint[]> = {};

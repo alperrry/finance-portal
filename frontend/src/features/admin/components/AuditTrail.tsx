@@ -1,4 +1,5 @@
 import { Alert, Box, Paper, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import type { AuditLogItem } from "../types/admin.types";
 import { PANEL_SX, PANEL_HEAD_SX, AUDIT_ITEM_SX } from "../constants/adminStyles";
 import { auditTime } from "../utils/adminFormatters";
@@ -9,7 +10,9 @@ interface UserAuditTrailProps {
     data: AuditLogItem[];
 }
 
-export function AuditTrail({loading,error,data}:UserAuditTrailProps) {return (
+export function AuditTrail({loading,error,data}:UserAuditTrailProps) {
+    const { t } = useTranslation();
+    return (
 
 <Paper sx={PANEL_SX}>
     <Box sx={PANEL_HEAD_SX}>
@@ -18,20 +21,20 @@ export function AuditTrail({loading,error,data}:UserAuditTrailProps) {return (
                 Audit Trail
             </Typography>
             <Typography variant="h6" sx={{ mt: 0.5, fontSize: 24, letterSpacing: 0, fontWeight: 700 }}>
-                Son kayıtlar
+                {t("admin.audit.recent")}
             </Typography>
         </Box>
     </Box>
     {loading && (
         <Typography sx={{ p: "22px", color: "text.secondary" }}>
-            Audit kayıtları yükleniyor...
+            {t("admin.audit.loading")}
         </Typography>
     )}
     {!loading && error && (
         <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
     )}
     {!loading && !error && data.length === 0 && (
-        <Typography sx={{ p: "22px", color: "text.secondary" }}>Kayıt bulunamadı.</Typography>
+        <Typography sx={{ p: "22px", color: "text.secondary" }}>{t("admin.audit.notFound")}</Typography>
     )}
     {!loading && !error && data.length > 0 && (
         <Box>
@@ -40,7 +43,7 @@ export function AuditTrail({loading,error,data}:UserAuditTrailProps) {return (
                     <Box>
                         <Typography variant="body2" sx={{ fontWeight: 700 }}>{item.action}</Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
-                            {item.actorUsername ?? "Sistem"}{item.reason ? `: ${item.reason}` : ""}
+                            {item.actorUsername ?? t("admin.audit.system")}{item.reason ? `: ${item.reason}` : ""}
                         </Typography>
                     </Box>
                     <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>

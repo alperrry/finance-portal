@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { useTranslation } from "react-i18next";
 
 export type ChartSeries = {
     key: string;
@@ -131,6 +132,7 @@ export function AnalysisLineChart({
     valueFormatter,
     volumeFormatter = formatCompactNumber,
 }: AnalysisLineChartProps) {
+    const { t } = useTranslation();
     const frameRef = useRef<HTMLDivElement | null>(null);
     const svgRef = useRef<SVGSVGElement | null>(null);
     const [tooltip, setTooltip] = useState<LineTooltipState | null>(null);
@@ -170,7 +172,7 @@ export function AnalysisLineChart({
     if (domainValues.length === 0) {
         return (
             <div className="analysis-chart-empty">
-                <strong>Grafik hazır değil</strong>
+                <strong>{t("analysis.chart.notReady")}</strong>
                 <span>{emptyLabel}</span>
             </div>
         );
@@ -353,11 +355,11 @@ export function AnalysisLineChart({
                     {tooltipPoint ? (
                         <>
                             <span>
-                                <b>Fiyat</b>
+                                <b>{t("analysis.chart.price")}</b>
                                 <em>{formatTooltipValue(tooltipPoint.close)}</em>
                             </span>
                             <span>
-                                <b>Hacim</b>
+                                <b>{t("analysis.chart.volumeLabel")}</b>
                                 <em>{volumeFormatter(tooltipPoint.volume)}</em>
                             </span>
                             {tooltipIndicatorRows.length > 0 ? <i className="analysis-tooltip-divider" /> : null}

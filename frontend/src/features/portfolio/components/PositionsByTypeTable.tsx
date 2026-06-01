@@ -26,8 +26,9 @@ import {
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useRef, useMemo } from "react";
 import type { ManualPositionResponse, PortfolioInstrumentType, PositionKind } from "../api/portfolioApi";
-import { INSTRUMENT_LABELS } from "../types";
+import { getInstrumentLabels } from "../types";
 import { calcMaturityValue, formatMoney, formatPercent, formatQuantity, formatSignedMoney } from "../utils/portfolioFormatters";
+import { useTranslation } from "react-i18next";
 
 const VIRTUAL_THRESHOLD = 20;
 const ROW_HEIGHT = 48;
@@ -162,7 +163,7 @@ function getColumns(
         cell: ({ row: { original: r } }) => (
             <Box sx={{ py: 0.5 }}>
                 <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
-                    {r.instrumentSymbol ?? r.bankName ?? INSTRUMENT_LABELS[r.instrumentType]}
+                    {r.instrumentSymbol ?? r.bankName ?? getInstrumentLabels()[r.instrumentType]}
                 </Typography>
                 {r.instrumentName ? (
                     <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>
@@ -509,6 +510,7 @@ function GroupTable({ rows, type, kind, onDelete, onSell, onSimulate }: GroupTab
 const TYPE_ORDER: PortfolioInstrumentType[] = ["STOCK", "FUND", "CURRENCY", "BOND", "VIOP", "DEPOSIT"];
 
 export function PositionsByTypeTable({ positions, loading, kind, onKindChange, onDelete, onSell, onSimulate }: Props) {
+    const { t } = useTranslation();
     const groups = useMemo(() => {
         const map = new Map<PortfolioInstrumentType, ManualPositionResponse[]>();
         for (const pos of positions) {
@@ -523,8 +525,8 @@ export function PositionsByTypeTable({ positions, loading, kind, onKindChange, o
         <Box>
             <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start", mb: 2, flexWrap: "wrap", gap: 1 }}>
                 <Box>
-                    <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>Pozisyonlar</Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 800 }}>Pozisyon Defteri</Typography>
+                    <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>{t("portfolio.positions.overline")}</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 800 }}>{t("portfolio.positions.title")}</Typography>
                 </Box>
             </Stack>
 
@@ -533,8 +535,8 @@ export function PositionsByTypeTable({ positions, loading, kind, onKindChange, o
                 onChange={(_, val: PositionKind) => onKindChange(val)}
                 sx={{ mb: 2, borderBottom: 1, borderColor: "divider" }}
             >
-                <Tab label="Mevcut Pozisyonlar" value="OPEN" />
-                <Tab label="Geçmiş Pozisyonlar" value="CLOSED" />
+                <Tab label={t("portfolio.positions.openTab")} value="OPEN" />
+                <Tab label={t("portfolio.positions.closedTab")} value="CLOSED" />
             </Tabs>
 
             {loading && (
@@ -545,7 +547,7 @@ export function PositionsByTypeTable({ positions, loading, kind, onKindChange, o
 
             {!loading && groups.length === 0 && (
                 <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                    {kind === "OPEN" ? "Mevcut pozisyon yok." : "Geçmiş pozisyon yok."}
+                    {kind === "OPEN" ? t("portfolio.positions.noOpen") : t("portfolio.positions.noClosed")}
                 </Typography>
             )}
 
@@ -556,7 +558,7 @@ export function PositionsByTypeTable({ positions, loading, kind, onKindChange, o
                             <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 48, "& .MuiAccordionSummary-content": { my: 1 } }}>
                                 <Stack direction="row" sx={{ alignItems: "center", gap: 1.5, flex: 1 }}>
                                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                        {INSTRUMENT_LABELS[type]}
+                                        {getInstrumentLabels()[type]}
                                     </Typography>
                                     <Chip label={rows.length} size="small" variant="outlined" sx={{ height: 20, fontSize: "0.7rem" }} />
                                 </Stack>

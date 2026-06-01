@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { AdminNewsQuery, AdminNewsSummary, AdminPageResponse } from "../types/admin.types";
 import { fetchAdminNews } from "./adminApi";
+import i18n from "../../../i18n";
 
 const EMPTY_PAGE: AdminPageResponse<AdminNewsSummary> = {
     content: [],
@@ -22,7 +23,7 @@ export function useAdminNews(query: AdminNewsQuery) {
     return {
         data: data ?? { ...EMPTY_PAGE, size: query.size },
         loading: isLoading,
-        error: error ? (error instanceof Error ? error.message : "Haberler yüklenemedi.") : null,
+        error: error ? (error instanceof Error ? error.message : i18n.t("admin.news.loadError")) : null,
         refetch: () => void refetch(),
     };
 }

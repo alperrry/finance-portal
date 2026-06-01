@@ -1,5 +1,6 @@
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { ManualPositionResponse } from "../api/portfolioApi";
 import { buildTypeGroupData, formatMoney, formatPercent, formatSignedMoney } from "../utils/portfolioFormatters";
@@ -46,6 +47,7 @@ type Props = {
 };
 
 export function PortfolioTypeChart({ positions, currency, onNewTrade }: Props) {
+    const { t } = useTranslation();
     const groups = useMemo(() => buildTypeGroupData(positions), [positions]);
     const total = groups.reduce((sum, g) => sum + g.value, 0);
     const [activeSegment, setActiveSegment] = useState<number | null>(null);
@@ -54,12 +56,12 @@ export function PortfolioTypeChart({ positions, currency, onNewTrade }: Props) {
         return (
             <Stack sx={{ alignItems: "center", py: 4, gap: 1 }}>
                 <Typography variant="h3" aria-hidden="true">▦</Typography>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Henüz pozisyon yok</Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{t("portfolio.typeChart.noPositions")}</Typography>
                 <Typography variant="body2" color="text.secondary">
-                    İlk işlemini eklediğinde portföy dağılımı burada görünecek.
+                    {t("portfolio.typeChart.noPositionsDesc")}
                 </Typography>
                 <Button variant="contained" color="secondary" size="small" onClick={onNewTrade} sx={{ mt: 1 }}>
-                    + Yeni İşlem
+                    {t("portfolio.typeChart.newTrade")}
                 </Button>
             </Stack>
         );
@@ -102,7 +104,7 @@ export function PortfolioTypeChart({ positions, currency, onNewTrade }: Props) {
                 {/* Grafiğin ortasındaki yazı ezilmesin diye alta şık bir kutu olarak alındı */}
                 <Box sx={{ textAlign: "center", mt: -2, bgcolor: "background.default", py: 1, px: 3, borderRadius: 2 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
-                        TOPLAM PORTFÖY DEĞERİ
+                        {t("portfolio.typeChart.totalValue")}
                     </Typography>
                     <Typography variant="h6" sx={{ fontWeight: 900, color: "text.primary" }}>
                         {formatMoney(total, currency)}
@@ -114,7 +116,7 @@ export function PortfolioTypeChart({ positions, currency, onNewTrade }: Props) {
             {/* DİKKAT: maxWidth: 500 eklenerek listenin sakız gibi sünmesi engellendi */}
             <Stack sx={{ gap: 1.5, flex: 1, maxWidth: 500, width: "100%" }}>
                 <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700 }}>
-                    Tür Dağılımı
+                    {t("portfolio.typeChart.typeDistribution")}
                 </Typography>
                 {groups.map((g) => {
                     const pct = total > 0 ? (g.value / total) * 100 : 0;

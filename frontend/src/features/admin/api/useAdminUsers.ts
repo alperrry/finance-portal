@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { AdminUserListItem, AdminUsersFilter } from "../types/admin.types";
 import { fetchAdminUsers } from "./adminApi";
+import i18n from "../../../i18n";
 
 export function useAdminUsers() {
     const { data, isLoading, error, refetch } = useQuery({
@@ -13,7 +14,7 @@ export function useAdminUsers() {
     return {
         data: data ?? [],
         loading: isLoading,
-        error: error ? (error instanceof Error ? error.message : "Kullanıcılar yüklenemedi.") : null,
+        error: error ? (error instanceof Error ? error.message : i18n.t("admin.users.loadError")) : null,
         refetch: () => void refetch(),
     };
 }

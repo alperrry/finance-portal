@@ -1,7 +1,9 @@
 import { Box, Button, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { Link as RouterLink } from "react-router-dom";
 import type { InstrumentType } from "../../analysis/api/historyApi";
 import type { InstrumentSummary, RangeKey } from "../types";
+import { RANGE_I18N_KEY } from "../types";
 import { toSafeNumber, formatPercent } from "../utils/marketFormatters";
 
 type Props = {
@@ -17,10 +19,10 @@ type Props = {
 const CARD_SX = {
     border: "1px solid",
     borderColor: "divider",
-    bgcolor: "rgba(255, 255, 255, 0.76)",
-    boxShadow: "0 16px 48px rgba(17, 17, 17, 0.06)",
+    bgcolor: (theme: { palette: { mode: string } }) => theme.palette.mode === "dark" ? "rgba(33, 28, 24, 0.76)" : "rgba(255, 255, 255, 0.76)",
+    boxShadow: (theme: { palette: { mode: string } }) => theme.palette.mode === "dark" ? "0 16px 48px rgba(0, 0, 0, 0.32)" : "0 16px 48px rgba(17, 17, 17, 0.06)",
     backdropFilter: "blur(16px)",
-} as const;
+};
 
 const STATUS_SX = {
     ...CARD_SX,
@@ -31,12 +33,15 @@ const STATUS_SX = {
 } as const;
 
 export function InstrumentHero({ code, summary, periodChange, range, instrumentType, loadingSummary, summaryError }: Props) {
+    const { t } = useTranslation();
     const changeTone =
         toSafeNumber(periodChange ?? summary?.snapshotChange) === null
             ? null
             : (periodChange ?? summary?.snapshotChange ?? 0) < 0
               ? "down"
               : "up";
+
+    const rangeLabel = t(`market.chart.range.${RANGE_I18N_KEY[range]}` as any) as string;
 
     return (
         <>
@@ -54,8 +59,9 @@ export function InstrumentHero({ code, summary, periodChange, range, instrumentT
                         ...CARD_SX,
                         borderRadius: "30px",
                         p: { xs: 2.5, md: 4 },
-                        background:
-                            "radial-gradient(circle at top left, rgba(193, 98, 47, 0.14), transparent 34%), linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(247, 245, 241, 0.9))",
+                        background: (theme) => theme.palette.mode === "dark"
+                            ? "radial-gradient(circle at top left, rgba(193, 98, 47, 0.14), transparent 34%), linear-gradient(145deg, rgba(33, 28, 24, 0.92), rgba(24, 21, 18, 0.9))"
+                            : "radial-gradient(circle at top left, rgba(193, 98, 47, 0.14), transparent 34%), linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(247, 245, 241, 0.9))",
                     }}
                 >
                     <Typography
@@ -67,7 +73,7 @@ export function InstrumentHero({ code, summary, periodChange, range, instrumentT
                             color: "text.secondary",
                         }}
                     >
-                        Enstrüman Detayı
+                        {t("market.instrument.detail")}
                     </Typography>
 
                     <Box sx={{ mt: 2, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2.25 }}>
@@ -87,7 +93,7 @@ export function InstrumentHero({ code, summary, periodChange, range, instrumentT
                             </Typography>
                             <Box component="p" sx={{ m: "12px 0 0", display: "flex", flexWrap: "wrap", gap: 1.5, fontSize: 15, lineHeight: 1.6, color: "text.secondary" }}>
                                 <Box component="strong" sx={{ color: "text.primary" }}>{code}</Box>
-                                <span>{summary?.subtitle ?? "Enstrüman"}</span>
+                                <span>{summary?.subtitle ?? t("market.instrument.defaultName")}</span>
                             </Box>
                         </Box>
 
@@ -98,8 +104,8 @@ export function InstrumentHero({ code, summary, periodChange, range, instrumentT
                                 p: "18px 20px",
                                 border: "1px solid",
                                 borderColor: "divider",
-                                bgcolor: "rgba(17, 17, 17, 0.94)",
-                                color: "rgba(255, 255, 255, 0.82)",
+                                bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(240, 237, 230, 0.94)" : "rgba(17, 17, 17, 0.94)",
+                                color: (theme) => theme.palette.mode === "dark" ? "rgba(17, 17, 17, 0.88)" : "rgba(255, 255, 255, 0.82)",
                                 flexShrink: 0,
                             }}
                         >
@@ -117,13 +123,13 @@ export function InstrumentHero({ code, summary, periodChange, range, instrumentT
                                 {formatPercent(periodChange ?? summary?.snapshotChange)}
                             </Typography>
                             <Typography component="span" sx={{ display: "block", mt: 1.25, fontSize: 12, lineHeight: 1.5 }}>
-                                {range} görünümündeki toplam değişim
+                                {rangeLabel} {t("market.instrument.rangeChange")}
                             </Typography>
                         </Box>
                     </Box>
 
                     <Typography component="p" sx={{ m: "18px 0 0", maxWidth: 680, fontSize: 14, lineHeight: 1.75, color: "text.secondary" }}>
-                        {summary?.helper ?? "Grafik seçili aralıktaki tarihsel seriyi gösterir. Daha ileri teknik indikatörler için analiz ekranına geçebilirsin."}
+                        {summary?.helper ?? t("market.instrument.chartHelp")}
                     </Typography>
 
                     <Box sx={{ mt: 3, display: "flex", flexWrap: "wrap", gap: 1.5 }}>
@@ -134,7 +140,7 @@ export function InstrumentHero({ code, summary, periodChange, range, instrumentT
                             color="inherit"
                             size="small"
                         >
-                            Enstrümanlara Dön
+                            {t("market.instrument.backToList")}
                         </Button>
                         <Button
                             component={RouterLink}
@@ -143,7 +149,7 @@ export function InstrumentHero({ code, summary, periodChange, range, instrumentT
                             color="primary"
                             size="small"
                         >
-                            Analize Git
+                            {t("market.instrument.analyzeButton")}
                         </Button>
                     </Box>
                 </Box>
@@ -164,13 +170,13 @@ export function InstrumentHero({ code, summary, periodChange, range, instrumentT
                             color: "text.secondary",
                         }}
                     >
-                        Canlı Referans
+                        {t("market.instrument.livePriceTab")}
                     </Typography>
                     <Typography
                         component="h2"
                         sx={{ m: "10px 0 0", fontSize: 28, lineHeight: 1, letterSpacing: "-0.03em", fontWeight: 700 }}
                     >
-                        Özet Kartlar
+                        {t("market.instrument.summaryTab")}
                     </Typography>
                     <Box sx={{ mt: 2.75, display: "grid", gap: 1.5 }}>
                         {(summary?.stats ?? []).map((item) => (
@@ -193,16 +199,16 @@ export function InstrumentHero({ code, summary, periodChange, range, instrumentT
             </Box>
 
             {summaryError ? (
-                <Box sx={{ ...STATUS_SX, borderColor: "rgba(224, 88, 88, 0.22)", bgcolor: "rgba(253, 240, 240, 0.88)" }}>
-                    <strong>Enstrüman detayı alınamadı</strong>
+                <Box sx={{ ...STATUS_SX, borderColor: "rgba(224, 88, 88, 0.22)", bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(80, 20, 20, 0.5)" : "rgba(253, 240, 240, 0.88)" }}>
+                    <strong>{t("market.instrument.loadError")}</strong>
                     <span>{summaryError}</span>
                 </Box>
             ) : null}
 
             {loadingSummary ? (
                 <Box sx={STATUS_SX}>
-                    <strong>Detay kartı hazırlanıyor</strong>
-                    <span>Seçili enstrümanın özet alanları yükleniyor.</span>
+                    <strong>{t("market.instrument.loading.title")}</strong>
+                    <span>{t("market.instrument.loading.subtitle")}</span>
                 </Box>
             ) : null}
         </>

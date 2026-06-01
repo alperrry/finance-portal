@@ -1,6 +1,7 @@
 import EditIcon from "@mui/icons-material/Edit";
 import { Box, Card, CardContent, Chip, Divider, IconButton, Stack, Typography } from "@mui/material";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type { UserResponse } from "../api/userApi";
 import type { ProfileField } from "../types";
 import { formatDateTime } from "../utils/profileFormatters";
@@ -34,47 +35,48 @@ function InfoRow({ label, value, field, onFocusField }: { label: string; value: 
 }
 
 export function ProfileInfoPanel({ currentUser, onFocusField }: Props) {
+    const { t } = useTranslation();
     return (
         <Card sx={{ flex: 1 }}>
             <CardContent>
                 <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mb: 2 }}>
                     <Box>
                         <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>
-                            Kullanıcı Bilgileri
+                            {t("profile.info.overline")}
                         </Typography>
                         <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
-                            Hesap Özeti
+                            {t("profile.info.heading")}
                         </Typography>
                     </Box>
                     <Chip
-                        label={currentUser.isActive ? "Aktif" : "Pasif"}
+                        label={currentUser.isActive ? t("common.active") : t("common.passive")}
                         size="small"
                         color={currentUser.isActive ? "success" : "default"}
                     />
                 </Stack>
                 <Divider sx={{ mb: 1 }} />
-                <InfoRow label="Ad" value={currentUser.firstName || "-"} field="firstName" onFocusField={onFocusField} />
+                <InfoRow label={t("profile.info.firstName")} value={currentUser.firstName || "-"} field="firstName" onFocusField={onFocusField} />
                 <Divider />
-                <InfoRow label="Soyad" value={currentUser.lastName || "-"} field="lastName" onFocusField={onFocusField} />
+                <InfoRow label={t("profile.info.lastName")} value={currentUser.lastName || "-"} field="lastName" onFocusField={onFocusField} />
                 <Divider />
-                <InfoRow label="E-posta" value={currentUser.email || "-"} field="email" onFocusField={onFocusField} />
+                <InfoRow label={t("profile.info.email")} value={currentUser.email || "-"} field="email" onFocusField={onFocusField} />
                 <Divider />
-                <InfoRow label="Kullanıcı adı" value={currentUser.username || "-"} />
+                <InfoRow label={t("profile.info.username")} value={currentUser.username || "-"} />
                 <Divider />
                 <InfoRow
-                    label="Rol"
+                    label={t("profile.info.role")}
                     value={<Chip label={currentUser.role} size="small" variant="outlined" color={currentUser.role === "ADMIN" ? "secondary" : "default"} />}
                 />
                 <Divider />
-                <InfoRow label="Son giriş" value={formatDateTime(currentUser.lastLoginAt)} />
+                <InfoRow label={t("profile.info.lastLogin")} value={formatDateTime(currentUser.lastLoginAt)} />
                 <Divider />
-                <InfoRow label="Kayıt tarihi" value={formatDateTime(currentUser.createdAt)} />
+                <InfoRow label={t("profile.info.registeredAt")} value={formatDateTime(currentUser.createdAt)} />
                 <Divider />
                 <InfoRow
-                    label="Hesap durumu"
+                    label={t("profile.info.accountStatus")}
                     value={
                         <Typography variant="body2" color={currentUser.isActive ? "success.main" : "text.secondary"} sx={{ fontWeight: 700 }}>
-                            {currentUser.isActive ? "Aktif" : "Pasif"}
+                            {currentUser.isActive ? t("common.active") : t("common.passive")}
                         </Typography>
                     }
                 />

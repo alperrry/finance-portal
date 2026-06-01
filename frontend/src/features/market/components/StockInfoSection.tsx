@@ -1,4 +1,5 @@
 import { Box, Chip, LinearProgress, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import type { InstrumentSummary } from "../types";
 import type { StockResponse } from "../api/marketApi";
 import { formatCompactNumber, formatNumber, toSafeNumber } from "../utils/marketFormatters";
@@ -33,6 +34,7 @@ function RangeBar({ low, high, current }: { low: number; high: number; current: 
 }
 
 export function StockInfoSection({ summary, stockData }: Props) {
+    const { t } = useTranslation();
     if (!stockData) return null;
 
     const current = toSafeNumber(stockData.price);
@@ -53,7 +55,7 @@ export function StockInfoSection({ summary, stockData }: Props) {
             }}
         >
             <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: "-0.01em" }}>
-                Şirket Bilgileri
+                {t("market.stock.companyInfo")}
             </Typography>
 
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
@@ -70,14 +72,14 @@ export function StockInfoSection({ summary, stockData }: Props) {
 
             {stockData.longName && summary?.title !== stockData.longName && (
                 <Box>
-                    <Typography variant="caption" color="text.secondary">Tam Ünvan</Typography>
+                    <Typography variant="caption" color="text.secondary">{t("market.stock.fullName")}</Typography>
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>{stockData.longName}</Typography>
                 </Box>
             )}
 
             {stockData.marketCap && (
                 <Box>
-                    <Typography variant="caption" color="text.secondary">Piyasa Değeri</Typography>
+                    <Typography variant="caption" color="text.secondary">{t("market.stock.marketCap")}</Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
                         {formatCompactNumber(stockData.marketCap)} {stockData.currency ?? "TRY"}
                     </Typography>
@@ -86,7 +88,7 @@ export function StockInfoSection({ summary, stockData }: Props) {
 
             {current !== null && low52 !== null && high52 !== null && (
                 <Box>
-                    <Typography variant="caption" color="text.secondary">52 Haftalık Aralık</Typography>
+                    <Typography variant="caption" color="text.secondary">{t("market.stock.range52w")}</Typography>
                     <Box sx={{ mt: 0.75 }}>
                         <RangeBar low={low52} high={high52} current={current} />
                     </Box>

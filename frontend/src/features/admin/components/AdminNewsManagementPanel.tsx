@@ -1,5 +1,6 @@
 import type { SyntheticEvent } from "react";
 import { Alert, Box, Button, Chip, FormControl, NativeSelect, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { PANEL_HEAD_SX, PANEL_SX } from "../constants/adminStyles";
 import type { AdminCategory, AdminNewsQuery, AdminNewsSource, AdminNewsStatus, AdminPageResponse, AdminNewsSummary } from "../types/admin.types";
 import { formatDateTime, newsStatusLabel } from "../utils/adminFormatters";
@@ -8,9 +9,9 @@ import { AdminPagination } from "./AdminPagination";
 const NEWS_STATUSES: AdminNewsStatus[] = ["published", "archived", "removed"];
 
 const STATUS_COLORS: Record<AdminNewsStatus, { bgcolor: string; color: string }> = {
-    published: { bgcolor: "rgba(46, 164, 79, 0.12)", color: "#1a7a35" },
-    archived: { bgcolor: "rgba(100, 100, 100, 0.12)", color: "#555" },
-    removed: { bgcolor: "rgba(220, 53, 69, 0.12)", color: "#9e1818" },
+    published: { bgcolor: "rgba(46, 164, 79, 0.12)", color: "success.main" },
+    archived: { bgcolor: "rgba(100, 100, 100, 0.12)", color: "text.secondary" },
+    removed: { bgcolor: "rgba(220, 53, 69, 0.12)", color: "error.main" },
 };
 
 interface AdminNewsManagementPanelProps {
@@ -36,6 +37,7 @@ export function AdminNewsManagementPanel({
     onStatusDialog,
     onCategoriesDialog,
 }: AdminNewsManagementPanelProps) {
+    const { t } = useTranslation();
     return (
         <Paper sx={PANEL_SX}>
             <Box sx={PANEL_HEAD_SX}>
@@ -44,10 +46,10 @@ export function AdminNewsManagementPanel({
                         News Management
                     </Typography>
                     <Typography variant="h6" sx={{ mt: 0.5, fontSize: 24, letterSpacing: 0, fontWeight: 700 }}>
-                        Haber Yönetimi
+                        {t("admin.news.title")}
                     </Typography>
                 </Box>
-                <Typography sx={{ fontWeight: 700 }}>{news.totalElements} haber</Typography>
+                <Typography sx={{ fontWeight: 700 }}>{t("admin.news.count", { count: news.totalElements })}</Typography>
             </Box>
 
             <Box sx={{ display: "grid", gridTemplateColumns: "1fr repeat(4, 160px)", gap: 1.25, p: "16px 22px", borderBottom: "1px solid", borderColor: "divider" }}>
@@ -55,23 +57,23 @@ export function AdminNewsManagementPanel({
                     size="small"
                     value={query.search}
                     onChange={(event) => onFilterChange("search", event.target.value)}
-                    placeholder="Başlık, içerik veya URL ara"
+                    placeholder={t("admin.news.searchPlaceholder")}
                 />
                 <FormControl size="small">
                     <NativeSelect value={query.status} onChange={(event) => onFilterChange("status", event.target.value)}>
-                        <option value="">Tüm durumlar</option>
+                        <option value="">{t("admin.news.allStatuses")}</option>
                         {NEWS_STATUSES.map((status) => <option key={status} value={status}>{newsStatusLabel(status)}</option>)}
                     </NativeSelect>
                 </FormControl>
                 <FormControl size="small">
                     <NativeSelect value={query.sourceId} onChange={(event) => onFilterChange("sourceId", event.target.value)}>
-                        <option value="">Tüm kaynaklar</option>
+                        <option value="">{t("admin.news.allSources")}</option>
                         {sources.map((source) => <option key={source.id} value={source.id}>{source.name}</option>)}
                     </NativeSelect>
                 </FormControl>
                 <FormControl size="small">
                     <NativeSelect value={query.categoryId} onChange={(event) => onFilterChange("categoryId", event.target.value)}>
-                        <option value="">Tüm kategoriler</option>
+                        <option value="">{t("admin.news.allCategories")}</option>
                         {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
                     </NativeSelect>
                 </FormControl>
@@ -84,9 +86,9 @@ export function AdminNewsManagementPanel({
                 </FormControl>
             </Box>
 
-            {loading ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Haberler yükleniyor...</Typography> : null}
+            {loading ? <Typography sx={{ p: "22px", color: "text.secondary" }}>{t("admin.news.loading")}</Typography> : null}
             {!loading && error ? <Alert severity="error" sx={{ m: 2 }}>{error}</Alert> : null}
-            {!loading && !error && news.content.length === 0 ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Bu filtrede haber yok.</Typography> : null}
+            {!loading && !error && news.content.length === 0 ? <Typography sx={{ p: "22px", color: "text.secondary" }}>{t("admin.news.empty")}</Typography> : null}
 
             {!loading && !error && news.content.length > 0 ? (
                 <>
@@ -94,12 +96,12 @@ export function AdminNewsManagementPanel({
                         <Table size="small" sx={{ minWidth: 900 }}>
                             <TableHead>
                                 <TableRow>
-                                    <TableCell>Haber</TableCell>
-                                    <TableCell>Kaynak</TableCell>
-                                    <TableCell>Kategoriler</TableCell>
-                                    <TableCell>Durum</TableCell>
-                                    <TableCell>Yayın</TableCell>
-                                    <TableCell>Aksiyon</TableCell>
+                                    <TableCell>{t("admin.news.cols.news")}</TableCell>
+                                    <TableCell>{t("admin.news.cols.source")}</TableCell>
+                                    <TableCell>{t("admin.news.cols.categories")}</TableCell>
+                                    <TableCell>{t("admin.news.cols.status")}</TableCell>
+                                    <TableCell>{t("admin.news.cols.published")}</TableCell>
+                                    <TableCell>{t("admin.news.cols.action")}</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -153,8 +155,8 @@ export function AdminNewsManagementPanel({
                                         <TableCell>{formatDateTime(item.publishedAt)}</TableCell>
                                         <TableCell>
                                             <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-                                                <Button size="small" variant="outlined" onClick={() => onStatusDialog(item)}>Durum</Button>
-                                                <Button size="small" variant="outlined" onClick={() => onCategoriesDialog(item)}>Kategori</Button>
+                                                <Button size="small" variant="outlined" onClick={() => onStatusDialog(item)}>{t("admin.news.actions.status")}</Button>
+                                                <Button size="small" variant="outlined" onClick={() => onCategoriesDialog(item)}>{t("admin.news.actions.category")}</Button>
                                             </Box>
                                         </TableCell>
                                     </TableRow>

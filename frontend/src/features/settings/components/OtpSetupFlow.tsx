@@ -1,4 +1,5 @@
 import { Alert, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { type ClipboardEvent, type KeyboardEvent, type MutableRefObject } from "react";
 import type { OtpSetupResponse } from "../../profile/api/userApi";
 import type { OtpStep } from "../types";
@@ -34,6 +35,8 @@ export function OtpSetupFlow({
     onBack,
     onSubmit,
 }: Props) {
+    const { t } = useTranslation();
+
     if (otpStep === "qr" && otpSetupData) {
         return (
             <Stack sx={{ gap: 2, mt: 1 }}>
@@ -41,29 +44,29 @@ export function OtpSetupFlow({
                     <Box
                         component="img"
                         src={otpSetupData.qrCodeDataUrl}
-                        alt="TOTP QR kodu"
+                        alt={t("settings.otp.qrAlt")}
                         sx={{ width: 180, height: 180, borderRadius: 1 }}
                     />
                 </Box>
                 <Box>
                     <Typography variant="caption" color="secondary" sx={{ fontWeight: 800 }}>
-                        Manuel giriş için kod
+                        {t("settings.otp.manualCode")}
                     </Typography>
                     <Stack direction="row" sx={{ alignItems: "center", gap: 1, mt: 0.5 }}>
                         <Typography variant="body2" component="code" sx={{ fontFamily: "monospace", bgcolor: "action.hover", px: 1, py: 0.5, borderRadius: 1, flexGrow: 1, wordBreak: "break-all" }}>
                             {otpSetupData.secret}
                         </Typography>
                         <Button size="small" variant="outlined" onClick={() => void navigator.clipboard.writeText(otpSetupData.secret)}>
-                            Kopyala
+                            {t("settings.otp.copy")}
                         </Button>
                     </Stack>
                     <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
-                        Authenticator uygulamanızda "Manuel giriş" seçeneği ile yukarıdaki kodu girin veya QR kodu tarayın.
+                        {t("settings.otp.manualInstruction")}
                     </Typography>
                 </Box>
                 <Stack direction="row" sx={{ gap: 1 }}>
-                    <Button variant="outlined" onClick={onReset}>İptal</Button>
-                    <Button variant="contained" color="secondary" onClick={onContinue}>Devam</Button>
+                    <Button variant="outlined" onClick={onReset}>{t("settings.otp.cancel")}</Button>
+                    <Button variant="contained" color="secondary" onClick={onContinue}>{t("settings.otp.continue")}</Button>
                 </Stack>
             </Stack>
         );
@@ -73,7 +76,7 @@ export function OtpSetupFlow({
         return (
             <Stack sx={{ gap: 2, mt: 1 }}>
                 <Typography variant="body2" color="text.secondary">
-                    Authenticator uygulamanızda görünen 6 haneli kodu girin.
+                    {t("settings.otp.codeInstruction")}
                 </Typography>
                 <Stack direction="row" sx={{ gap: 1 }}>
                     {otpCode.map((digit, i) => (
@@ -109,7 +112,7 @@ export function OtpSetupFlow({
                 </Stack>
                 {otpError ? <Alert severity="error">{otpError}</Alert> : null}
                 <Stack direction="row" sx={{ gap: 1 }}>
-                    <Button variant="outlined" onClick={onBack} disabled={otpVerifying}>Geri</Button>
+                    <Button variant="outlined" onClick={onBack} disabled={otpVerifying}>{t("settings.otp.back")}</Button>
                     <Button
                         variant="contained"
                         color="secondary"
@@ -117,7 +120,7 @@ export function OtpSetupFlow({
                         disabled={otpCode.join("").length !== 6 || otpVerifying}
                         startIcon={otpVerifying ? <CircularProgress size={14} color="inherit" /> : undefined}
                     >
-                        {otpVerifying ? "Doğrulanıyor..." : "Doğrula"}
+                        {otpVerifying ? t("settings.otp.verifying") : t("settings.otp.verify")}
                     </Button>
                 </Stack>
             </Stack>

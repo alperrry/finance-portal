@@ -1,5 +1,6 @@
 import { Box, Button, Card, CardContent, Chip, Container, Grid, Skeleton, Stack, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { MarketItem, MarketSnapshot } from "../types";
 import { useAuth } from "../../../app/auth/AuthContext";
 
@@ -56,6 +57,7 @@ function HeroCard({ item }: { item: MarketItem }) {
 export default function HeroSection({ snapshot, loading }: Props) {
     const navigate = useNavigate();
     const { authenticated, login } = useAuth();
+    const { t } = useTranslation();
     const heroItems = snapshot?.heroItems ?? [];
 
     return (
@@ -81,7 +83,7 @@ export default function HeroSection({ snapshot, loading }: Props) {
                     <Grid size={{ xs: 12, md: 6 }}>
                         <Box>
                             <Chip
-                                label="Finansal Analiz Platformu"
+                                label={t("home.hero.chipLabel")}
                                 size="small"
                                 sx={{ bgcolor: "rgba(193,98,47,0.15)", color: "#c1622f", mb: 3, fontWeight: 600 }}
                             />
@@ -95,15 +97,14 @@ export default function HeroSection({ snapshot, loading }: Props) {
                                     fontSize: { xs: "2.2rem", md: "3rem" },
                                 }}
                             >
-                                Piyasayı Anlık
-                                <Box component="span" sx={{ color: "#c1622f" }}> Takip Et.</Box>
+                                {t("home.hero.title")}
+                                <Box component="span" sx={{ color: "#c1622f" }}>{t("home.hero.titleHighlight")}</Box>
                             </Typography>
                             <Typography
                                 variant="body1"
                                 sx={{ color: "#999", mb: 4, maxWidth: 420, lineHeight: 1.8 }}
                             >
-                                Hisse senetleri, döviz, fon ve tahvilleri tek ekranda izleyin.
-                                Gelişmiş analiz araçlarıyla portföyünüzü yönetin.
+                                {t("home.hero.desc")}
                             </Typography>
                             <Stack direction="row" spacing={2}>
                                 {authenticated ? (
@@ -113,7 +114,7 @@ export default function HeroSection({ snapshot, loading }: Props) {
                                         onClick={() => navigate("/portfolio")}
                                         sx={{ bgcolor: "#c1622f", "&:hover": { bgcolor: "#a8512a" }, px: 4, fontWeight: 700 }}
                                     >
-                                        Portföyüme Git
+                                        {t("home.hero.goPortfolio")}
                                     </Button>
                                 ) : (
                                     <Button
@@ -122,7 +123,7 @@ export default function HeroSection({ snapshot, loading }: Props) {
                                         onClick={login}
                                         sx={{ bgcolor: "#c1622f", "&:hover": { bgcolor: "#a8512a" }, px: 4, fontWeight: 700 }}
                                     >
-                                        Hemen Başla
+                                        {t("home.hero.getStarted")}
                                     </Button>
                                 )}
                                 <Button
@@ -131,7 +132,7 @@ export default function HeroSection({ snapshot, loading }: Props) {
                                     onClick={() => (authenticated ? navigate("/analysis") : login())}
                                     sx={{ color: "#fff", borderColor: "#444", "&:hover": { borderColor: "#c1622f" }, px: 3 }}
                                 >
-                                    Analiz Yap
+                                    {t("home.hero.analyze")}
                                 </Button>
                             </Stack>
                         </Box>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useToast } from "../../../components/ToastContext";
+import i18n from "../../../i18n";
 import { clearAdminMarketData, triggerAdminMarketBackfill } from "../api/adminApi";
 import { invalidateAdminQuery } from "../api/adminQueryBus";
 import { useAdminAuditLogs } from "../api/useAdminAuditLogs";
@@ -9,7 +10,7 @@ import { resolveAdminError } from "../utils/adminErrors";
 const MARKET_AUDIT_TARGETS = ["market"];
 
 export function marketAuditTitle(item: AuditLogItem) {
-    return item.action === "BACKFILL_TRIGGERED" ? "Backfill tetiklendi" : item.action;
+    return item.action === "BACKFILL_TRIGGERED" ? i18n.t("admin.marketJobs.backfillTriggered") : item.action;
 }
 
 export function marketAuditDescription(item: AuditLogItem) {
@@ -30,7 +31,7 @@ export function useAdminMarketJobsPage() {
             showToast(response.message, response.status === "ALREADY_RUNNING" ? "info" : "success");
             invalidateAdminQuery({ scope: "market-audit" });
         } catch (caughtError) {
-            showToast(resolveAdminError(caughtError, "Backfill başlatılamadı."), "error");
+            showToast(resolveAdminError(caughtError, i18n.t("admin.marketJobs.backfillError")), "error");
         } finally {
             setPendingModule(null);
         }
@@ -40,10 +41,10 @@ export function useAdminMarketJobsPage() {
         setClearingModule(module);
         try {
             const deleted = await clearAdminMarketData(module);
-            showToast(`${module.toUpperCase()} verileri temizlendi (${deleted} kayıt silindi).`, "success");
+            showToast(i18n.t("admin.marketJobs.clearSuccess", { module: module.toUpperCase(), count: deleted }), "success");
             invalidateAdminQuery({ scope: "market-audit" });
         } catch (caughtError) {
-            showToast(resolveAdminError(caughtError, "Veri temizleme başarısız."), "error");
+            showToast(resolveAdminError(caughtError, i18n.t("admin.marketJobs.clearError")), "error");
         } finally {
             setClearingModule(null);
         }

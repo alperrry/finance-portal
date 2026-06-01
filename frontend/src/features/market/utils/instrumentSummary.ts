@@ -1,3 +1,4 @@
+import i18n from "../../../i18n";
 import { fetchBonds, fetchFunds, fetchFx, fetchStocks } from "../api/marketApi";
 import type { BondResponse, FundResponse, FxResponse, StockResponse } from "../api/marketApi";
 import type { InstrumentType, HistoryPoint } from "../../analysis/api/historyApi";
@@ -47,17 +48,17 @@ export function buildStockInstrumentSummary(row: StockResponse, code: string, ty
         subtitle: row.shortName && row.longName && row.shortName !== row.longName
             ? row.shortName
             : row.sector ?? row.indexName ?? row.instrumentType,
-        helper: "Fiyat ve grafik günlük kapanış serisinden gelir.",
+        helper: i18n.t("market.stock.chartHelp"),
         currency: row.currency ?? "TRY",
         latestValue: row.price,
         latestDate: row.tradeDate,
         snapshotChange: row.changePercent,
         newsQuery: stripMarketSuffix(code),
         stats: [
-            { label: "Açılış", value: formatCurrencyValue(row.open, row.currency ?? "TRY") },
-            { label: "Gün İçi Yüksek", value: formatCurrencyValue(row.dayHigh, row.currency ?? "TRY") },
-            { label: "Gün İçi Düşük", value: formatCurrencyValue(row.dayLow, row.currency ?? "TRY") },
-            { label: "Hacim", value: formatCompactNumber(row.volume) },
+            { label: i18n.t("market.stock.open"), value: formatCurrencyValue(row.open, row.currency ?? "TRY") },
+            { label: i18n.t("market.stock.dayHigh"), value: formatCurrencyValue(row.dayHigh, row.currency ?? "TRY") },
+            { label: i18n.t("market.stock.dayLow"), value: formatCurrencyValue(row.dayLow, row.currency ?? "TRY") },
+            { label: i18n.t("market.metrics.volume"), value: formatCompactNumber(row.volume) },
         ],
     };
 }
@@ -68,22 +69,22 @@ export function buildFxInstrumentSummary(row: FxResponse, code: string): Instrum
         code,
         title: row.currencyName,
         subtitle: `${row.unit > 1 ? row.unit : 1} birim / TRY`,
-        helper: "Grafik, TCMB tarihsel kur serisini kullanır.",
+        helper: i18n.t("market.currency.chartHelp"),
         currency: null,
         latestValue: row.forexSelling ?? row.forexBuying,
         latestDate: row.rateDate,
         snapshotChange: null,
         newsQuery: `${code} kuru`,
         stats: [
-            { label: "Alış",   value: formatNumber(row.forexBuying, getValueDigits("fx", row.forexBuying)) },
-            { label: "Satış",  value: formatNumber(row.forexSelling, getValueDigits("fx", row.forexSelling)) },
+            { label: i18n.t("market.currency.buy"), value: formatNumber(row.forexBuying, getValueDigits("fx", row.forexBuying)) },
+            { label: i18n.t("market.currency.sell"), value: formatNumber(row.forexSelling, getValueDigits("fx", row.forexSelling)) },
             {
-                label: "Makas",
+                label: i18n.t("market.currency.spread"),
                 value: toSafeNumber(row.forexBuying) !== null && toSafeNumber(row.forexSelling) !== null
                     ? formatNumber((row.forexSelling ?? 0) - (row.forexBuying ?? 0), getValueDigits("fx", row.forexSelling))
                     : "-",
             },
-            { label: "Tarih", value: formatLocalDate(row.rateDate) },
+            { label: i18n.t("market.currency.date"), value: formatLocalDate(row.rateDate) },
         ],
     };
 }
@@ -93,18 +94,18 @@ export function buildFundInstrumentSummary(row: FundResponse, code: string): Ins
         type: "funds",
         code,
         title: row.name,
-        subtitle: row.fundType ?? "Yatırım Fonu",
-        helper: "Grafik, TEFAS fiyat serisinden üretilir.",
+        subtitle: row.fundType ?? i18n.t("market.fund.subtitle"),
+        helper: i18n.t("market.fund.chartHelp"),
         currency: "TRY",
         latestValue: row.price,
         latestDate: row.priceDate,
         snapshotChange: null,
         newsQuery: `${code} fon`,
         stats: [
-            { label: "Yatırımcı",  value: formatCompactNumber(row.investorCount) },
-            { label: "Portföy",    value: formatCurrencyValue(row.portfolioSize, "TRY") },
-            { label: "Pay Adedi",  value: formatCompactNumber(row.totalShares) },
-            { label: "Tarih",      value: formatLocalDate(row.priceDate) },
+            { label: i18n.t("market.fund.investors"),  value: formatCompactNumber(row.investorCount) },
+            { label: i18n.t("market.fund.portfolio"),  value: formatCurrencyValue(row.portfolioSize, "TRY") },
+            { label: i18n.t("market.fund.shares"),     value: formatCompactNumber(row.totalShares) },
+            { label: i18n.t("market.tables.fund.date"), value: formatLocalDate(row.priceDate) },
         ],
     };
 }
@@ -114,18 +115,21 @@ export function buildBondInstrumentSummary(row: BondResponse, code: string): Ins
         type: "bonds",
         code,
         title: row.name,
-        subtitle: row.bondType ?? row.currency ?? "Tahvil/Bono",
-        helper: "Grafik, EVDS faiz serisinden üretilir.",
+        subtitle: row.bondType ?? row.currency ?? i18n.t("market.bond.label"),
+        helper: i18n.t("market.bond.chartHelp"),
         currency: null,
         latestValue: row.compoundedRate ?? row.interestRate,
         latestDate: row.rateDate,
         snapshotChange: null,
         newsQuery: code,
         stats: [
-            { label: "Faiz",    value: row.interestRate === null ? "-" : `%${formatNumber(row.interestRate, 2)}` },
-            { label: "Bileşik", value: row.compoundedRate === null ? "-" : `%${formatNumber(row.compoundedRate, 2)}` },
-            { label: "Vade",    value: row.maturityDays === null ? "-" : `${formatCompactNumber(row.maturityDays)} gün` },
-            { label: "Tarih",   value: formatLocalDate(row.rateDate) },
+            { label: i18n.t("market.tables.bond.interest"), value: row.interestRate === null ? "-" : `%${formatNumber(row.interestRate, 2)}` },
+            { label: i18n.t("market.bond.compound"),        value: row.compoundedRate === null ? "-" : `%${formatNumber(row.compoundedRate, 2)}` },
+            {
+                label: i18n.t("market.bond.maturityDays"),
+                value: row.maturityDays === null ? "-" : `${formatCompactNumber(row.maturityDays)} ${i18n.t("market.bond.days")}`,
+            },
+            { label: i18n.t("market.tables.bond.date"), value: formatLocalDate(row.rateDate) },
         ],
     };
 }
@@ -137,7 +141,7 @@ export async function fetchInstrumentSummary(type: InstrumentType, code: string)
             const match = rows.find((r) => r.symbol === code);
             return match
                 ? buildStockInstrumentSummary(match, code)
-                : { type, code, title: code, subtitle: "Hisse", helper: "Hisse detayları bulunamadı, grafik tarihsel seriden çiziliyor.", currency: "TRY", latestValue: null, latestDate: null, snapshotChange: null, newsQuery: stripMarketSuffix(code), stats: [] };
+                : { type, code, title: code, subtitle: i18n.t("market.stock.label"), helper: i18n.t("market.stock.detailMissing"), currency: "TRY", latestValue: null, latestDate: null, snapshotChange: null, newsQuery: stripMarketSuffix(code), stats: [] };
         }
         case "indexes":
         case "commodities":
@@ -147,28 +151,28 @@ export async function fetchInstrumentSummary(type: InstrumentType, code: string)
             const match = rows.find((r) => r.symbol === code);
             return match
                 ? buildStockInstrumentSummary(match, code, type)
-                : { type, code, title: code, subtitle: apiType, helper: "Detaylar bulunamadı, grafik tarihsel seriden çiziliyor.", currency: "TRY", latestValue: null, latestDate: null, snapshotChange: null, newsQuery: stripMarketSuffix(code), stats: [] };
+                : { type, code, title: code, subtitle: apiType, helper: i18n.t("market.index.detailMissing"), currency: "TRY", latestValue: null, latestDate: null, snapshotChange: null, newsQuery: stripMarketSuffix(code), stats: [] };
         }
         case "fx": {
             const rows = await fetchFx();
             const match = rows.find((r) => r.currencyCode === code);
             return match
                 ? buildFxInstrumentSummary(match, code)
-                : { type, code, title: code, subtitle: "Döviz", helper: "Döviz detayları bulunamadı, grafik tarihsel seriden çiziliyor.", currency: null, latestValue: null, latestDate: null, snapshotChange: null, newsQuery: `${code} kuru`, stats: [] };
+                : { type, code, title: code, subtitle: i18n.t("market.currency.label"), helper: i18n.t("market.currency.detailMissing"), currency: null, latestValue: null, latestDate: null, snapshotChange: null, newsQuery: `${code} kuru`, stats: [] };
         }
         case "funds": {
             const rows = await fetchFunds();
             const match = rows.find((r) => r.code === code);
             return match
                 ? buildFundInstrumentSummary(match, code)
-                : { type, code, title: code, subtitle: "Fon", helper: "Fon detayları bulunamadı, grafik tarihsel seriden çiziliyor.", currency: "TRY", latestValue: null, latestDate: null, snapshotChange: null, newsQuery: `${code} fon`, stats: [] };
+                : { type, code, title: code, subtitle: i18n.t("market.fund.label"), helper: i18n.t("market.fund.detailMissing"), currency: "TRY", latestValue: null, latestDate: null, snapshotChange: null, newsQuery: `${code} fon`, stats: [] };
         }
         case "bonds": {
             const rows = await fetchBonds();
             const match = rows.find((r) => r.evdsSeriesCode === code);
             return match
                 ? buildBondInstrumentSummary(match, code)
-                : { type, code, title: code, subtitle: "Tahvil/Bono", helper: "Tahvil detayları bulunamadı, grafik tarihsel seriden çiziliyor.", currency: null, latestValue: null, latestDate: null, snapshotChange: null, newsQuery: code, stats: [] };
+                : { type, code, title: code, subtitle: i18n.t("market.bond.label"), helper: i18n.t("market.bond.detailMissing"), currency: null, latestValue: null, latestDate: null, snapshotChange: null, newsQuery: code, stats: [] };
         }
     }
 }
@@ -214,7 +218,7 @@ export function getDisplayLatestNote(
     historyTo: string | null | undefined,
 ): string {
     return summary.type === "stocks"
-        ? `${formatLocalDate(summary.latestDate)} günlük kapanış`
+        ? `${formatLocalDate(summary.latestDate)} ${i18n.t("market.stock.dailyClose")}`
         : latestClose !== null
           ? `${formatLocalDate(historyTo)}`
           : summary.helper;

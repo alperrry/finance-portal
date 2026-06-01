@@ -14,7 +14,6 @@ import {
     sortStockRows,
     sortViopRows,
 } from "../utils/marketSorters";
-import { MARKET_TABS } from "../types";
 import type { MarketTab } from "../types";
 
 export function useMarketPage() {
@@ -25,7 +24,6 @@ export function useMarketPage() {
     const [query, setQuery] = useState("");
     const [stockIndexFilter, setStockIndexFilter] = useState<"ALL" | "BIST30" | "BIST100">("ALL");
 
-    const activeMeta = MARKET_TABS.find((tab) => tab.key === activeTab) ?? MARKET_TABS[0];
     const isInitialLoading = loading && data === null;
     const isRefreshing = loading && data !== null;
 
@@ -166,7 +164,6 @@ export function useMarketPage() {
         sortState, toggleSort,
         activeTab, handleTabChange,
         query, setQuery,
-        activeMeta,
         isInitialLoading, isRefreshing,
         fxRows, bondRows, fundRows, stockRows, indexRows, commodityRows, cryptoRows, macroRows, viopRows,
         summaryCards, activeDatasetDate,

@@ -1,4 +1,5 @@
 import { Box, Chip, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import type { GoogleNewsItem } from "../../news/api/newsApi";
 import type { InstrumentSummary } from "../types";
 import { formatLocalDate } from "../utils/marketFormatters";
@@ -14,18 +15,18 @@ type Props = {
 const PANEL_SX = {
     border: "1px solid",
     borderColor: "divider",
-    bgcolor: "rgba(255, 255, 255, 0.76)",
-    boxShadow: "0 16px 48px rgba(17, 17, 17, 0.06)",
+    bgcolor: (theme: { palette: { mode: string } }) => theme.palette.mode === "dark" ? "rgba(33, 28, 24, 0.76)" : "rgba(255, 255, 255, 0.76)",
+    boxShadow: (theme: { palette: { mode: string } }) => theme.palette.mode === "dark" ? "0 16px 48px rgba(0, 0, 0, 0.32)" : "0 16px 48px rgba(17, 17, 17, 0.06)",
     backdropFilter: "blur(16px)",
     borderRadius: "28px",
     p: { xs: 2.5, md: 3 },
-} as const;
+};
 
 const STATUS_SX = {
     ...PANEL_SX,
     borderRadius: "22px",
     p: "18px 20px",
-} as const;
+};
 
 const KICKER_SX = {
     fontFamily: '"JetBrains Mono", monospace',
@@ -36,16 +37,18 @@ const KICKER_SX = {
 } as const;
 
 export function InstrumentNewsSection({ summary, newsItems, newsError, loadingNews }: Props) {
+    const { t } = useTranslation();
+
     return (
         <Box component="section" sx={PANEL_SX}>
             <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2.25 }}>
                 <Box>
-                    <Typography sx={KICKER_SX}>Haber Akışı</Typography>
+                    <Typography sx={KICKER_SX}>{t("market.news.kicker")}</Typography>
                     <Typography component="h2" sx={{ m: "10px 0 0", fontSize: 28, lineHeight: 1, letterSpacing: "-0.03em", fontWeight: 700 }}>
-                        Enstrümana Özel Haberler
+                        {t("market.news.title")}
                     </Typography>
                     <Typography sx={{ m: "10px 0 0", fontSize: 13, lineHeight: 1.6, color: "text.secondary" }}>
-                        Google News RSS araması üzerinden listelenir. Başlıklar yeni sekmede açılır.
+                        {t("market.news.help")}
                     </Typography>
                 </Box>
 
@@ -54,8 +57,8 @@ export function InstrumentNewsSection({ summary, newsItems, newsError, loadingNe
                         label={buildNewsQuery(summary)}
                         sx={{
                             borderRadius: "999px",
-                            bgcolor: "rgba(17, 17, 17, 0.92)",
-                            color: "#fff",
+                            bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(240, 237, 230, 0.92)" : "rgba(17, 17, 17, 0.92)",
+                            color: (theme) => theme.palette.mode === "dark" ? "#111" : "#fff",
                             fontWeight: 700,
                             flexShrink: 0,
                         }}
@@ -65,22 +68,22 @@ export function InstrumentNewsSection({ summary, newsItems, newsError, loadingNe
 
             {newsError ? (
                 <Box sx={{ ...STATUS_SX, mt: 2.25, borderColor: "rgba(224, 88, 88, 0.22)", bgcolor: "rgba(253, 240, 240, 0.88)" }}>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>Haber akışı alınamadı</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{t("market.news.error")}</Typography>
                     <Typography variant="caption" color="text.secondary">{newsError}</Typography>
                 </Box>
             ) : null}
 
             {loadingNews ? (
                 <Box sx={{ ...STATUS_SX, mt: 2.25 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>Haberler yükleniyor</Typography>
-                    <Typography variant="caption" color="text.secondary">Seçili enstrümana göre ilgili başlıklar aranıyor.</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{t("market.news.loading.title")}</Typography>
+                    <Typography variant="caption" color="text.secondary">{t("market.news.loading.subtitle")}</Typography>
                 </Box>
             ) : null}
 
             {!loadingNews && !newsError && (newsItems?.length ?? 0) === 0 ? (
-                <Box sx={{ mt: 2.25, borderRadius: "24px", border: "1px dashed", borderColor: "divider", bgcolor: "rgba(255, 255, 255, 0.5)", p: 3 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>İlgili haber bulunamadı</Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.75 }}>Arama terimi için Google RSS sonuç dönmedi.</Typography>
+                <Box sx={{ mt: 2.25, borderRadius: "24px", border: "1px dashed", borderColor: "divider", bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(33, 28, 24, 0.5)" : "rgba(255, 255, 255, 0.5)", p: 3 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{t("market.news.empty.title")}</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.75 }}>{t("market.news.empty.subtitle")}</Typography>
                 </Box>
             ) : null}
 
@@ -104,7 +107,7 @@ export function InstrumentNewsSection({ summary, newsItems, newsError, loadingNe
                                 borderRadius: "22px",
                                 border: "1px solid",
                                 borderColor: "divider",
-                                bgcolor: "rgba(255, 255, 255, 0.84)",
+                                bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(33, 28, 24, 0.84)" : "rgba(255, 255, 255, 0.84)",
                                 p: 2.25,
                                 textDecoration: "none",
                                 color: "inherit",
@@ -125,7 +128,7 @@ export function InstrumentNewsSection({ summary, newsItems, newsError, loadingNe
                                 {item.title}
                             </Typography>
                             <Typography sx={{ mt: 1.5, fontSize: 13, lineHeight: 1.65, color: "text.secondary" }}>
-                                {item.description || "Başlık, Google News RSS arama sonucundan getirildi."}
+                                {item.description || t("market.news.fallbackDesc")}
                             </Typography>
                         </Box>
                     ))}

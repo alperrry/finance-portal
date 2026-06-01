@@ -1,8 +1,10 @@
 import { AppBar, Box, Button, Toolbar, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../app/auth/AuthContext";
 
 export default function Navbar() {
     const { login, register } = useAuth();
+    const { t } = useTranslation();
 
     return (
         <AppBar position="sticky" elevation={0} sx={{ bgcolor: "#111111", borderBottom: "1px solid #222" }}>
@@ -16,14 +18,14 @@ export default function Navbar() {
                         onClick={login}
                         sx={{ color: "#fff", borderColor: "#444", "&:hover": { borderColor: "#c1622f", bgcolor: "transparent" } }}
                     >
-                        Giriş Yap
+                        {t("auth.login")}
                     </Button>
                     <Button
                         variant="contained"
                         onClick={register}
                         sx={{ bgcolor: "#c1622f", "&:hover": { bgcolor: "#a8512a" } }}
                     >
-                        Kayıt Ol
+                        {t("auth.register")}
                     </Button>
                 </Box>
             </Toolbar>

@@ -1,4 +1,5 @@
 import { Box } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import type { PortfolioResponse } from "../api/portfolioApi";
 import { MetricCard } from "../../../components/ui/MetricCard";
 import { useAnimatedNumber } from "../hooks/useAnimatedNumber";
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export function PortfolioMetrics({ portfolio }: Props) {
+    const { t } = useTranslation();
     const dailyChange = (portfolio.items ?? []).reduce((sum, item) => {
         const change = toNumber(item.dailyChange);
         return sum + (change === null ? 0 : change * item.quantity);
@@ -20,9 +22,9 @@ export function PortfolioMetrics({ portfolio }: Props) {
 
     const metrics = [
         {
-            label: "Pozisyon Değeri",
+            label: t("portfolio.metrics.positionValue"),
             value: <AnimatedMoney value={portfolio.totalValue} currency={portfolio.displayCurrency} />,
-            note: "Güncel piyasa değeri",
+            note: t("portfolio.metrics.currentMarketValue"),
             tone: "neutral" as const,
         },
         {

@@ -1,4 +1,5 @@
 import { Box, Stack, Typography, Tooltip } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import type { SimulationLensResult, SimulationResponse } from "../api/portfolioApi";
 import { formatMoney, formatPercent, formatSignedMoney, getProfitTone } from "../utils/portfolioFormatters";
 
@@ -85,29 +86,29 @@ function ResultBlock({
 
 // 4. DIŞARIYA EXPORT EDİLEN ANA GRUP BİLEŞENİ
 export function SimulationCardGroup({ data, baselineTitle = "Nominal TRY" }: { data: SimulationResponse; baselineTitle?: string }) {
+    const { t } = useTranslation();
     const usdResult = data.lenses.USD ?? null;
     const inflationResult = data.lenses.INFLATION_ADJUSTED ?? null;
 
     return (
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", flex: 1 }}>
-            <ResultBlock title={baselineTitle} result={data.baseline} costLabel="Maliyet" hideRate />
+            <ResultBlock title={baselineTitle} result={data.baseline} costLabel={t("portfolio.simulation.cost")} hideRate />
 
             {usdResult && (
                 <ResultBlock
-                    title="USD Bazlı"
+                    title={t("portfolio.simulation.usdBased")}
                     result={usdResult}
-                    costLabel="Maliyet"
-                    rateLabel="Giriş Kuru"
-                    // 3. Madde Çözümü: Satır eklemeden güncel kur mantığını Tooltip ile açıkladık
-                    infoTooltip="Kâr/Zarar hesabı güncel kurlar üzerinden hesaplanmıştır."
+                    costLabel={t("portfolio.simulation.cost")}
+                    rateLabel={t("portfolio.simulation.entryRate")}
+                    infoTooltip={t("portfolio.simulation.pnlNote")}
                 />
             )}
 
             {inflationResult && (
                 <ResultBlock
-                    title="Enflasyon Bazlı"
+                    title={t("portfolio.simulation.inflationBased")}
                     result={inflationResult}
-                    costLabel="Reel Maliyet"
+                    costLabel={t("portfolio.simulation.cost")}
                     hideRate
                 />
             )}

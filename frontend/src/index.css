@@ -1,12 +1,46 @@
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,500;1,600;1,700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
+:root {
+  --chart-frame-bg: rgba(255, 255, 255, 0.72);
+  --chart-frame-border: rgba(17, 17, 17, 0.08);
+  --chart-frame-inset: rgba(255, 255, 255, 0.72);
+  --chart-canvas-bg: rgba(255, 255, 255, 0.62);
+  --chart-tooltip-bg: rgba(255, 255, 255, 0.94);
+  --chart-tooltip-border: rgba(17, 17, 17, 0.1);
+  --chart-tooltip-shadow: rgba(17, 17, 17, 0.14);
+  --chart-tooltip-divider: rgba(17, 17, 17, 0.08);
+  --chart-empty-bg: rgba(255, 255, 255, 0.68);
+  --chart-empty-border: rgba(17, 17, 17, 0.14);
+  --chart-text-primary: rgba(17, 17, 17, 0.9);
+  --chart-text-secondary: rgba(17, 17, 17, 0.52);
+  --chart-text-value: rgba(17, 17, 17, 0.84);
+  --chart-text-muted: rgba(17, 17, 17, 0.58);
+}
+
+.fp-theme-dark {
+  --chart-frame-bg: rgba(33, 28, 24, 0.72);
+  --chart-frame-border: rgba(255, 255, 255, 0.08);
+  --chart-frame-inset: rgba(255, 255, 255, 0.04);
+  --chart-canvas-bg: rgba(33, 28, 24, 0.62);
+  --chart-tooltip-bg: rgba(40, 34, 30, 0.96);
+  --chart-tooltip-border: rgba(255, 255, 255, 0.1);
+  --chart-tooltip-shadow: rgba(0, 0, 0, 0.4);
+  --chart-tooltip-divider: rgba(255, 255, 255, 0.08);
+  --chart-empty-bg: rgba(33, 28, 24, 0.68);
+  --chart-empty-border: rgba(255, 255, 255, 0.1);
+  --chart-text-primary: rgba(255, 255, 255, 0.9);
+  --chart-text-secondary: rgba(255, 255, 255, 0.52);
+  --chart-text-value: rgba(255, 255, 255, 0.84);
+  --chart-text-muted: rgba(255, 255, 255, 0.52);
+}
+
 .analysis-chart-frame {
   position: relative;
   margin-top: 18px;
   border-radius: 18px;
-  border: 1px solid rgba(17, 17, 17, 0.08);
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--chart-frame-border);
+  background: var(--chart-frame-bg);
+  box-shadow: inset 0 1px 0 var(--chart-frame-inset);
   overflow: hidden;
 }
 
@@ -35,7 +69,7 @@
   width: 100%;
   height: 100%;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.62);
+  background: var(--chart-canvas-bg);
 }
 
 .analysis-candlestick-chart.drawing-crosshair .analysis-candlestick-container,
@@ -73,10 +107,10 @@
   left: 0;
   z-index: 8;
   width: 232px;
-  border: 1px solid rgba(17, 17, 17, 0.1);
+  border: 1px solid var(--chart-tooltip-border);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 18px 40px rgba(17, 17, 17, 0.14);
+  background: var(--chart-tooltip-bg);
+  box-shadow: 0 18px 40px var(--chart-tooltip-shadow);
   padding: 12px;
   pointer-events: none;
   backdrop-filter: blur(18px);
@@ -87,7 +121,7 @@
 .analysis-line-tooltip strong {
   display: block;
   margin-bottom: 10px;
-  color: rgba(17, 17, 17, 0.9);
+  color: var(--chart-text-primary);
   font-size: 12px;
   line-height: 1.35;
 }
@@ -104,7 +138,7 @@
 
 .analysis-candlestick-tooltip b,
 .analysis-line-tooltip b {
-  color: rgba(17, 17, 17, 0.52);
+  color: var(--chart-text-secondary);
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -121,7 +155,7 @@
 
 .analysis-candlestick-tooltip em,
 .analysis-line-tooltip em {
-  color: rgba(17, 17, 17, 0.84);
+  color: var(--chart-text-value);
   font-style: normal;
   font-family: "JetBrains Mono", monospace;
   font-size: 11px;
@@ -142,14 +176,14 @@
   display: block;
   height: 1px;
   margin: 8px 0;
-  background: rgba(17, 17, 17, 0.08);
+  background: var(--chart-tooltip-divider);
 }
 
 .analysis-chart-empty {
   margin-top: 18px;
   border-radius: 18px;
-  border: 1px dashed rgba(17, 17, 17, 0.14);
-  background: rgba(255, 255, 255, 0.68);
+  border: 1px dashed var(--chart-empty-border);
+  background: var(--chart-empty-bg);
   padding: 24px;
 }
 
@@ -162,7 +196,7 @@
   display: block;
   margin-top: 6px;
   font-size: 12px;
-  color: rgba(17, 17, 17, 0.58);
+  color: var(--chart-text-muted);
 }
 
 section:fullscreen .analysis-line-chart-container,

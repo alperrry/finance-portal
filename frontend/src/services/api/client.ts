@@ -1,4 +1,5 @@
 import { keycloak } from "../../app/auth/keycloak";
+import i18n from "../../i18n";
 
 export type ApiAuthMode = "required" | "optional" | "none";
 
@@ -36,12 +37,13 @@ function emitToast(message: string, tone: "success" | "error" | "info" = "info")
     window.dispatchEvent(new CustomEvent("app:toast", { detail: { message, tone } }));
 }
 
-function redirectToLogin(message = "Oturum süreniz doldu. Yeniden girişe yönlendiriliyorsunuz.") {
+function redirectToLogin(message?: string) {
     if (loginRedirectInProgress) return;
 
+    const msg = message ?? i18n.t("common.sessionExpired");
     loginRedirectInProgress = true;
-    sessionStorage.setItem("authMessage", message);
-    emitToast(message, "error");
+    sessionStorage.setItem("authMessage", msg);
+    emitToast(msg, "error");
 
     void keycloak
         .login({ redirectUri: window.location.href })
@@ -71,7 +73,7 @@ async function getAccessToken(authMode: ApiAuthMode) {
 
     if (!keycloak.authenticated) {
         if (authMode === "required") {
-            const message = "Oturum bulunamadı. Giriş sayfasına yönlendiriliyorsunuz.";
+            const message = i18n.t("common.sessionNotFound");
             redirectToLogin(message);
             throw createAuthError(message);
         }
@@ -82,13 +84,13 @@ async function getAccessToken(authMode: ApiAuthMode) {
     try {
         await keycloak.updateToken(30);
     } catch {
-        const message = "Oturum süreniz doldu. Yeniden girişe yönlendiriliyorsunuz.";
+        const message = i18n.t("common.sessionExpired");
         redirectToLogin(message);
         throw createAuthError(message);
     }
 
     if (!keycloak.token) {
-        const message = "Oturum anahtarı alınamadı. Yeniden girişe yönlendiriliyorsunuz.";
+        const message = i18n.t("common.tokenFailed");
         redirectToLogin(message);
         throw createAuthError(message);
     }
@@ -110,9 +112,10 @@ async function readErrorPayload(response: Response): Promise<ApiErrorPayload | n
     }
 }
 
-export async function createApiError(response: Response, fallbackMessage = "Bir hata oluştu, tekrar deneyin.") {
+export async function createApiError(response: Response, fallbackMessage?: string) {
+    const fallback = fallbackMessage ?? i18n.t("common.requestError");
     const payload = await readErrorPayload(response);
-    const message = payload?.message || payload?.error || fallbackMessage;
+    const message = payload?.message || payload?.error || fallback;
     return new ApiError(message, response.status, payload);
 }
 
@@ -139,7 +142,7 @@ export async function apiFetch(input: RequestInfo | URL, options: ApiFetchOption
             redirectToLogin();
         }
 
-        throw await createApiError(response, "Oturum süreniz doldu. Lütfen tekrar giriş yapın.");
+        throw await createApiError(response, i18n.t("common.loginExpired"));
     }
 
     if (!response.ok) {

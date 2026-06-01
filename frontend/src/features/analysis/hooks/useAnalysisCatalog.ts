@@ -9,6 +9,7 @@ import {
     buildCatalogFromStocks,
     createEmptyCatalog,
 } from "../utils/analysisFormatters";
+import i18n from "../../../i18n";
 
 async function fetchCatalogData() {
     const [stocksResult, indexesResult, commoditiesResult, cryptoResult, fxResult, fundsResult, bondsResult] = await Promise.allSettled([
@@ -27,44 +28,44 @@ async function fetchCatalogData() {
     if (stocksResult.status === "fulfilled") {
         nextCatalog.stocks = buildCatalogFromStocks(stocksResult.value);
     } else {
-        failedGroups.push("hisse");
+        failedGroups.push(i18n.t("analysis.catalogGroup.stocks"));
     }
     if (indexesResult.status === "fulfilled") {
         nextCatalog.indexes = buildCatalogFromStocks(indexesResult.value);
     } else {
-        failedGroups.push("endeks");
+        failedGroups.push(i18n.t("analysis.catalogGroup.indexes"));
     }
     if (commoditiesResult.status === "fulfilled") {
         nextCatalog.commodities = buildCatalogFromStocks(commoditiesResult.value);
     } else {
-        failedGroups.push("emtia");
+        failedGroups.push(i18n.t("analysis.catalogGroup.commodities"));
     }
     if (cryptoResult.status === "fulfilled") {
         nextCatalog.crypto = buildCatalogFromStocks(cryptoResult.value);
     } else {
-        failedGroups.push("kripto");
+        failedGroups.push(i18n.t("analysis.catalogGroup.crypto"));
     }
     if (fxResult.status === "fulfilled") {
         nextCatalog.fx = buildCatalogFromFx(fxResult.value);
     } else {
-        failedGroups.push("döviz");
+        failedGroups.push(i18n.t("analysis.catalogGroup.fx"));
     }
     if (fundsResult.status === "fulfilled") {
         nextCatalog.funds = buildCatalogFromFunds(fundsResult.value);
     } else {
-        failedGroups.push("fon");
+        failedGroups.push(i18n.t("analysis.catalogGroup.funds"));
     }
     if (bondsResult.status === "fulfilled") {
         nextCatalog.bonds = buildCatalogFromBonds(bondsResult.value);
     } else {
-        failedGroups.push("tahvil");
+        failedGroups.push(i18n.t("analysis.catalogGroup.bonds"));
     }
 
     const hasAnyOptions = TYPE_ORDER.some((type) => nextCatalog[type].length > 0);
     const error = !hasAnyOptions
-        ? "Enstrüman listeleri yüklenemedi."
+        ? i18n.t("analysis.errors.instrumentLists")
         : failedGroups.length > 0
-          ? `Bazı listeler eksik: ${failedGroups.join(", ")}.`
+          ? i18n.t("analysis.errors.partialLists", { list: failedGroups.join(", ") })
           : null;
 
     return { catalog: nextCatalog, error };

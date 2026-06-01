@@ -4,8 +4,9 @@ import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import { useMemo } from "react";
 import { AppDataGrid } from "../../../components/ui/AppDataGrid";
 import type { ManualPositionResponse, PositionKind } from "../api/portfolioApi";
-import { INSTRUMENT_LABELS } from "../types";
+import { getInstrumentLabels } from "../types";
 import { formatMoney, formatPercent, formatQuantity, formatSignedMoney } from "../utils/portfolioFormatters";
+import { useTranslation } from "react-i18next";
 
 type Props = {
     portfolioId: number;
@@ -24,26 +25,27 @@ function pnlColor(value: number | null | undefined): string | undefined {
 }
 
 export function TradeHistoryTable({ positions, loading, kind, onKindChange, onDelete }: Props) {
+    const { t } = useTranslation();
     const openColumns: GridColDef<ManualPositionResponse>[] = useMemo(() => [
         {
             field: "instrument",
-            headerName: "Enstrüman",
+            headerName: t("portfolio.positions.cols.instrument"),
             flex: 1.2,
             minWidth: 130,
             renderCell: ({ row }) => (
                 <Box sx={{ py: 0.5 }}>
                     <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
-                        {row.instrumentSymbol ?? (row.bankName ?? INSTRUMENT_LABELS[row.instrumentType])}
+                        {row.instrumentSymbol ?? (row.bankName ?? getInstrumentLabels()[row.instrumentType])}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>
-                        {row.instrumentName ?? INSTRUMENT_LABELS[row.instrumentType]}
+                        {row.instrumentName ?? getInstrumentLabels()[row.instrumentType]}
                     </Typography>
                 </Box>
             ),
         },
         {
             field: "direction",
-            headerName: "Yön",
+            headerName: t("portfolio.positions.cols.direction"),
             flex: 0.7,
             minWidth: 80,
             renderCell: ({ row }) =>
@@ -60,21 +62,21 @@ export function TradeHistoryTable({ positions, loading, kind, onKindChange, onDe
         },
         {
             field: "quantity",
-            headerName: "Miktar",
+            headerName: t("portfolio.positions.cols.quantity"),
             flex: 0.7,
             minWidth: 80,
             renderCell: ({ row }) => formatQuantity(row.quantity),
         },
         {
             field: "entryPrice",
-            headerName: "Alış Fiyatı",
+            headerName: t("portfolio.positions.cols.buyPrice"),
             flex: 0.9,
             minWidth: 100,
             renderCell: ({ row }) => formatMoney(row.entryPrice, "TRY"),
         },
         {
             field: "currentPrice",
-            headerName: "Anlık Fiyat",
+            headerName: t("portfolio.positions.cols.currentPrice"),
             flex: 0.9,
             minWidth: 100,
             renderCell: ({ row }) =>
@@ -84,7 +86,7 @@ export function TradeHistoryTable({ positions, loading, kind, onKindChange, onDe
         },
         {
             field: "unrealizedPnl",
-            headerName: "Gerç. Dışı K/Z",
+            headerName: t("portfolio.positions.cols.unrealizedPnl"),
             flex: 1,
             minWidth: 120,
             renderCell: ({ row }) => (
@@ -106,7 +108,7 @@ export function TradeHistoryTable({ positions, loading, kind, onKindChange, onDe
         },
         {
             field: "entryDate",
-            headerName: "Alım Tarihi",
+            headerName: t("portfolio.positions.cols.buyDate"),
             flex: 0.9,
             minWidth: 100,
             renderCell: ({ row }) => (
@@ -115,47 +117,47 @@ export function TradeHistoryTable({ positions, loading, kind, onKindChange, onDe
         },
         {
             field: "actions",
-            headerName: "Sil",
+            headerName: t("portfolio.positions.cols.delete"),
             flex: 0.5,
             minWidth: 60,
             sortable: false,
             renderCell: ({ row }) => (
-                <Tooltip title="Pozisyonu sil">
+                <Tooltip title={t("portfolio.positions.deleteTooltip")}>
                     <IconButton size="small" color="error" onClick={() => onDelete(row.id)}>
                         <DeleteOutlinedIcon fontSize="small" />
                     </IconButton>
                 </Tooltip>
             ),
         },
-    ], [onDelete]);
+    ], [onDelete, t]);
 
     const closedColumns: GridColDef<ManualPositionResponse>[] = useMemo(() => [
         {
             field: "instrument",
-            headerName: "Enstrüman",
+            headerName: t("portfolio.positions.cols.instrument"),
             flex: 1.2,
             minWidth: 130,
             renderCell: ({ row }) => (
                 <Box sx={{ py: 0.5 }}>
                     <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
-                        {row.instrumentSymbol ?? (row.bankName ?? INSTRUMENT_LABELS[row.instrumentType])}
+                        {row.instrumentSymbol ?? (row.bankName ?? getInstrumentLabels()[row.instrumentType])}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>
-                        {row.instrumentName ?? INSTRUMENT_LABELS[row.instrumentType]}
+                        {row.instrumentName ?? getInstrumentLabels()[row.instrumentType]}
                     </Typography>
                 </Box>
             ),
         },
         {
             field: "quantity",
-            headerName: "Miktar",
+            headerName: t("portfolio.positions.cols.quantity"),
             flex: 0.7,
             minWidth: 80,
             renderCell: ({ row }) => formatQuantity(row.quantity),
         },
         {
             field: "entryExitPrice",
-            headerName: "Alış / Satış",
+            headerName: t("portfolio.positions.cols.buySell"),
             flex: 1.1,
             minWidth: 120,
             renderCell: ({ row }) => (
@@ -166,7 +168,7 @@ export function TradeHistoryTable({ positions, loading, kind, onKindChange, onDe
         },
         {
             field: "realizedPnl",
-            headerName: "Gerçekleşen K/Z",
+            headerName: t("portfolio.positions.cols.realizedPnl"),
             flex: 1,
             minWidth: 120,
             renderCell: ({ row }) => (
@@ -188,7 +190,7 @@ export function TradeHistoryTable({ positions, loading, kind, onKindChange, onDe
         },
         {
             field: "dates",
-            headerName: "Alım — Satım",
+            headerName: t("portfolio.positions.cols.buySellDate"),
             flex: 1.2,
             minWidth: 140,
             renderCell: ({ row }) => (
@@ -199,19 +201,19 @@ export function TradeHistoryTable({ positions, loading, kind, onKindChange, onDe
         },
         {
             field: "actions",
-            headerName: "Sil",
+            headerName: t("portfolio.positions.cols.delete"),
             flex: 0.5,
             minWidth: 60,
             sortable: false,
             renderCell: ({ row }) => (
-                <Tooltip title="Pozisyonu sil">
+                <Tooltip title={t("portfolio.positions.deleteTooltip")}>
                     <IconButton size="small" color="error" onClick={() => onDelete(row.id)}>
                         <DeleteOutlinedIcon fontSize="small" />
                     </IconButton>
                 </Tooltip>
             ),
         },
-    ], [onDelete]);
+    ], [onDelete, t]);
 
     const columns = kind === "OPEN" ? openColumns : closedColumns;
 
@@ -219,8 +221,8 @@ export function TradeHistoryTable({ positions, loading, kind, onKindChange, onDe
         <Box>
             <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start", mb: 2, flexWrap: "wrap", gap: 1 }}>
                 <Box>
-                    <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>Pozisyonlar</Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 800 }}>Pozisyon Defteri</Typography>
+                    <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>{t("portfolio.positions.overline")}</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 800 }}>{t("portfolio.positions.title")}</Typography>
                 </Box>
             </Stack>
 
@@ -229,8 +231,8 @@ export function TradeHistoryTable({ positions, loading, kind, onKindChange, onDe
                 onChange={(_, val: PositionKind) => onKindChange(val)}
                 sx={{ mb: 2, borderBottom: 1, borderColor: "divider" }}
             >
-                <Tab label="Mevcut Pozisyonlar" value="OPEN" />
-                <Tab label="Geçmiş Pozisyonlar" value="CLOSED" />
+                <Tab label={t("portfolio.positions.openTab")} value="OPEN" />
+                <Tab label={t("portfolio.positions.closedTab")} value="CLOSED" />
             </Tabs>
 
             {loading && (
@@ -241,7 +243,7 @@ export function TradeHistoryTable({ positions, loading, kind, onKindChange, onDe
 
             {!loading && positions.length === 0 && (
                 <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                    {kind === "OPEN" ? "Mevcut pozisyon yok." : "Geçmiş pozisyon yok."}
+                    {kind === "OPEN" ? t("portfolio.positions.noOpen") : t("portfolio.positions.noClosed")}
                 </Typography>
             )}
 

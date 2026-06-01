@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import i18n from "../../../i18n";
 import {
     Alert,
     Box,
@@ -43,11 +45,13 @@ type Props = {
     onRetry: () => void;
 };
 
-const OPPORTUNITY_CATEGORIES = [
-    { id: "CURRENCY", label: "Döviz" },
-    { id: "FUND", label: "Yatırım Fonu" },
-    { id: "STOCK", label: "Hisse Senedi" }
-];
+function getOpportunityCategories() {
+    return [
+        { id: "CURRENCY", label: i18n.t("portfolio.simulation.typeCurrency") },
+        { id: "FUND", label: i18n.t("portfolio.simulation.typeFund") },
+        { id: "STOCK", label: i18n.t("portfolio.types.stock") },
+    ];
+}
 
 function formatLocalDate(value: string | null | undefined) {
     if (!value) return "-";
@@ -62,6 +66,8 @@ function formatQuantity(value: number | null | undefined) {
 }
 
 export function SimulationResultDialog({ target, data, busy, error, onClose, onRetry }: Props) {
+    const { t } = useTranslation();
+    const OPPORTUNITY_CATEGORIES = getOpportunityCategories();
     const [targetType, setTargetType] = useState<string>("CURRENCY");
     const [targetSymbol, setTargetSymbol] = useState<string>("");
     const [isExpanded, setIsExpanded] = useState<boolean>(false);
@@ -99,7 +105,7 @@ export function SimulationResultDialog({ target, data, busy, error, onClose, onR
                     if (formatted.length > 0 && !targetSymbol) setTargetSymbol(formatted[0].value);
                 }
             } catch (err) {
-                console.error("Semboller yüklenemedi", err);
+                console.error(t("portfolio.simulation.noSymbols"), err);
             }
         };
         loadSymbols();
@@ -117,7 +123,7 @@ export function SimulationResultDialog({ target, data, busy, error, onClose, onR
                 const res = await fetchWhatIfSimulation(target.id, targetType, targetSymbol, ["USD", "INFLATION_ADJUSTED"]);
                 if (isMounted) setWhatIfData(res);
             } catch (err: any) {
-                if (isMounted) setWhatIfError("Bu senaryo için geçmiş fiyat verisi bulunamadı.");
+                if (isMounted) setWhatIfError(t("portfolio.simulation.noHistory"));
             } finally {
                 if (isMounted) setWhatIfBusy(false);
             }

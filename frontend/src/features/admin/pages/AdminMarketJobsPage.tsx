@@ -1,4 +1,5 @@
 import { Box } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { AdminAuditPanel } from "../components/AdminAuditPanel";
 import { AdminMarketJobsPanel } from "../components/AdminMarketJobsPanel";
 import {
@@ -8,6 +9,7 @@ import {
 } from "../hooks/useAdminMarketJobsPage";
 
 export function AdminMarketJobsPage() {
+    const { t } = useTranslation();
     const { auditTrail, pending, handlers } = useAdminMarketJobsPage();
 
     return (
@@ -20,7 +22,7 @@ export function AdminMarketJobsPage() {
             />
 
             <AdminAuditPanel
-                title="Market audit geçmişi"
+                title={t("admin.marketJobs.audit")}
                 loading={auditTrail.loading}
                 error={auditTrail.error}
                 items={auditTrail.data}

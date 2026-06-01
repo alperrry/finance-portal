@@ -6,6 +6,7 @@ import { CHART_COLORS } from "../types";
 import type { EnrichedHistoryPoint, InstrumentOption, RangeKey } from "../types";
 import { RANGE_OPTIONS } from "../types";
 import { ApiError } from "../../../services/api/client";
+import i18n from "../../../i18n";
 
 const dateFormatter = new Intl.DateTimeFormat("tr-TR", {
     day: "2-digit",
@@ -128,23 +129,23 @@ export const createEmptyCatalog = () => ({
 
 export const buildCatalogFromStocks = (rows: StockResponse[]): InstrumentOption[] =>
     [...rows]
-        .map((row) => ({ code: row.symbol, name: row.longName ?? row.shortName ?? row.symbol, detail: row.sector ?? row.indexName ?? "Hisse" }))
-        .sort((left, right) => left.code.localeCompare(right.code, "tr"));
+        .map((row) => ({ code: row.symbol, name: row.longName ?? row.shortName ?? row.symbol, detail: row.sector ?? row.indexName ?? i18n.t("analysis.detail.stock") }))
+        .sort((left, right) => left.code.localeCompare(right.code, i18n.language));
 
 export const buildCatalogFromFx = (rows: FxResponse[]): InstrumentOption[] =>
     [...rows]
         .map((row) => ({ code: row.currencyCode, name: row.currencyName, detail: `TCMB · ${row.unit > 1 ? `${row.unit} birim` : "1 birim"}` }))
-        .sort((left, right) => left.code.localeCompare(right.code, "tr"));
+        .sort((left, right) => left.code.localeCompare(right.code, i18n.language));
 
 export const buildCatalogFromFunds = (rows: FundResponse[]): InstrumentOption[] =>
     [...rows]
-        .map((row) => ({ code: row.code, name: row.name, detail: row.fundType ?? "Fon" }))
-        .sort((left, right) => left.code.localeCompare(right.code, "tr"));
+        .map((row) => ({ code: row.code, name: row.name, detail: row.fundType ?? i18n.t("analysis.detail.fund") }))
+        .sort((left, right) => left.code.localeCompare(right.code, i18n.language));
 
 export const buildCatalogFromBonds = (rows: BondResponse[]): InstrumentOption[] =>
     [...rows]
-        .map((row) => ({ code: row.evdsSeriesCode, name: row.name, detail: row.currency ?? row.bondType ?? "Tahvil/Bono" }))
-        .sort((left, right) => left.code.localeCompare(right.code, "tr"));
+        .map((row) => ({ code: row.evdsSeriesCode, name: row.name, detail: row.currency ?? row.bondType ?? i18n.t("analysis.detail.bond") }))
+        .sort((left, right) => left.code.localeCompare(right.code, i18n.language));
 
 export const sanitizeCompareCodes = (value: string | null, options: InstrumentOption[], currentCode: string): string[] => {
     if (!value) return [];
@@ -290,62 +291,62 @@ export const buildComparisonChartData = (
 
 export const getRsiComment = (value: number | null | undefined): string => {
     const normalized = toSafeNumber(value);
-    if (normalized === null) return "Veri yetersiz";
-    if (normalized < 30) return "Aşırı satım";
-    if (normalized > 70) return "Aşırı alım";
-    return "Nötr";
+    if (normalized === null) return i18n.t("analysis.indicator.insufficientData");
+    if (normalized < 30) return i18n.t("analysis.indicator.oversold");
+    if (normalized > 70) return i18n.t("analysis.indicator.overbought");
+    return i18n.t("analysis.indicator.neutral");
 };
 
 export const getMomentumComment = (value: number | null | undefined): string => {
     const normalized = toSafeNumber(value);
-    if (normalized === null) return "Veri yetersiz";
-    if (normalized > 0) return "Yükseliş momentumu";
-    if (normalized < 0) return "Düşüş momentumu";
-    return "Nötr";
+    if (normalized === null) return i18n.t("analysis.indicator.insufficientData");
+    if (normalized > 0) return i18n.t("analysis.indicator.bullishMomentum");
+    if (normalized < 0) return i18n.t("analysis.indicator.bearishMomentum");
+    return i18n.t("analysis.indicator.neutral");
 };
 
 export const getStochasticComment = (value: number | null | undefined): string => {
     const normalized = toSafeNumber(value);
-    if (normalized === null) return "Veri yetersiz";
-    if (normalized > 80) return "Aşırı alım";
-    if (normalized < 20) return "Aşırı satım";
-    return "Nötr";
+    if (normalized === null) return i18n.t("analysis.indicator.insufficientData");
+    if (normalized > 80) return i18n.t("analysis.indicator.overbought");
+    if (normalized < 20) return i18n.t("analysis.indicator.oversold");
+    return i18n.t("analysis.indicator.neutral");
 };
 
 export const getRsiContext = (value: number | null | undefined): string => {
     const normalized = toSafeNumber(value);
-    if (normalized === null) return "Veri yetersiz";
-    if (normalized > 70) return "Satış baskısı gelebilir";
-    if (normalized >= 55) return "Alış baskısı sürüyor";
-    if (normalized > 45) return "Yön dengeleniyor";
-    if (normalized >= 30) return "Satış baskısı sürüyor";
-    return "Tepki alımı izlenebilir";
+    if (normalized === null) return i18n.t("analysis.indicator.insufficientData");
+    if (normalized > 70) return i18n.t("analysis.indicator.sellPressureMayCome");
+    if (normalized >= 55) return i18n.t("analysis.indicator.bullishPressureContinuing");
+    if (normalized > 45) return i18n.t("analysis.indicator.directionBalancing");
+    if (normalized >= 30) return i18n.t("analysis.indicator.bearishPressureContinuing");
+    return i18n.t("analysis.indicator.counterBuy");
 };
 
 export const getMacdContext = (current: number | null | undefined, previous: number | null | undefined): string => {
     const currentValue = toSafeNumber(current);
     const previousValue = toSafeNumber(previous);
-    if (currentValue === null || previousValue === null) return "Veri yetersiz";
-    if (currentValue > 0 && currentValue > previousValue) return "Alış baskısı güçleniyor";
-    if (currentValue > 0) return "Alış baskısı sürüyor";
-    if (currentValue < 0 && currentValue < previousValue) return "Satış baskısı güçleniyor";
-    if (currentValue < 0) return "Satış baskısı sürüyor";
-    return "Momentum yatay";
+    if (currentValue === null || previousValue === null) return i18n.t("analysis.indicator.insufficientData");
+    if (currentValue > 0 && currentValue > previousValue) return i18n.t("analysis.indicator.bullishPressureGrowing");
+    if (currentValue > 0) return i18n.t("analysis.indicator.bullishPressureContinuing");
+    if (currentValue < 0 && currentValue < previousValue) return i18n.t("analysis.indicator.bearishPressureGrowing");
+    if (currentValue < 0) return i18n.t("analysis.indicator.bearishPressureContinuing");
+    return i18n.t("analysis.indicator.momentumFlat");
 };
 
 export const getStochasticContext = (k: number | null | undefined, d: number | null | undefined): string => {
     const kValue = toSafeNumber(k);
     const dValue = toSafeNumber(d);
-    if (kValue === null || dValue === null) return "Veri yetersiz";
-    if (kValue > 80) return "Satış baskısı gelebilir";
-    if (kValue < 20) return "Alış baskısı gelebilir";
-    if (kValue > dValue) return "Yukarı yönlü";
-    if (kValue < dValue) return "Aşağı yönlü";
-    return "Yön dengeleniyor";
+    if (kValue === null || dValue === null) return i18n.t("analysis.indicator.insufficientData");
+    if (kValue > 80) return i18n.t("analysis.indicator.sellPressureMayCome");
+    if (kValue < 20) return i18n.t("analysis.indicator.buyPressureMayCome");
+    if (kValue > dValue) return i18n.t("analysis.indicator.bullishSignal");
+    if (kValue < dValue) return i18n.t("analysis.indicator.bearishSignal");
+    return i18n.t("analysis.indicator.directionBalancing");
 };
 
 export const formatIndicatorSnapshotValue = (value: number | null | undefined, digits: number): string =>
-    toSafeNumber(value) === null ? "Veri yetersiz" : formatDecimal(value, digits);
+    toSafeNumber(value) === null ? i18n.t("analysis.indicator.insufficientData") : formatDecimal(value, digits);
 
 export const emitIndicatorError = (message: string, error: unknown): void => {
     if (error instanceof ApiError && error.status === 401) return;

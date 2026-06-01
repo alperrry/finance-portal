@@ -1,30 +1,12 @@
 import { Avatar, Box, Button, Chip, Stack, Typography } from "@mui/material";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../app/auth/AuthContext";
 import { LiveBadge } from "./components/LiveBadge";
 import { NotificationBell } from "./components/NotificationBell";
 import { useAdminQueryInvalidation } from "./api/useAdminQueryInvalidation";
 import { useAdminWebSocket } from "./websocket/useAdminWebSocket";
 import { useAuditFeed } from "./websocket/useAuditFeed";
-
-const NAV_ITEMS = [
-    { to: "/admin", label: "Dashboard", end: true },
-    { to: "/admin/users", label: "Kullanıcılar", end: false },
-    { to: "/admin/news", label: "Haber Yönetimi", end: false },
-    { to: "/admin/categories", label: "Kategori Yönetimi", end: false },
-    { to: "/admin/news-sources", label: "RSS Kaynakları", end: false },
-    { to: "/admin/market-jobs", label: "Market İşleri", end: false },
-];
-
-function titleForPath(pathname: string) {
-    if (pathname.includes("/admin/users/")) return "Kullanıcı Detayı";
-    if (pathname.includes("/admin/users")) return "Kullanıcılar";
-    if (pathname.includes("/admin/news-sources")) return "RSS Kaynakları";
-    if (pathname.includes("/admin/news")) return "Haber Yönetimi";
-    if (pathname.includes("/admin/categories")) return "Kategori Yönetimi";
-    if (pathname.includes("/admin/market-jobs")) return "Market İşleri";
-    return "Admin";
-}
 
 const NAV_LINK_SX = {
     display: "block",
@@ -38,12 +20,14 @@ const NAV_LINK_SX = {
     transition: "color 0.18s, background 0.18s",
     "&.active, &:hover": {
         color: "text.primary",
-        bgcolor: "rgba(17, 17, 17, 0.07)",
+        bgcolor: (theme: { palette: { mode: string } }) => theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(17, 17, 17, 0.07)",
     },
-} as const;
+};
 
 export function AdminLayout() {
+    const { t } = useTranslation();
     const location = useLocation();
+    const navigate = useNavigate();
     const { currentUser, logout } = useAuth();
     const auditFeed = useAuditFeed();
     const detailMatch = location.pathname.match(/^\/admin\/users\/(\d+)/);
@@ -51,11 +35,30 @@ export function AdminLayout() {
     const { state } = useAdminWebSocket({ onEvent: auditFeed.addEvent, watchedUserId });
     useAdminQueryInvalidation();
 
+    const NAV_ITEMS = [
+        { to: "/admin", label: t("admin.nav.dashboard"), end: true },
+        { to: "/admin/users", label: t("admin.nav.users"), end: false },
+        { to: "/admin/news", label: t("admin.nav.newsManagement"), end: false },
+        { to: "/admin/categories", label: t("admin.nav.categoryManagement"), end: false },
+        { to: "/admin/news-sources", label: t("admin.nav.rssSources"), end: false },
+        { to: "/admin/market-jobs", label: t("admin.nav.marketJobs"), end: false },
+    ];
+
+    const titleForPath = (pathname: string) => {
+        if (pathname.includes("/admin/users/")) return t("admin.nav.userDetail");
+        if (pathname.includes("/admin/users")) return t("admin.nav.users");
+        if (pathname.includes("/admin/news-sources")) return t("admin.nav.rssSources");
+        if (pathname.includes("/admin/news")) return t("admin.nav.newsManagement");
+        if (pathname.includes("/admin/categories")) return t("admin.nav.categoryManagement");
+        if (pathname.includes("/admin/market-jobs")) return t("admin.nav.marketJobs");
+        return t("admin.nav.dashboard");
+    };
+
     return (
         <Box
             sx={{
                 minHeight: "100vh",
-                background: "radial-gradient(circle at 14% -12%, rgba(193, 98, 47, 0.1), transparent 42%), #edeae4",
+                background: (theme) => theme.palette.mode === "dark" ? "radial-gradient(circle at 14% -12%, rgba(193, 98, 47, 0.1), transparent 42%), #181512" : "radial-gradient(circle at 14% -12%, rgba(193, 98, 47, 0.1), transparent 42%), #edeae4",
                 display: "grid",
                 gridTemplateColumns: { xs: "1fr", md: "248px minmax(0, 1fr)" },
                 fontFamily: '"Sora", sans-serif',
@@ -66,7 +69,7 @@ export function AdminLayout() {
                 sx={{
                     borderRight: "1px solid",
                     borderColor: "divider",
-                    bgcolor: "rgba(247, 245, 241, 0.86)",
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(24, 21, 18, 0.86)" : "rgba(247, 245, 241, 0.86)",
                     backdropFilter: "blur(20px)",
                     p: "22px 18px",
                 }}
@@ -79,11 +82,11 @@ export function AdminLayout() {
                     onClick={() => undefined}
                 >
                     <Typography sx={{ textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 13, fontWeight: 800 }}>
-                        Kapital Admin
+                        {t("admin.header.brand")}
                     </Typography>
                 </Button>
 
-                <Box component="nav" aria-label="Admin menü" sx={{ display: "grid", gap: 1 }}>
+                <Box component="nav" aria-label={t("admin.nav.adminMenu")} sx={{ display: "grid", gap: 1 }}>
                     {NAV_ITEMS.map((item) => (
                         <Box
                             key={item.to}
@@ -105,7 +108,7 @@ export function AdminLayout() {
                         height: { xs: "auto", md: 82 },
                         borderBottom: "1px solid",
                         borderColor: "divider",
-                        bgcolor: "rgba(237, 234, 228, 0.8)",
+                        bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(24, 21, 18, 0.8)" : "rgba(237, 234, 228, 0.8)",
                         backdropFilter: "blur(18px)",
                         display: "flex",
                         alignItems: { xs: "flex-start", md: "center" },
@@ -121,7 +124,7 @@ export function AdminLayout() {
                 >
                     <Box>
                         <Typography sx={{ color: "text.secondary", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                            Admin Panel
+                            {t("admin.header.adminPanel")}
                         </Typography>
                         <Typography variant="h6" sx={{ mt: 0.5, fontSize: 24, letterSpacing: 0, fontWeight: 700 }}>
                             {titleForPath(location.pathname)}
@@ -131,13 +134,22 @@ export function AdminLayout() {
                     <Stack direction="row" sx={{ alignItems: "center", gap: 1.25 }}>
                         <LiveBadge state={state} />
                         <NotificationBell events={auditFeed.events} unreadCount={auditFeed.unreadCount} onOpen={auditFeed.markAllRead} />
+                        <Button
+                            variant="outlined"
+                            color="inherit"
+                            size="small"
+                            type="button"
+                            onClick={() => navigate("/portfolio")}
+                        >
+                            {t("admin.nav.backToSite")}
+                        </Button>
                         <Chip
-                            avatar={<Avatar sx={{ width: 28, height: 28, bgcolor: "#111", color: "#fff", fontSize: 11, fontWeight: 800 }}>
+                            avatar={<Avatar sx={{ width: 28, height: 28, bgcolor: "primary.main", color: "primary.contrastText", fontSize: 11, fontWeight: 800 }}>
                                 {(currentUser?.firstName || currentUser?.username || "A").slice(0, 2).toLocaleUpperCase("tr-TR")}
                             </Avatar>}
                             label={currentUser?.username ?? "Admin"}
                             onClick={logout}
-                            sx={{ cursor: "pointer", border: "1px solid", borderColor: "divider", bgcolor: "rgba(255,255,255,0.76)", fontWeight: 800 }}
+                            sx={{ cursor: "pointer", border: "1px solid", borderColor: "divider", bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(33, 28, 24, 0.76)" : "rgba(255, 255, 255, 0.76)", fontWeight: 800 }}
                         />
                     </Stack>
                 </Box>

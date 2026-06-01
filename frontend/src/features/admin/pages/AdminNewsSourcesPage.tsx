@@ -1,4 +1,5 @@
 import { Box } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { AdminAuditPanel } from "../components/AdminAuditPanel";
 import { AdminNewsSourceDialog } from "../components/AdminNewsSourceDialog";
 import { AdminNewsSourcesPanel } from "../components/AdminNewsSourcesPanel";
@@ -9,6 +10,7 @@ import {
 } from "../hooks/useAdminNewsSourcesPage";
 
 export function AdminNewsSourcesPage() {
+    const { t } = useTranslation();
     const { sources, sourcesQuery, auditTrail, search, dialogs, handlers, pending } =
         useAdminNewsSourcesPage();
 
@@ -28,7 +30,7 @@ export function AdminNewsSourcesPage() {
             />
 
             <AdminAuditPanel
-                title="RSS ve haber audit geçmişi"
+                title={t("admin.sources.audit")}
                 loading={auditTrail.loading}
                 error={auditTrail.error}
                 items={auditTrail.data}

@@ -1,4 +1,5 @@
 import { Alert, Box, Button, Chip, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { PANEL_HEAD_SX, PANEL_SX } from "../constants/adminStyles";
 import type { AdminCategory } from "../types/admin.types";
 import { formatDateTime } from "../utils/adminFormatters";
@@ -28,6 +29,7 @@ export function AdminCategoriesPanel({
     onDelete,
     onToggle,
 }: AdminCategoriesPanelProps) {
+    const { t } = useTranslation();
     return (
         <Paper sx={PANEL_SX}>
             <Box sx={PANEL_HEAD_SX}>
@@ -36,33 +38,33 @@ export function AdminCategoriesPanel({
                         Category Management
                     </Typography>
                     <Typography variant="h6" sx={{ mt: 0.5, fontSize: 24, letterSpacing: 0, fontWeight: 700 }}>
-                        Kategori Yönetimi
+                        {t("admin.categories.title")}
                     </Typography>
                 </Box>
                 <Button variant="contained" color="secondary" size="small" onClick={onCreate}>
-                    Kategori ekle
+                    {t("admin.categories.addButton")}
                 </Button>
             </Box>
 
             <Box sx={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 1.25, p: "16px 22px", borderBottom: "1px solid", borderColor: "divider", alignItems: "center" }}>
-                <TextField size="small" value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder="Kategori ara" />
-                <Typography sx={{ fontWeight: 700 }}>{categories.length} kategori</Typography>
+                <TextField size="small" value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder={t("admin.categories.searchPlaceholder")} />
+                <Typography sx={{ fontWeight: 700 }}>{t("admin.categories.count", { count: categories.length })}</Typography>
             </Box>
 
-            {loading ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Kategoriler yükleniyor...</Typography> : null}
+            {loading ? <Typography sx={{ p: "22px", color: "text.secondary" }}>{t("admin.categories.loading")}</Typography> : null}
             {!loading && error ? <Alert severity="error" sx={{ m: 2 }}>{error}</Alert> : null}
-            {!loading && !error && categories.length === 0 ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Bu filtrede kategori yok.</Typography> : null}
+            {!loading && !error && categories.length === 0 ? <Typography sx={{ p: "22px", color: "text.secondary" }}>{t("admin.categories.empty")}</Typography> : null}
 
             {!loading && !error && categories.length > 0 ? (
                 <TableContainer sx={{ overflowX: "auto" }}>
                     <Table size="small" sx={{ minWidth: 680 }}>
                         <TableHead>
                             <TableRow>
-                                <TableCell>Kategori</TableCell>
-                                <TableCell>Durum</TableCell>
-                                <TableCell>Oluşturma</TableCell>
-                                <TableCell>Güncelleme</TableCell>
-                                <TableCell>Aksiyon</TableCell>
+                                <TableCell>{t("admin.categories.cols.category")}</TableCell>
+                                <TableCell>{t("admin.categories.cols.status")}</TableCell>
+                                <TableCell>{t("admin.categories.cols.created")}</TableCell>
+                                <TableCell>{t("admin.categories.cols.updated")}</TableCell>
+                                <TableCell>{t("admin.categories.cols.action")}</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -72,7 +74,7 @@ export function AdminCategoriesPanel({
                                     <TableCell>
                                         <Chip
                                             size="small"
-                                            label={category.active ? "Aktif" : "Pasif"}
+                                            label={category.active ? t("admin.users.statusActive") : t("admin.users.statusPassive")}
                                             sx={{
                                                 height: 22,
                                                 fontSize: 11,
@@ -92,10 +94,10 @@ export function AdminCategoriesPanel({
                                                 disabled={pendingAction === `toggle-${category.id}`}
                                                 onClick={() => onToggle(category)}
                                             >
-                                                {category.active ? "Pasifleştir" : "Aktifleştir"}
+                                                {category.active ? t("admin.categories.actions.deactivate") : t("admin.categories.actions.activate")}
                                             </Button>
-                                            <Button size="small" variant="outlined" onClick={() => onEdit(category)}>Düzenle</Button>
-                                            <Button size="small" variant="outlined" color="error" onClick={() => onDelete(category)}>Sil</Button>
+                                            <Button size="small" variant="outlined" onClick={() => onEdit(category)}>{t("admin.categories.actions.edit")}</Button>
+                                            <Button size="small" variant="outlined" color="error" onClick={() => onDelete(category)}>{t("admin.categories.actions.delete")}</Button>
                                         </Box>
                                     </TableCell>
                                 </TableRow>

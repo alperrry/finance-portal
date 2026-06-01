@@ -1,4 +1,5 @@
 import { Box, Card, CardContent, Chip, Container, Grid, Skeleton, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import type { MarketItem, MarketSnapshot } from "../types";
 
 type Props = {
@@ -9,23 +10,23 @@ type Props = {
 function MarketCard({ item }: { item: MarketItem }) {
     const isUp = item.direction === "up";
     const isDown = item.direction === "down";
-    const changeColor = isUp ? "#2f8f58" : isDown ? "#c84b4b" : "#888";
+    const changeColor = isUp ? "#2f8f58" : isDown ? "#c84b4b" : "text.secondary";
 
     return (
         <Card
             sx={{
-                border: "1px solid #e8e4da",
                 borderRadius: 2,
                 boxShadow: "none",
                 transition: "box-shadow 0.2s, border-color 0.2s",
-                "&:hover": { boxShadow: "0 4px 20px rgba(0,0,0,0.08)", borderColor: "#c1622f" },
+                "&:hover": { boxShadow: "0 4px 20px rgba(0,0,0,0.08)", borderColor: "secondary.main" },
             }}
         >
             <CardContent sx={{ p: 2.5 }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                     <Typography
                         variant="caption"
-                        sx={{ color: "#888", fontWeight: 500, textTransform: "uppercase" }}
+                        color="text.secondary"
+                        sx={{ fontWeight: 500, textTransform: "uppercase" }}
                     >
                         {item.marketLabel}
                     </Typography>
@@ -38,7 +39,7 @@ function MarketCard({ item }: { item: MarketItem }) {
                                     ? "rgba(47,143,88,0.1)"
                                     : isDown
                                     ? "rgba(200,75,75,0.1)"
-                                    : "rgba(0,0,0,0.05)",
+                                    : "rgba(128,128,128,0.1)",
                                 color: changeColor,
                                 fontWeight: 700,
                                 fontSize: "0.7rem",
@@ -46,15 +47,15 @@ function MarketCard({ item }: { item: MarketItem }) {
                         />
                     )}
                 </Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#111", mb: 0.5 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5 }}>
                     {item.symbol}
                 </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 800, color: "#111" }}>
+                <Typography variant="h5" sx={{ fontWeight: 800 }}>
                     {item.price !== null
                         ? item.price.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 4 })
                         : "—"}
                 </Typography>
-                <Typography variant="caption" sx={{ color: "#999" }}>
+                <Typography variant="caption" color="text.secondary">
                     {item.name}
                 </Typography>
             </CardContent>
@@ -63,20 +64,21 @@ function MarketCard({ item }: { item: MarketItem }) {
 }
 
 export default function MarketOverview({ snapshot, loading }: Props) {
+    const { t } = useTranslation();
     const items = snapshot?.marketItems ?? [];
 
     return (
-        <Box sx={{ bgcolor: "#f7f6f2", py: { xs: 6, md: 10 } }}>
+        <Box sx={{ bgcolor: "background.default", py: { xs: 6, md: 10 } }}>
             <Container maxWidth="lg">
                 <Box sx={{ mb: 5 }}>
-                    <Typography variant="overline" sx={{ color: "#c1622f", fontWeight: 700, letterSpacing: 2 }}>
-                        Piyasalar
+                    <Typography variant="overline" color="secondary" sx={{ fontWeight: 700, letterSpacing: 2 }}>
+                        {t("nav.markets")}
                     </Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 800, color: "#111", mt: 0.5 }}>
-                        Piyasa Görünümü
+                    <Typography variant="h4" sx={{ fontWeight: 800, mt: 0.5 }}>
+                        {t("home.marketOverview.title")}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: "#666", mt: 1 }}>
-                        Anlık fiyatlar ve değişim oranları
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        {t("home.marketOverview.description")}
                     </Typography>
                 </Box>
                 <Grid container spacing={3}>

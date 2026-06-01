@@ -4,40 +4,43 @@ import ShowChartOutlinedIcon from "@mui/icons-material/ShowChartOutlined";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import QueryStatsOutlinedIcon from "@mui/icons-material/QueryStatsOutlined";
 import type { SvgIconComponent } from "@mui/icons-material";
-
-const FEATURES: { icon: SvgIconComponent; title: string; description: string }[] = [
-    {
-        icon: AccountBalanceWalletOutlinedIcon,
-        title: "Portföy Takibi",
-        description: "Hisse, döviz, fon ve tahvillerinizi tek ekranda izleyin. Gerçek zamanlı kar/zarar hesaplaması.",
-    },
-    {
-        icon: ShowChartOutlinedIcon,
-        title: "Canlı Piyasa",
-        description: "WebSocket bağlantısıyla anlık fiyat güncellemeleri. Dört piyasayı eş zamanlı takip edin.",
-    },
-    {
-        icon: ArticleOutlinedIcon,
-        title: "Haber Akışı",
-        description: "Finansal haberler, kategori filtreleme ve enstrümana özel haber takibi.",
-    },
-    {
-        icon: QueryStatsOutlinedIcon,
-        title: "Gelişmiş Analiz",
-        description: "Mum grafikler, teknik indikatörler, çizim araçları ve enstrüman karşılaştırma.",
-    },
-];
+import { useTranslation } from "react-i18next";
 
 export default function FeaturesSection() {
+    const { t } = useTranslation();
+
+    const FEATURES: { icon: SvgIconComponent; title: string; description: string }[] = [
+        {
+            icon: AccountBalanceWalletOutlinedIcon,
+            title: t("home.features.portfolio.title"),
+            description: t("home.features.portfolio.desc"),
+        },
+        {
+            icon: ShowChartOutlinedIcon,
+            title: t("home.features.liveMarket.title"),
+            description: t("home.features.liveMarket.desc"),
+        },
+        {
+            icon: ArticleOutlinedIcon,
+            title: t("home.features.newsSection.title"),
+            description: t("home.features.newsSection.desc"),
+        },
+        {
+            icon: QueryStatsOutlinedIcon,
+            title: t("home.features.analysisSection.title"),
+            description: t("home.features.analysisSection.desc"),
+        },
+    ];
+
     return (
-        <Box sx={{ bgcolor: "#fff", py: { xs: 6, md: 10 }, borderTop: "1px solid #eeebe4" }}>
+        <Box sx={{ bgcolor: "background.paper", py: { xs: 6, md: 10 }, borderTop: "1px solid", borderColor: "divider" }}>
             <Container maxWidth="lg">
                 <Box sx={{ mb: 6, textAlign: "center" }}>
-                    <Typography variant="overline" sx={{ color: "#c1622f", fontWeight: 700, letterSpacing: 2 }}>
-                        Özellikler
+                    <Typography variant="overline" color="secondary" sx={{ fontWeight: 700, letterSpacing: 2 }}>
+                        {t("home.features.overline")}
                     </Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 800, color: "#111", mt: 0.5 }}>
-                        Neler Sunuyoruz?
+                    <Typography variant="h4" sx={{ fontWeight: 800, mt: 0.5 }}>
+                        {t("home.features.title")}
                     </Typography>
                 </Box>
                 <Grid container spacing={3}>
@@ -46,11 +49,10 @@ export default function FeaturesSection() {
                             <Card
                                 sx={{
                                     height: "100%",
-                                    border: "1px solid #eeebe4",
                                     boxShadow: "none",
                                     borderRadius: 2,
                                     transition: "box-shadow 0.2s, border-color 0.2s",
-                                    "&:hover": { boxShadow: "0 4px 24px rgba(0,0,0,0.07)", borderColor: "#c1622f" },
+                                    "&:hover": { boxShadow: "0 4px 24px rgba(0,0,0,0.07)", borderColor: "secondary.main" },
                                 }}
                             >
                                 <CardContent sx={{ p: 3 }}>
@@ -66,12 +68,12 @@ export default function FeaturesSection() {
                                             mb: 2,
                                         }}
                                     >
-                                        <Icon sx={{ color: "#c1622f", fontSize: 24 }} />
+                                        <Icon sx={{ color: "secondary.main", fontSize: 24 }} />
                                     </Box>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#111", mb: 1 }}>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
                                         {title}
                                     </Typography>
-                                    <Typography variant="body2" sx={{ color: "#666", lineHeight: 1.7 }}>
+                                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
                                         {description}
                                     </Typography>
                                 </CardContent>

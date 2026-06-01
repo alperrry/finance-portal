@@ -1,6 +1,7 @@
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, InputLabel, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material/Select";
 import { useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import type { CreatePortfolioRequest, DisplayCurrency } from "../api/portfolioApi";
 import type { PortfolioFormState } from "../types";
 import { CURRENCIES } from "../types";
@@ -14,9 +15,10 @@ type Props = {
 };
 
 export function PortfolioFormModal({ state, busy, error, onClose, onSubmit }: Props) {
+    const { t } = useTranslation();
     const [name, setName] = useState(state.portfolio?.name ?? "");
     const [currency, setCurrency] = useState<DisplayCurrency>(state.portfolio?.displayCurrency ?? "TRY");
-    const title = state.mode === "create" ? "Yeni Portföy" : "Portföyü Düzenle";
+    const title = state.mode === "create" ? t("portfolio.form.newTitle") : t("portfolio.form.editTitle");
 
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault();
@@ -35,10 +37,10 @@ export function PortfolioFormModal({ state, busy, error, onClose, onSubmit }: Pr
                 <DialogContent>
                     <Stack sx={{ gap: 2, pt: 1 }}>
                         <TextField
-                            label="Portföy Adı"
+                            label={t("portfolio.form.nameLabel")}
                             value={name}
                             onChange={(event) => setName(event.target.value)}
-                            placeholder="Uzun vadeli yatırım"
+                            placeholder={t("portfolio.form.descriptionPlaceholder")}
                             slotProps={{ htmlInput: { maxLength: 255 } }}
                             autoFocus
                             fullWidth
@@ -65,9 +67,9 @@ export function PortfolioFormModal({ state, busy, error, onClose, onSubmit }: Pr
                     </Stack>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={onClose}>İptal</Button>
+                    <Button onClick={onClose}>{t("portfolio.deleteModal.cancel")}</Button>
                     <Button type="submit" variant="contained" color="secondary" disabled={busy || !name.trim()}>
-                        {busy ? "Kaydediliyor..." : state.mode === "create" ? "Oluştur" : "Kaydet"}
+                        {busy ? t("portfolio.form.saving") : state.mode === "create" ? t("portfolio.form.create") : t("portfolio.form.save")}
                     </Button>
                 </DialogActions>
             </Box>

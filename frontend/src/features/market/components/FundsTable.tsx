@@ -1,4 +1,5 @@
 import { Box, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import type { GridColDef, GridSortModel } from "@mui/x-data-grid";
 import { AppDataGrid } from "../../../components/ui/AppDataGrid";
 import type { FundResponse } from "../api/marketApi";
@@ -12,65 +13,66 @@ type Props = {
     onRowClick: (code: string) => void;
 };
 
-const COLUMNS: GridColDef<FundResponse>[] = [
-    {
-        field: "fund",
-        headerName: "Fon",
-        flex: 1.4,
-        minWidth: 160,
-        renderCell: ({ row }) => (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25, py: 0.5 }}>
-                <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.3 }}>{row.code}</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>{row.name}</Typography>
-            </Box>
-        ),
-    },
-    {
-        field: "type",
-        headerName: "Tür",
-        flex: 0.8,
-        minWidth: 90,
-        renderCell: ({ row }) => row.fundType ?? "-",
-    },
-    {
-        field: "price",
-        headerName: "Fiyat",
-        flex: 0.9,
-        minWidth: 100,
-        renderCell: ({ row }) => formatMoney(row.price, "TRY", 4),
-    },
-    {
-        field: "investors",
-        headerName: "Yatırımcı",
-        flex: 0.9,
-        minWidth: 100,
-        renderCell: ({ row }) => formatCompactNumber(row.investorCount),
-    },
-    {
-        field: "portfolioSize",
-        headerName: "Portföy Büyüklüğü",
-        flex: 1.2,
-        minWidth: 140,
-        renderCell: ({ row }) => formatCompactMoney(row.portfolioSize, "TRY"),
-    },
-    {
-        field: "shares",
-        headerName: "Pay Adedi",
-        flex: 0.9,
-        minWidth: 100,
-        renderCell: ({ row }) => formatCompactNumber(row.totalShares),
-    },
-    {
-        field: "date",
-        headerName: "Tarih",
-        flex: 0.9,
-        minWidth: 100,
-        renderCell: ({ row }) => formatLocalDate(row.priceDate),
-    },
-];
-
 export function FundsTable({ rows, sortConfig, onSort, onRowClick }: Props) {
+    const { t } = useTranslation();
     const sortModel: GridSortModel = [{ field: sortConfig.key, sort: sortConfig.direction }];
+
+    const COLUMNS: GridColDef<FundResponse>[] = [
+        {
+            field: "fund",
+            headerName: t("market.tables.fund.fund"),
+            flex: 1.4,
+            minWidth: 160,
+            renderCell: ({ row }) => (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25, py: 0.5 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.3 }}>{row.code}</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>{row.name}</Typography>
+                </Box>
+            ),
+        },
+        {
+            field: "type",
+            headerName: t("market.tables.fund.type"),
+            flex: 0.8,
+            minWidth: 90,
+            renderCell: ({ row }) => row.fundType ?? "-",
+        },
+        {
+            field: "price",
+            headerName: t("market.tables.fund.price"),
+            flex: 0.9,
+            minWidth: 100,
+            renderCell: ({ row }) => formatMoney(row.price, "TRY", 4),
+        },
+        {
+            field: "investors",
+            headerName: t("market.tables.fund.investors"),
+            flex: 0.9,
+            minWidth: 100,
+            renderCell: ({ row }) => formatCompactNumber(row.investorCount),
+        },
+        {
+            field: "portfolioSize",
+            headerName: t("market.tables.fund.portfolioSize"),
+            flex: 1.2,
+            minWidth: 140,
+            renderCell: ({ row }) => formatCompactMoney(row.portfolioSize, "TRY"),
+        },
+        {
+            field: "shares",
+            headerName: t("market.tables.fund.shares"),
+            flex: 0.9,
+            minWidth: 100,
+            renderCell: ({ row }) => formatCompactNumber(row.totalShares),
+        },
+        {
+            field: "date",
+            headerName: t("market.tables.fund.date"),
+            flex: 0.9,
+            minWidth: 100,
+            renderCell: ({ row }) => formatLocalDate(row.priceDate),
+        },
+    ];
 
     const handleSortChange = (model: GridSortModel) => {
         const item = model[0];
@@ -85,7 +87,7 @@ export function FundsTable({ rows, sortConfig, onSort, onRowClick }: Props) {
             onRowClick={(row) => onRowClick(row.code)}
             sortModel={sortModel}
             onSortModelChange={handleSortChange}
-            emptyMessage="Aramaya uyan fon kaydı yok."
+            emptyMessage={t("market.tables.fund.empty")}
             rowHeight={52}
         />
     );

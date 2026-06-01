@@ -1,11 +1,11 @@
 export const PANEL_SX = {
     borderRadius: "22px",
     overflow: "hidden",
-    bgcolor: "rgba(247, 245, 241, 0.92)",
+    bgcolor: (theme: { palette: { mode: string } }) => theme.palette.mode === "dark" ? "rgba(33, 28, 24, 0.92)" : "rgba(247, 245, 241, 0.92)",
     border: "1px solid",
-    borderColor: "rgba(255, 255, 255, 0.72)",
-    boxShadow: "0 18px 52px rgba(17, 17, 17, 0.09)",
-} as const;
+    borderColor: "divider",
+    boxShadow: (theme: { palette: { mode: string } }) => theme.palette.mode === "dark" ? "0 18px 52px rgba(0, 0, 0, 0.32)" : "0 18px 52px rgba(17, 17, 17, 0.09)",
+};
 
 export const PANEL_HEAD_SX = {
     display: "flex",

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { AdminCategory } from "../types/admin.types";
 import { fetchAdminCategories } from "./adminApi";
+import i18n from "../../../i18n";
 
 export function useAdminCategories() {
     const { data, isLoading, error, refetch } = useQuery({
@@ -13,7 +14,7 @@ export function useAdminCategories() {
     return {
         data: data ?? [] as AdminCategory[],
         loading: isLoading,
-        error: error ? (error instanceof Error ? error.message : "Kategoriler yüklenemedi.") : null,
+        error: error ? (error instanceof Error ? error.message : i18n.t("admin.categories.loadError")) : null,
         refetch: () => void refetch(),
     };
 }

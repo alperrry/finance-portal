@@ -85,10 +85,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                         role={toast.tone === "error" ? "alert" : "status"}
                         sx={{
                             border: "1px solid",
-                            borderColor: toast.tone === "error" ? "rgba(224, 88, 88, 0.26)" : "rgba(17, 17, 17, 0.09)",
-                            bgcolor: "rgba(255, 255, 255, 0.94)",
-                            color: "rgba(17, 17, 17, 0.82)",
-                            boxShadow: "0 16px 42px rgba(17, 17, 17, 0.12)",
+                            borderColor: toast.tone === "error" ? "rgba(224, 88, 88, 0.26)" : "divider",
+                            bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(33, 28, 24, 0.96)" : "rgba(255, 255, 255, 0.96)",
+                            color: "text.primary",
+                            boxShadow: (theme) => theme.palette.mode === "dark" ? "0 16px 42px rgba(0, 0, 0, 0.4)" : "0 16px 42px rgba(17, 17, 17, 0.12)",
                             backdropFilter: "blur(18px)",
                             borderRadius: "18px",
                             p: "13px 14px",

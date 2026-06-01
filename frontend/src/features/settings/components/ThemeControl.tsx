@@ -1,4 +1,5 @@
 import { ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import type { ThemePreference } from "../../../app/providers/UiPreferencesProvider";
 
 type Props = {
@@ -8,10 +9,20 @@ type Props = {
 };
 
 export function ThemeControl({ value, resolvedTheme, onChange }: Props) {
+    const { t } = useTranslation();
+
     const options: Array<{ id: ThemePreference; label: string; hint: string }> = [
-        { id: "light", label: "Açık", hint: "Parlak arayüz" },
-        { id: "dark", label: "Koyu", hint: "Düşük ışık" },
-        { id: "system", label: "Sistem", hint: `Şu an: ${resolvedTheme === "dark" ? "Koyu" : "Açık"}` },
+        { id: "light", label: t("preferences.theme.light.label"), hint: t("preferences.theme.light.hint") },
+        { id: "dark", label: t("preferences.theme.dark.label"), hint: t("preferences.theme.dark.hint") },
+        {
+            id: "system",
+            label: t("preferences.theme.system.label"),
+            hint: t("preferences.theme.system.hint", {
+                current: resolvedTheme === "dark"
+                    ? t("preferences.theme.dark.label")
+                    : t("preferences.theme.light.label"),
+            }),
+        },
     ];
 
     return (
@@ -19,7 +30,7 @@ export function ThemeControl({ value, resolvedTheme, onChange }: Props) {
             exclusive
             value={value}
             onChange={(_, next: ThemePreference | null) => { if (next) onChange(next); }}
-            aria-label="Tema seçimi"
+            aria-label={t("preferences.theme.ariaLabel")}
             sx={{ flexWrap: "wrap" }}
         >
             {options.map((option) => (

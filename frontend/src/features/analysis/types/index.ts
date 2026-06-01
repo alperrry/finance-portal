@@ -58,22 +58,29 @@ export type CatalogState = {
 
 export const TYPE_ORDER: InstrumentType[] = ["stocks", "indexes", "commodities", "crypto", "fx", "funds", "bonds"];
 
-export const TYPE_META: Record<InstrumentType, { label: string; description: string }> = {
-    stocks: { label: "Hisseler", description: "Fiyat, hareketli ortalama ve volatiliteyi tek panelde okuyun." },
-    indexes: { label: "Endeksler", description: "BIST endekslerini fiyat trendiyle birlikte izleyin." },
-    commodities: { label: "Emtia", description: "Emtia fiyat serilerini ayrı piyasa grubu olarak analiz edin." },
-    crypto: { label: "Kripto", description: "Kripto varlık fiyatlarını günlük seri üzerinden okuyun." },
-    fx: { label: "Döviz", description: "TCMB serileri üzerinden kur trendlerini ve momentumunu izleyin." },
-    funds: { label: "Fonlar", description: "Fon fiyat serilerini seçili aralıkta karşılaştırın." },
-    bonds: { label: "Tahvil/Bono", description: "Faiz serilerini trend ve bant yapısıyla birlikte analiz edin." },
+export const TYPE_I18N_KEY: Record<InstrumentType, string> = {
+    stocks: "stocks",
+    indexes: "indices",
+    commodities: "commodity",
+    crypto: "crypto",
+    fx: "fx",
+    funds: "funds",
+    bonds: "bond",
 };
 
-export const RANGE_OPTIONS: Array<{ key: RangeKey; label: string; months?: number; days?: number }> = [
-    { key: "1A", label: "1A", months: 1 },
-    { key: "3A", label: "3A", months: 3 },
-    { key: "6A", label: "6A", months: 6 },
-    { key: "1Y", label: "1Y", days: 365 },
+export const RANGE_OPTIONS: Array<{ key: RangeKey; months?: number; days?: number }> = [
+    { key: "1A", months: 1 },
+    { key: "3A", months: 3 },
+    { key: "6A", months: 6 },
+    { key: "1Y", days: 365 },
 ];
+
+export const ANALYSIS_RANGE_I18N_KEY: Record<RangeKey, string> = {
+    "1A": "oneMonth",
+    "3A": "threeMonths",
+    "6A": "sixMonths",
+    "1Y": "oneYear",
+};
 
 export const CHART_COLORS = {
     price: "#111111",

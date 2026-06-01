@@ -1,4 +1,5 @@
 import { useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { ApiError } from "../../../services/api/client";
 import { useToast } from "../../../components/ToastContext";
 import { deleteOtpCredential, setupOtp, verifyOtp, type OtpSetupResponse, type SecurityStatusResponse } from "../../profile/api/userApi";
@@ -9,6 +10,7 @@ export function useOtpSetup(
     onStatusUpdate: (status: SecurityStatusResponse) => void,
 ) {
     const { showToast } = useToast();
+    const { t } = useTranslation();
 
     const [otpStep, setOtpStep] = useState<OtpStep>("idle");
     const [otpSetupData, setOtpSetupData] = useState<OtpSetupResponse | null>(null);
@@ -48,12 +50,12 @@ export function useOtpSetup(
             setOtpStep("idle");
             setOtpSetupData(null);
             setOtpCode(["", "", "", "", "", ""]);
-            showToast("İki aşamalı doğrulama aktive edildi", "success");
+            showToast(t("settings.otp.activateSuccess"), "success");
         } catch (err) {
             if (err instanceof ApiError && err.status === 410) {
                 setOtpStep("idle");
                 setOtpSetupData(null);
-                setOtpError("Setup süresi doldu, yeniden başlatın.");
+                setOtpError(t("settings.otp.setupExpired"));
             } else {
                 setOtpError(resolveProfileError(err));
             }
@@ -90,12 +92,12 @@ export function useOtpSetup(
     };
 
     const handleDeleteOtp = async (credentialId: string) => {
-        if (!window.confirm("İki aşamalı doğrulama bu cihaz için kaldırılsın mı?")) return;
+        if (!window.confirm(t("settings.otp.deleteConfirm"))) return;
         setOtpBusyId(credentialId);
         try {
             const nextStatus = await deleteOtpCredential(credentialId);
             onStatusUpdate(nextStatus);
-            showToast("İki aşamalı doğrulama kaldırıldı", "success");
+            showToast(t("settings.otp.deleteSuccess"), "success");
         } catch (err) {
             showToast(resolveProfileError(err), "error");
         } finally {

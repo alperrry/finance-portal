@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useToast } from "../../../components/ToastContext";
+import i18n from "../../../i18n";
 import { createAdminCategory, deleteAdminCategory, updateAdminCategory } from "../api/adminApi";
 import { invalidateAdminQuery } from "../api/adminQueryBus";
 import { useAdminAuditLogs } from "../api/useAdminAuditLogs";
@@ -17,9 +18,9 @@ export type CategoryDialogState =
 
 export function categoryAuditTitle(item: AuditLogItem) {
     const titles: Record<string, string> = {
-        CATEGORY_CREATED: "Kategori oluşturuldu",
-        CATEGORY_UPDATED: "Kategori güncellendi",
-        CATEGORY_DELETED: "Kategori silindi",
+        CATEGORY_CREATED: i18n.t("admin.categories.created"),
+        CATEGORY_UPDATED: i18n.t("admin.categories.updated"),
+        CATEGORY_DELETED: i18n.t("admin.categories.deleted"),
     };
     return titles[item.action] ?? item.action;
 }
@@ -48,15 +49,15 @@ export function useAdminCategoriesPage() {
         try {
             if (dialog?.type === "edit") {
                 await updateAdminCategory(dialog.category.id, payload);
-                showToast("Kategori güncellendi.", "success");
+                showToast(i18n.t("admin.categories.updated"), "success");
             } else {
                 await createAdminCategory(payload);
-                showToast("Kategori oluşturuldu.", "success");
+                showToast(i18n.t("admin.categories.created"), "success");
             }
             refreshAfterMutation();
             setDialog(null);
         } catch (caughtError) {
-            showToast(resolveAdminError(caughtError, "Kategori kaydedilemedi."), "error");
+            showToast(resolveAdminError(caughtError, i18n.t("admin.categories.saveError")), "error");
         } finally {
             setPendingAction(null);
         }
@@ -66,11 +67,11 @@ export function useAdminCategoriesPage() {
         setPendingAction(`delete-${category.id}`);
         try {
             await deleteAdminCategory(category.id);
-            showToast("Kategori silindi.", "success");
+            showToast(i18n.t("admin.categories.deleted"), "success");
             refreshAfterMutation();
             setDialog(null);
         } catch (caughtError) {
-            showToast(resolveAdminError(caughtError, "Kategori silinemedi."), "error");
+            showToast(resolveAdminError(caughtError, i18n.t("admin.categories.deleteError")), "error");
         } finally {
             setPendingAction(null);
         }
@@ -80,10 +81,10 @@ export function useAdminCategoriesPage() {
         setPendingAction(`toggle-${category.id}`);
         try {
             await updateAdminCategory(category.id, { name: category.name, isActive: !category.active });
-            showToast(category.active ? "Kategori pasifleştirildi." : "Kategori aktifleştirildi.", "success");
+            showToast(category.active ? i18n.t("admin.categories.deactivated") : i18n.t("admin.categories.activated"), "success");
             refreshAfterMutation();
         } catch (caughtError) {
-            showToast(resolveAdminError(caughtError, "Kategori durumu güncellenemedi."), "error");
+            showToast(resolveAdminError(caughtError, i18n.t("admin.categories.statusError")), "error");
         } finally {
             setPendingAction(null);
         }

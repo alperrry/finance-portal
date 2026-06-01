@@ -1,6 +1,8 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { LineStyle } from "lightweight-charts";
 import { useQuery } from "@tanstack/react-query";
+import i18n from "../../../i18n";
 import {
     fetchInstrumentHistory,
     type HistoryResponse,
@@ -45,6 +47,7 @@ type HistoryHookInput = {
 const EMPTY_INDICATOR_HISTORY: StockIndicator[] = [];
 
 export function useAnalysisHistory({ resolvedType, resolvedCode, rangeDates, activeOverlayIndicators }: HistoryHookInput) {
+    const { t } = useTranslation();
     const enabled = Boolean(resolvedCode);
     const stocksEnabled = enabled && resolvedType === "stocks";
 
@@ -61,7 +64,7 @@ export function useAnalysisHistory({ resolvedType, resolvedCode, rangeDates, act
             try {
                 return await getIndicatorHistory(resolvedCode, rangeDates.from, rangeDates.to);
             } catch (error) {
-                emitIndicatorError("İndikatör verileri yüklenemedi, grafik fiyat verisiyle devam ediyor.", error);
+                emitIndicatorError(i18n.t("analysis.errors.indicatorData"), error);
                 throw error;
             }
         },
@@ -81,9 +84,9 @@ export function useAnalysisHistory({ resolvedType, resolvedCode, rangeDates, act
     const latestIndicator: StockIndicator | null = latestIndicatorQuery.data ?? null;
 
     const isHistoryLoading = historyQuery.isLoading;
-    const historyError = historyQuery.error ? (historyQuery.error instanceof Error ? historyQuery.error.message : "Tarihsel veri yüklenemedi.") : null;
+    const historyError = historyQuery.error ? (historyQuery.error instanceof Error ? historyQuery.error.message : i18n.t("analysis.errors.historicalData")) : null;
     const isIndicatorHistoryLoading = indicatorHistoryQuery.isLoading;
-    const indicatorHistoryError = indicatorHistoryQuery.error ? (indicatorHistoryQuery.error instanceof Error ? indicatorHistoryQuery.error.message : "İndikatör geçmişi yüklenemedi.") : null;
+    const indicatorHistoryError = indicatorHistoryQuery.error ? (indicatorHistoryQuery.error instanceof Error ? indicatorHistoryQuery.error.message : i18n.t("analysis.errors.indicatorHistory")) : null;
 
     const enrichedHistory = useMemo(() => buildEnrichedHistory(historyData?.data ?? [], indicatorHistoryData), [historyData, indicatorHistoryData]);
     const latestPoint = enrichedHistory.at(-1) ?? null;
@@ -95,7 +98,7 @@ export function useAnalysisHistory({ resolvedType, resolvedCode, rangeDates, act
     );
 
     const priceSeries = useMemo<ChartSeries[]>(() => {
-        const series: ChartSeries[] = [{ key: "close", label: "Fiyat", color: CHART_COLORS.price, values: enrichedHistory.map((p) => p.close), strokeWidth: 2.8 }];
+        const series: ChartSeries[] = [{ key: "close", label: t("analysis.chart.price"), color: CHART_COLORS.price, values: enrichedHistory.map((p) => p.close), strokeWidth: 2.8 }];
         const addOverlay = (key: OverlayIndicatorKey, label: string, color: string, values: Array<number | null>, strokeWidth = 2.2, dashArray?: string) => {
             if (activeOverlayIndicators.includes(key)) series.push({ key, label, color, values, strokeWidth, dashArray });
         };
@@ -106,9 +109,9 @@ export function useAnalysisHistory({ resolvedType, resolvedCode, rangeDates, act
         addOverlay("ema26", "EMA 26", INDICATOR_COLORS.ema26, enrichedHistory.map((p) => p.ema26), 2);
         if (activeOverlayIndicators.includes("bollinger")) {
             series.push(
-                { key: "bollingerUpper", label: "Bollinger Üst", color: INDICATOR_COLORS.bollingerUpper, values: enrichedHistory.map((p) => p.bollingerUpper), strokeWidth: 1.8, dashArray: "6 4" },
-                { key: "bollingerMiddle", label: "Bollinger Orta", color: INDICATOR_COLORS.bollingerMiddle, values: enrichedHistory.map((p) => p.bollingerMiddle), strokeWidth: 2 },
-                { key: "bollingerLower", label: "Bollinger Alt", color: INDICATOR_COLORS.bollingerLower, values: enrichedHistory.map((p) => p.bollingerLower), strokeWidth: 1.8, dashArray: "6 4" },
+                { key: "bollingerUpper", label: t("analysis.chart.bollingerUpper"), color: INDICATOR_COLORS.bollingerUpper, values: enrichedHistory.map((p) => p.bollingerUpper), strokeWidth: 1.8, dashArray: "6 4" },
+                { key: "bollingerMiddle", label: t("analysis.chart.bollingerMiddle"), color: INDICATOR_COLORS.bollingerMiddle, values: enrichedHistory.map((p) => p.bollingerMiddle), strokeWidth: 2 },
+                { key: "bollingerLower", label: t("analysis.chart.bollingerLower"), color: INDICATOR_COLORS.bollingerLower, values: enrichedHistory.map((p) => p.bollingerLower), strokeWidth: 1.8, dashArray: "6 4" },
             );
         }
         if (activeOverlayIndicators.includes("ichimoku")) {
@@ -118,7 +121,7 @@ export function useAnalysisHistory({ resolvedType, resolvedCode, rangeDates, act
             );
         }
         return series;
-    }, [activeOverlayIndicators, enrichedHistory]);
+    }, [activeOverlayIndicators, enrichedHistory, t]);
 
     const candlestickOverlays = useMemo<CandlestickOverlay[]>(() => {
         const overlays: CandlestickOverlay[] = [];
@@ -134,9 +137,9 @@ export function useAnalysisHistory({ resolvedType, resolvedCode, rangeDates, act
         addOverlay("ema26", "EMA 26", INDICATOR_COLORS.ema26, enrichedHistory.map((p) => p.ema26), 2);
         if (activeOverlayIndicators.includes("bollinger")) {
             overlays.push(
-                { key: "bollingerUpper", label: "Bollinger Üst", color: INDICATOR_COLORS.bollingerUpper, values: enrichedHistory.map((p) => p.bollingerUpper), lineWidth: 1.7, lineStyle: LineStyle.Dashed },
-                { key: "bollingerMiddle", label: "Bollinger Orta", color: INDICATOR_COLORS.bollingerMiddle, values: enrichedHistory.map((p) => p.bollingerMiddle), lineWidth: 1.9 },
-                { key: "bollingerLower", label: "Bollinger Alt", color: INDICATOR_COLORS.bollingerLower, values: enrichedHistory.map((p) => p.bollingerLower), lineWidth: 1.7, lineStyle: LineStyle.Dashed },
+                { key: "bollingerUpper", label: t("analysis.chart.bollingerUpper"), color: INDICATOR_COLORS.bollingerUpper, values: enrichedHistory.map((p) => p.bollingerUpper), lineWidth: 1.7, lineStyle: LineStyle.Dashed },
+                { key: "bollingerMiddle", label: t("analysis.chart.bollingerMiddle"), color: INDICATOR_COLORS.bollingerMiddle, values: enrichedHistory.map((p) => p.bollingerMiddle), lineWidth: 1.9 },
+                { key: "bollingerLower", label: t("analysis.chart.bollingerLower"), color: INDICATOR_COLORS.bollingerLower, values: enrichedHistory.map((p) => p.bollingerLower), lineWidth: 1.7, lineStyle: LineStyle.Dashed },
             );
         }
         if (activeOverlayIndicators.includes("ichimoku")) {
@@ -148,7 +151,7 @@ export function useAnalysisHistory({ resolvedType, resolvedCode, rangeDates, act
             );
         }
         return overlays;
-    }, [activeOverlayIndicators, enrichedHistory]);
+    }, [activeOverlayIndicators, enrichedHistory, t]);
 
     const candlestickClouds = useMemo<CandlestickCloud[]>(() =>
         activeOverlayIndicators.includes("ichimoku") ? [{
@@ -166,12 +169,12 @@ export function useAnalysisHistory({ resolvedType, resolvedCode, rangeDates, act
     const previousHistoryIndicator = indicatorHistoryData.at(-2) ?? null;
 
     const metricCards = useMemo(() => [
-        { label: resolvedType === "stocks" ? "Son Kapanış" : "Son Değer", value: formatValueByType(resolvedType, latestPoint?.close ?? null) },
-        { label: "Açılış", value: formatValueByType(resolvedType, latestPoint?.open ?? null) },
-        { label: "Yüksek", value: formatValueByType(resolvedType, latestPoint?.high ?? null) },
-        { label: "Düşük", value: formatValueByType(resolvedType, latestPoint?.low ?? null) },
-        { label: "Hacim", value: formatCompactNumber(latestPoint?.volume ?? null) },
-    ], [latestPoint, resolvedType]);
+        { label: resolvedType === "stocks" ? t("analysis.metrics.lastClose") : t("analysis.metrics.lastValue"), value: formatValueByType(resolvedType, latestPoint?.close ?? null) },
+        { label: t("analysis.metrics.open"), value: formatValueByType(resolvedType, latestPoint?.open ?? null) },
+        { label: t("analysis.metrics.high"), value: formatValueByType(resolvedType, latestPoint?.high ?? null) },
+        { label: t("analysis.metrics.low"), value: formatValueByType(resolvedType, latestPoint?.low ?? null) },
+        { label: t("analysis.metrics.volume"), value: formatCompactNumber(latestPoint?.volume ?? null) },
+    ], [latestPoint, resolvedType, t]);
 
     const indicatorSnapshotCards = useMemo(
         () => resolvedType === "stocks" ? [

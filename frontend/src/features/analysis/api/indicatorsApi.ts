@@ -1,6 +1,7 @@
 import type { ApiResponse } from "../../market/api/marketApi";
 import { apiFetch } from "../../../services/api/client";
 import type { StockIndicator } from "../../../types/indicator";
+import i18n from "../../../i18n";
 
 type RawStockIndicator = {
     symbol?: unknown;
@@ -78,7 +79,7 @@ async function fetchIndicatorPayload<T>(path: string, errorMessage: string): Pro
 
     const raw = (await response.json()) as ApiResponse<T>;
     if (raw?.success !== true || raw.data === undefined || raw.data === null) {
-        throw new Error(`${errorMessage} Geçersiz API cevabı alındı.`);
+        throw new Error(`${errorMessage} ${i18n.t("analysis.drawings.errors.invalidApi")}`);
     }
 
     return raw.data;
@@ -87,7 +88,7 @@ async function fetchIndicatorPayload<T>(path: string, errorMessage: string): Pro
 export async function getLatestIndicator(symbol: string): Promise<StockIndicator> {
     const raw = await fetchIndicatorPayload<RawStockIndicator>(
         `/api/v1/stocks/${encodeURIComponent(symbol)}/indicators/latest`,
-        "Güncel indikatör verisi yüklenemedi."
+        i18n.t("analysis.errors.latestIndicator")
     );
 
     return normalizeIndicator(raw, symbol);
@@ -100,7 +101,7 @@ export async function getIndicatorHistory(symbol: string, from: string, to: stri
 
     const raw = await fetchIndicatorPayload<RawStockIndicator[]>(
         `/api/v1/stocks/${encodeURIComponent(symbol)}/indicators?${params.toString()}`,
-        "İndikatör geçmişi yüklenemedi."
+        i18n.t("analysis.errors.indicatorHistory")
     );
 
     return Array.isArray(raw) ? raw.map((item) => normalizeIndicator(item, symbol)) : [];

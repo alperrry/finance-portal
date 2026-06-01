@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useAuth } from "../../../app/auth/AuthContext";
 import { useToast } from "../../../components/ToastContext";
+import i18n from "../../../i18n";
 import { updateCurrentUser } from "../api/userApi";
 import type { FieldTouched, ProfileField, ProfileForm } from "../types";
 import {
@@ -76,7 +77,7 @@ export function useProfileForm() {
             setCurrentUser(updatedUser);
             setForm(buildForm(updatedUser));
             setTouched({});
-            showToast("Profiliniz güncellendi", "success");
+            showToast(i18n.t("profile.errors.updateSuccess"), "success");
         } catch (caughtError) {
             setServerError(resolveProfileError(caughtError));
         } finally {

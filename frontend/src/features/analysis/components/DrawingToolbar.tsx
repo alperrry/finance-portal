@@ -5,6 +5,7 @@ import MouseIcon from "@mui/icons-material/Mouse";
 import ShowChartIcon from "@mui/icons-material/ShowChart";
 import { ButtonGroup, IconButton, Tooltip } from "@mui/material";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type { CandlestickDrawingMode } from "../../../components/charts/CandlestickChart";
 
 type DrawingToolbarProps = {
@@ -16,20 +17,22 @@ type DrawingToolbarProps = {
     onClear: () => void;
 };
 
-const drawingTools: Array<{
-    key: CandlestickDrawingMode;
-    label: string;
-    icon: ReactNode;
-}> = [
-    { key: "select", label: "Seç", icon: <MouseIcon fontSize="small" /> },
-    { key: "TREND_LINE", label: "Trend çizgisi", icon: <ShowChartIcon fontSize="small" /> },
-    { key: "HORIZONTAL_LINE", label: "Yatay çizgi", icon: <HorizontalRuleIcon fontSize="small" /> },
-    { key: "RECTANGLE", label: "Dikdörtgen", icon: <HighlightAltIcon fontSize="small" /> },
-];
-
 export function DrawingToolbar({ activeTool, toolDisabled, busy, canClear, onSelect, onClear }: DrawingToolbarProps) {
+    const { t } = useTranslation();
+
+    const drawingTools: Array<{
+        key: CandlestickDrawingMode;
+        label: string;
+        icon: ReactNode;
+    }> = [
+        { key: "select", label: t("analysis.drawings.toolbar.select"), icon: <MouseIcon fontSize="small" /> },
+        { key: "TREND_LINE", label: t("analysis.drawings.toolbar.trendLine"), icon: <ShowChartIcon fontSize="small" /> },
+        { key: "HORIZONTAL_LINE", label: t("analysis.drawings.toolbar.horizontalLine"), icon: <HorizontalRuleIcon fontSize="small" /> },
+        { key: "RECTANGLE", label: t("analysis.drawings.toolbar.rectangle"), icon: <HighlightAltIcon fontSize="small" /> },
+    ];
+
     return (
-        <ButtonGroup className="analysis-drawing-toolbar" variant="outlined" size="small" aria-label="Çizim araçları">
+        <ButtonGroup className="analysis-drawing-toolbar" variant="outlined" size="small" aria-label={t("analysis.drawings.toolbar.ariaLabel")}>
             {drawingTools.map((tool) => {
                 const disabled = busy || (toolDisabled && tool.key !== "select");
                 const active = activeTool === tool.key;
@@ -51,12 +54,12 @@ export function DrawingToolbar({ activeTool, toolDisabled, busy, canClear, onSel
                     </Tooltip>
                 );
             })}
-            <Tooltip title="Tümünü temizle">
+            <Tooltip title={t("analysis.drawings.toolbar.clearAll")}>
                 <span>
                     <IconButton
                         className="analysis-drawing-tool danger"
                         type="button"
-                        aria-label="Tüm çizimleri temizle"
+                        aria-label={t("analysis.drawings.toolbar.clearAllAria")}
                         disabled={busy || !canClear}
                         color="error"
                         onClick={onClear}

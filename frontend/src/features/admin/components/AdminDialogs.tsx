@@ -13,6 +13,7 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import type { AdminUserListItem, AdminUserRole, AdminUserStatus } from "../types/admin.types";
 
 type DialogType = "role" | "status" | "reset-2fa";
@@ -29,10 +30,6 @@ function fullName(user: AdminUserListItem) {
     return [user.firstName, user.lastName].filter(Boolean).join(" ") || user.username;
 }
 
-function validateReason(reason: string) {
-    return reason.trim().length >= 10 ? null : "Gerekçe en az 10 karakter olmalı.";
-}
-
 export function ChangeRoleDialog({
     state,
     pending,
@@ -44,6 +41,7 @@ export function ChangeRoleDialog({
     onClose: () => void;
     onSubmit: (role: AdminUserRole, reason: string) => Promise<void>;
 }) {
+    const { t } = useTranslation();
     const user = state?.type === "role" ? state.user : null;
     const [role, setRole] = useState<AdminUserRole>(user?.role ?? "NORMAL_USER");
     const [reason, setReason] = useState("");
@@ -51,9 +49,9 @@ export function ChangeRoleDialog({
 
     const submit = async (event: FormEvent) => {
         event.preventDefault();
-        const validation = validateReason(reason);
-        setError(validation);
-        if (validation) return;
+        const err = reason.trim().length >= 10 ? null : t("admin.dialogs.reasonMinError");
+        setError(err);
+        if (err) return;
         await onSubmit(role, reason.trim());
         setReason("");
         setError(null);
@@ -63,24 +61,24 @@ export function ChangeRoleDialog({
         <Dialog open={!!user} onClose={onClose} maxWidth="xs" fullWidth>
             <DialogTitle>
                 <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>{user ? fullName(user) : ""}</Typography>
-                Rol Değiştir
+                {t("admin.dialogs.roleTitle")}
             </DialogTitle>
             <Box component="form" onSubmit={submit}>
                 <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                     <FormControl fullWidth size="small">
-                        <InputLabel htmlFor="role-select">Yeni rol</InputLabel>
+                        <InputLabel htmlFor="role-select">{t("admin.dialogs.roleLabel")}</InputLabel>
                         <NativeSelect
                             inputProps={{ id: "role-select", name: "role" }}
                             value={role}
                             onChange={(e) => setRole(e.target.value as AdminUserRole)}
                         >
                             {ROLE_OPTIONS.map((item) => (
-                                <option key={item} value={item}>{item === "ADMIN" ? "Admin" : "Normal Kullanıcı"}</option>
+                                <option key={item} value={item}>{item === "ADMIN" ? t("admin.dialogs.roleAdmin") : t("admin.dialogs.roleUser")}</option>
                             ))}
                         </NativeSelect>
                     </FormControl>
                     <TextField
-                        label="Gerekçe"
+                        label={t("admin.dialogs.reasonLabel")}
                         value={reason}
                         onChange={(e) => { setReason(e.target.value); setError(null); }}
                         multiline
@@ -89,13 +87,13 @@ export function ChangeRoleDialog({
                         size="small"
                         error={!!error}
                         helperText={error ?? undefined}
-                        placeholder="Bu işlem neden yapılıyor?"
+                        placeholder={t("admin.dialogs.reasonPlaceholder")}
                     />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={onClose} variant="outlined" size="small">Vazgeç</Button>
+                    <Button onClick={onClose} variant="outlined" size="small">{t("admin.dialogs.cancel")}</Button>
                     <Button type="submit" variant="contained" color="secondary" size="small" disabled={pending}>
-                        {pending ? "İşleniyor..." : "Rolü kaydet"}
+                        {pending ? t("admin.dialogs.processing") : t("admin.dialogs.roleSave")}
                     </Button>
                 </DialogActions>
             </Box>
@@ -114,6 +112,7 @@ export function ChangeStatusDialog({
     onClose: () => void;
     onSubmit: (status: AdminUserStatus, reason: string) => Promise<void>;
 }) {
+    const { t } = useTranslation();
     const user = state?.type === "status" ? state.user : null;
     const [status, setStatus] = useState<AdminUserStatus>(user?.status ?? "ACTIVE");
     const [reason, setReason] = useState("");
@@ -121,9 +120,9 @@ export function ChangeStatusDialog({
 
     const submit = async (event: FormEvent) => {
         event.preventDefault();
-        const validation = validateReason(reason);
-        setError(validation);
-        if (validation) return;
+        const err = reason.trim().length >= 10 ? null : t("admin.dialogs.reasonMinError");
+        setError(err);
+        if (err) return;
         await onSubmit(status, reason.trim());
         setReason("");
         setError(null);
@@ -133,24 +132,24 @@ export function ChangeStatusDialog({
         <Dialog open={!!user} onClose={onClose} maxWidth="xs" fullWidth>
             <DialogTitle>
                 <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>{user ? fullName(user) : ""}</Typography>
-                Durum Değiştir
+                {t("admin.dialogs.statusTitle")}
             </DialogTitle>
             <Box component="form" onSubmit={submit}>
                 <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                     <FormControl fullWidth size="small">
-                        <InputLabel htmlFor="status-select">Yeni durum</InputLabel>
+                        <InputLabel htmlFor="status-select">{t("admin.dialogs.statusLabel")}</InputLabel>
                         <NativeSelect
                             inputProps={{ id: "status-select", name: "status" }}
                             value={status}
                             onChange={(e) => setStatus(e.target.value as AdminUserStatus)}
                         >
                             {STATUS_OPTIONS.map((item) => (
-                                <option key={item} value={item}>{item === "ACTIVE" ? "Aktif" : "Pasif"}</option>
+                                <option key={item} value={item}>{item === "ACTIVE" ? t("admin.dialogs.statusActive") : t("admin.dialogs.statusPassive")}</option>
                             ))}
                         </NativeSelect>
                     </FormControl>
                     <TextField
-                        label="Gerekçe"
+                        label={t("admin.dialogs.reasonLabel")}
                         value={reason}
                         onChange={(e) => { setReason(e.target.value); setError(null); }}
                         multiline
@@ -159,13 +158,13 @@ export function ChangeStatusDialog({
                         size="small"
                         error={!!error}
                         helperText={error ?? undefined}
-                        placeholder="Bu işlem neden yapılıyor?"
+                        placeholder={t("admin.dialogs.reasonPlaceholder")}
                     />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={onClose} variant="outlined" size="small">Vazgeç</Button>
+                    <Button onClick={onClose} variant="outlined" size="small">{t("admin.dialogs.cancel")}</Button>
                     <Button type="submit" variant="contained" color="secondary" size="small" disabled={pending}>
-                        {pending ? "İşleniyor..." : "Durumu kaydet"}
+                        {pending ? t("admin.dialogs.processing") : t("admin.dialogs.statusSave")}
                     </Button>
                 </DialogActions>
             </Box>
@@ -184,15 +183,16 @@ export function Reset2FADialog({
     onClose: () => void;
     onSubmit: (reason: string) => Promise<void>;
 }) {
+    const { t } = useTranslation();
     const user = state?.type === "reset-2fa" ? state.user : null;
     const [reason, setReason] = useState("");
     const [error, setError] = useState<string | null>(null);
 
     const submit = async (event: FormEvent) => {
         event.preventDefault();
-        const validation = validateReason(reason);
-        setError(validation);
-        if (validation) return;
+        const err = reason.trim().length >= 10 ? null : t("admin.dialogs.reasonMinError");
+        setError(err);
+        if (err) return;
         await onSubmit(reason.trim());
         setReason("");
         setError(null);
@@ -202,15 +202,15 @@ export function Reset2FADialog({
         <Dialog open={!!user} onClose={onClose} maxWidth="xs" fullWidth>
             <DialogTitle>
                 <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>{user ? fullName(user) : ""}</Typography>
-                2FA Sıfırla
+                {t("admin.dialogs.tfaTitle")}
             </DialogTitle>
             <Box component="form" onSubmit={submit}>
                 <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                     <Alert severity="warning" sx={{ fontSize: "0.8rem" }}>
-                        Bu işlem kullanıcının mevcut iki aşamalı doğrulama kurulumunu kaldırır.
+                        {t("admin.dialogs.tfaAlert")}
                     </Alert>
                     <TextField
-                        label="Gerekçe"
+                        label={t("admin.dialogs.reasonLabel")}
                         value={reason}
                         onChange={(e) => { setReason(e.target.value); setError(null); }}
                         multiline
@@ -219,13 +219,13 @@ export function Reset2FADialog({
                         size="small"
                         error={!!error}
                         helperText={error ?? undefined}
-                        placeholder="Bu işlem neden yapılıyor?"
+                        placeholder={t("admin.dialogs.reasonPlaceholder")}
                     />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={onClose} variant="outlined" size="small">Vazgeç</Button>
+                    <Button onClick={onClose} variant="outlined" size="small">{t("admin.dialogs.cancel")}</Button>
                     <Button type="submit" variant="contained" color="error" size="small" disabled={pending}>
-                        {pending ? "İşleniyor..." : "2FA sıfırla"}
+                        {pending ? t("admin.dialogs.processing") : t("admin.dialogs.tfaSave")}
                     </Button>
                 </DialogActions>
             </Box>

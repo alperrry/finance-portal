@@ -1,4 +1,5 @@
 import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useToast } from "../../../components/ToastContext";
 import { changeCurrentUserPassword } from "../../profile/api/userApi";
 import type { PasswordForm } from "../types";
@@ -6,6 +7,7 @@ import { EMPTY_PASSWORD_FORM, resolveProfileError, validatePasswordForm } from "
 
 export function usePasswordForm() {
     const { showToast } = useToast();
+    const { t } = useTranslation();
     const [passwordForm, setPasswordForm] = useState<PasswordForm>(EMPTY_PASSWORD_FORM);
     const [passwordTouched, setPasswordTouched] = useState<Partial<Record<keyof PasswordForm, boolean>>>({});
     const [passwordError, setPasswordError] = useState<string | null>(null);
@@ -38,7 +40,7 @@ export function usePasswordForm() {
             await changeCurrentUserPassword(passwordForm.newPassword);
             setPasswordForm(EMPTY_PASSWORD_FORM);
             setPasswordTouched({});
-            showToast("Şifre güncellendi", "success");
+            showToast(t("settings.security.updateSuccess"), "success");
         } catch (err) {
             setPasswordError(resolveProfileError(err));
         } finally {

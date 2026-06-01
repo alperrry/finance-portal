@@ -2,6 +2,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import { Box, Button, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
 import type { SyntheticEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { Link as RouterLink } from "react-router-dom";
 import type { NewsItem } from "../api/newsApi";
 
@@ -12,11 +13,12 @@ type Props = {
 };
 
 export function NewsDetailContent({ news }: Props) {
+    const { t } = useTranslation();
     return (
         <Card sx={{ flex: 1 }}>
             <CardContent>
                 <Stack direction="row" sx={{ gap: 1, mb: 2, flexWrap: "wrap" }}>
-                    <Chip label={news.source?.name ?? "Bilinmeyen Kaynak"} size="small" color="secondary" />
+                    <Chip label={news.source?.name ?? t("news.detail.unknownSource")} size="small" color="secondary" />
                     <Chip label={formatDate(news.publishedAt, "full")} size="small" variant="outlined" />
                 </Stack>
 
@@ -45,14 +47,14 @@ export function NewsDetailContent({ news }: Props) {
                         ))
                     ) : (
                         <Typography variant="body1" color="text.secondary">
-                            Bu haber için içerik bilgisi bulunamadı.
+                            {t("news.detail.noContent")}
                         </Typography>
                     )}
                 </Box>
 
                 <Stack direction="row" sx={{ gap: 1, mt: 3, flexWrap: "wrap" }}>
                     <Button component={RouterLink} to="/news" variant="outlined" size="small" startIcon={<ArrowBackIcon />}>
-                        Listeye Dön
+                        {t("news.detail.backToList")}
                     </Button>
                     {news.canonicalUrl && (
                         <Button
@@ -64,7 +66,7 @@ export function NewsDetailContent({ news }: Props) {
                             size="small"
                             endIcon={<OpenInNewIcon />}
                         >
-                            Kaynağı Aç
+                            {t("news.detail.openSource")}
                         </Button>
                     )}
                 </Stack>

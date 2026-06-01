@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Box, IconButton, MenuItem, Select, Stack, TextField, Typography } from "@mui/material";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import type { FxResponse } from "../api/marketApi";
@@ -60,6 +61,7 @@ function ResultCard({ label, value, currency }: ResultCardProps) {
 }
 
 export function CurrencyConverterCard({ fxRows }: Props) {
+    const { t } = useTranslation();
     const [amount, setAmount] = useState("1");
     const [fromCode, setFromCode] = useState("USD");
     const [toCode, setToCode] = useState("TRY");
@@ -96,7 +98,7 @@ export function CurrencyConverterCard({ fxRows }: Props) {
         >
             <Box sx={{ mb: 2 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: "-0.01em" }}>
-                    Hızlı Çevirici
+                    {t("market.fx.converter.title")}
                 </Typography>
             </Box>
 
@@ -124,7 +126,7 @@ export function CurrencyConverterCard({ fxRows }: Props) {
                     ))}
                 </Select>
 
-                <IconButton size="small" onClick={swap} aria-label="Para birimlerini değiştir">
+                <IconButton size="small" onClick={swap} aria-label={t("market.fx.converter.swapAriaLabel")}>
                     <SwapHorizIcon fontSize="small" />
                 </IconButton>
 
@@ -143,8 +145,8 @@ export function CurrencyConverterCard({ fxRows }: Props) {
             </Stack>
 
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 1.5 }}>
-                <ResultCard label="Döviz Alış" value={buyingResult} currency={safeTo} />
-                <ResultCard label="Döviz Satış" value={sellingResult} currency={safeTo} />
+                <ResultCard label={t("market.fx.buyLabel")} value={buyingResult} currency={safeTo} />
+                <ResultCard label={t("market.fx.sellLabel")} value={sellingResult} currency={safeTo} />
             </Box>
 
             {rateDate && (

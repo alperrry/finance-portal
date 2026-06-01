@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { fetchPortfolio, fetchPortfolios, type PortfolioResponse } from "../api/portfolioApi";
 import { useAuth } from "../../../app/auth/AuthContext";
 import { useTradeNotifications } from "../../../hooks/useTradeNotifications";
@@ -16,6 +17,7 @@ async function fetchDashboardPortfolios() {
 }
 
 export function usePortfolioDashboard() {
+    const { t } = useTranslation();
     const { token, refreshCurrentUser } = useAuth();
     const portfoliosQuery = useQuery({
         queryKey: ["portfolio", "dashboard"],
@@ -29,7 +31,7 @@ export function usePortfolioDashboard() {
     }, [portfoliosQuery]);
     const listState = {
         loading: portfoliosQuery.isLoading,
-        error: portfoliosQuery.error ? resolveApiError(portfoliosQuery.error, "Portföyler yüklenemedi.") : null,
+        error: portfoliosQuery.error ? resolveApiError(portfoliosQuery.error, t("portfolio.errors.listFailed")) : null,
     };
 
     useTradeNotifications({

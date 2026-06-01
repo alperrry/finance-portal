@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import i18n from "../../../i18n";
 import { useQuery } from "@tanstack/react-query";
 import { fetchInstrumentHistory, type HistoryResponse } from "../../analysis/api/historyApi";
 import type { InstrumentType } from "../../analysis/api/historyApi";
@@ -52,13 +53,13 @@ export function useInstrumentDetail(
 
     return {
         summary: summaryQuery.data ?? null,
-        summaryError: summaryQuery.error ? (summaryQuery.error instanceof Error ? summaryQuery.error.message : "Enstrüman detayı yüklenemedi.") : null,
+        summaryError: summaryQuery.error ? (summaryQuery.error instanceof Error ? summaryQuery.error.message : i18n.t("market.errors.instrumentDetail")) : null,
         loadingSummary: summaryQuery.isLoading,
         history: historyQuery.data ?? null,
-        historyError: historyQuery.error ? (historyQuery.error instanceof Error ? historyQuery.error.message : "Tarihsel veri yüklenemedi.") : null,
+        historyError: historyQuery.error ? (historyQuery.error instanceof Error ? historyQuery.error.message : i18n.t("market.errors.historicalData")) : null,
         loadingHistory: historyQuery.isLoading,
         newsItems: newsQuery.data ?? null,
-        newsError: newsQuery.error ? (newsQuery.error instanceof Error ? newsQuery.error.message : "Enstrümana özel haberler yüklenemedi.") : null,
+        newsError: newsQuery.error ? (newsQuery.error instanceof Error ? newsQuery.error.message : i18n.t("market.errors.instrumentNews")) : null,
         loadingNews: newsQuery.isLoading,
         rangeDates,
     };

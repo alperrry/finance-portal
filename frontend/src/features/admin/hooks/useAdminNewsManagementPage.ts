@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useToast } from "../../../components/ToastContext";
+import i18n from "../../../i18n";
 import { updateAdminNewsCategories, updateAdminNewsStatus } from "../api/adminApi";
 import { invalidateAdminQuery } from "../api/adminQueryBus";
 import { useAdminAuditLogs } from "../api/useAdminAuditLogs";
@@ -31,9 +32,9 @@ function readQuery(params: URLSearchParams): AdminNewsQuery {
 
 export function newsAuditTitle(item: AuditLogItem) {
     const titles: Record<string, string> = {
-        NEWS_STATUS_CHANGED: "Haber durumu değişti",
-        NEWS_CATEGORY_OVERRIDDEN: "Haber kategorileri değişti",
-        NEWS_FETCH_TRIGGERED: "Haber çekimi tetiklendi",
+        NEWS_STATUS_CHANGED: i18n.t("admin.news.statusChanged"),
+        NEWS_CATEGORY_OVERRIDDEN: i18n.t("admin.news.categoriesChanged"),
+        NEWS_FETCH_TRIGGERED: i18n.t("admin.news.fetchTriggered"),
     };
     return titles[item.action] ?? item.action;
 }
@@ -70,11 +71,11 @@ export function useAdminNewsManagementPage() {
         setPending(true);
         try {
             await updateAdminNewsStatus(news.id, status);
-            showToast("Haber durumu güncellendi.", "success");
+            showToast(i18n.t("admin.news.statusUpdated"), "success");
             refreshAfterMutation();
             setDialog(null);
         } catch (caughtError) {
-            showToast(resolveAdminError(caughtError, "Haber durumu güncellenemedi."), "error");
+            showToast(resolveAdminError(caughtError, i18n.t("admin.news.statusError")), "error");
         } finally {
             setPending(false);
         }
@@ -82,17 +83,17 @@ export function useAdminNewsManagementPage() {
 
     const submitCategories = async (news: AdminNewsSummary, categoryIds: number[]) => {
         if (categoryIds.length === 0) {
-            showToast("En az bir kategori seçilmelidir.", "error");
+            showToast(i18n.t("admin.news.dialogs.minCategory"), "error");
             return;
         }
         setPending(true);
         try {
             await updateAdminNewsCategories(news.id, categoryIds);
-            showToast("Haber kategorileri güncellendi.", "success");
+            showToast(i18n.t("admin.news.categoriesUpdated"), "success");
             refreshAfterMutation();
             setDialog(null);
         } catch (caughtError) {
-            showToast(resolveAdminError(caughtError, "Haber kategorileri güncellenemedi."), "error");
+            showToast(resolveAdminError(caughtError, i18n.t("admin.news.categoriesError")), "error");
         } finally {
             setPending(false);
         }

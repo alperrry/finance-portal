@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Box, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, NativeSelect, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import type { NewsDialogState } from "../hooks/useAdminNewsManagementPage";
 import type { AdminCategory, AdminNewsStatus, AdminNewsSummary } from "../types/admin.types";
 import { newsStatusLabel } from "../utils/adminFormatters";
@@ -34,13 +35,14 @@ function AdminNewsStatusDialogForm({ news, pending, onClose, onSubmit }: {
     onClose: () => void;
     onSubmit: (news: AdminNewsSummary, status: AdminNewsStatus) => Promise<void>;
 }) {
+    const { t } = useTranslation();
     const [status, setStatus] = useState<AdminNewsStatus>(news.status);
 
     return (
         <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
             <DialogTitle>
-                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Haber</Typography>
-                Durum değiştir
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>{t("admin.news.cols.news")}</Typography>
+                {t("admin.news.dialogs.status")}
             </DialogTitle>
             <Box component="form" onSubmit={(event: FormEvent) => { event.preventDefault(); void onSubmit(news, status); }}>
                 <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -51,9 +53,9 @@ function AdminNewsStatusDialogForm({ news, pending, onClose, onSubmit }: {
                     </FormControl>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={onClose} variant="outlined" size="small">Vazgeç</Button>
+                    <Button onClick={onClose} variant="outlined" size="small">{t("admin.dialogs.cancel")}</Button>
                     <Button type="submit" variant="contained" color="secondary" size="small" disabled={pending}>
-                        {pending ? "Kaydediliyor..." : "Kaydet"}
+                        {pending ? t("admin.dialogs.saving") : t("admin.dialogs.save")}
                     </Button>
                 </DialogActions>
             </Box>
@@ -104,6 +106,7 @@ function AdminNewsCategoryOverrideDialogForm({
     onClose: () => void;
     onSubmit: (news: AdminNewsSummary, categoryIds: number[]) => Promise<void>;
 }) {
+    const { t } = useTranslation();
     const [selectedIds, setSelectedIds] = useState<number[]>(news.categories.map((category) => category.id));
 
     const toggle = (categoryId: number) => {
@@ -115,8 +118,8 @@ function AdminNewsCategoryOverrideDialogForm({
     return (
         <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
             <DialogTitle>
-                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>Haber</Typography>
-                Kategorileri düzenle
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>{t("admin.news.cols.news")}</Typography>
+                {t("admin.news.dialogs.categories")}
             </DialogTitle>
             <Box component="form" onSubmit={(event: FormEvent) => { event.preventDefault(); void onSubmit(news, selectedIds); }}>
                 <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -131,9 +134,9 @@ function AdminNewsCategoryOverrideDialogForm({
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={onClose} variant="outlined" size="small">Vazgeç</Button>
+                    <Button onClick={onClose} variant="outlined" size="small">{t("admin.dialogs.cancel")}</Button>
                     <Button type="submit" variant="contained" color="secondary" size="small" disabled={pending || selectedIds.length === 0}>
-                        {pending ? "Kaydediliyor..." : "Kaydet"}
+                        {pending ? t("admin.dialogs.saving") : t("admin.dialogs.save")}
                     </Button>
                 </DialogActions>
             </Box>

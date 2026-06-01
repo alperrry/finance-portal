@@ -1,4 +1,5 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, useTheme } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { formatNumber } from "../utils/marketFormatters";
 import { getTickIndexes, getLinearTicks, createLinePath } from "../utils/instrumentSummary";
 import { formatShortDate } from "../utils/marketFormatters";
@@ -11,13 +12,24 @@ type Props = {
     yFormatter?: (value: number) => string;
 };
 
-const CHART_AXIS_STYLE = {
-    fill: "rgba(17, 17, 17, 0.46)",
-    fontFamily: '"JetBrains Mono", monospace',
-    fontSize: 10,
-} as const;
-
 export function InstrumentLineChart({ dates, series, emptyLabel, yFormatter }: Props) {
+    const { t } = useTranslation();
+    const theme = useTheme();
+    const isDark = theme.palette.mode === "dark";
+
+    const CHART_AXIS_STYLE = {
+        fill: isDark ? "rgba(255, 255, 255, 0.52)" : "rgba(17, 17, 17, 0.46)",
+        fontFamily: '"JetBrains Mono", monospace',
+        fontSize: 10,
+    };
+    const chartCanvasBg = isDark ? "rgba(33, 28, 24, 0.74)" : "rgba(255, 255, 255, 0.74)";
+    const gridGradientStart = isDark ? "rgba(255,255,255,0.1)" : "rgba(17,17,17,0.16)";
+    const gridGradientEnd = isDark ? "rgba(255,255,255,0.02)" : "rgba(17,17,17,0.04)";
+    const chartFrameBg = isDark
+        ? "linear-gradient(180deg, rgba(33, 28, 24, 0.7), rgba(24, 21, 18, 0.96)), radial-gradient(circle at top right, rgba(193, 98, 47, 0.08), transparent 28%)"
+        : "linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(245, 243, 239, 0.96)), radial-gradient(circle at top right, rgba(193, 98, 47, 0.08), transparent 28%)";
+    const emptyBg = isDark ? "rgba(33, 28, 24, 0.5)" : "rgba(255, 255, 255, 0.5)";
+
     const width = 960;
     const height = 340;
     const padding = { top: 20, right: 18, bottom: 34, left: 56 };
@@ -34,11 +46,11 @@ export function InstrumentLineChart({ dates, series, emptyLabel, yFormatter }: P
                     borderRadius: "24px",
                     border: "1px dashed",
                     borderColor: "divider",
-                    bgcolor: "rgba(255, 255, 255, 0.5)",
+                    bgcolor: emptyBg,
                     p: 3,
                 }}
             >
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>Grafik hazır değil</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>{t("market.chart.notReady")}</Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.75 }}>{emptyLabel}</Typography>
             </Box>
         );
@@ -70,8 +82,7 @@ export function InstrumentLineChart({ dates, series, emptyLabel, yFormatter }: P
                 borderRadius: "24px",
                 border: "1px solid",
                 borderColor: "divider",
-                background:
-                    "linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(245, 243, 239, 0.96)), radial-gradient(circle at top right, rgba(193, 98, 47, 0.08), transparent 28%)",
+                background: chartFrameBg,
                 p: 1.75,
                 overflow: "hidden",
             }}
@@ -85,8 +96,8 @@ export function InstrumentLineChart({ dates, series, emptyLabel, yFormatter }: P
             >
                 <defs>
                     <linearGradient id="detail-grid-fade" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="rgba(17,17,17,0.16)" />
-                        <stop offset="100%" stopColor="rgba(17,17,17,0.04)" />
+                        <stop offset="0%" stopColor={gridGradientStart} />
+                        <stop offset="100%" stopColor={gridGradientEnd} />
                     </linearGradient>
                 </defs>
 
@@ -96,7 +107,7 @@ export function InstrumentLineChart({ dates, series, emptyLabel, yFormatter }: P
                     width={innerWidth}
                     height={innerHeight}
                     rx="18"
-                    fill="rgba(255,255,255,0.74)"
+                    fill={chartCanvasBg}
                 />
 
                 {yTicks.map((tick) => (

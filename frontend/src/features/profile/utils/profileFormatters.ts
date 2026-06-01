@@ -1,4 +1,5 @@
 import { ApiError } from "../../../services/api/client";
+import i18n from "../../../i18n";
 import type { UpdateUserRequest, UserResponse } from "../api/userApi";
 import type { FormErrors, ProfileField, ProfileForm } from "../types";
 
@@ -15,15 +16,15 @@ export function validateForm(form: ProfileForm): FormErrors {
     const errors: FormErrors = {};
     const validateName = (field: "firstName" | "lastName", label: string) => {
         const value = form[field].trim();
-        if (value.length < 1) { errors[field] = `${label} 1-100 karakter olmalıdır.`; return; }
-        if (value.length > 100) { errors[field] = `${label} en fazla 100 karakter olabilir.`; }
+        if (value.length < 1) { errors[field] = `${label} ${i18n.t("profile.errors.nameMinLength")}`; return; }
+        if (value.length > 100) { errors[field] = `${label} ${i18n.t("profile.errors.nameMaxLength")}`; }
     };
-    validateName("firstName", "Ad");
-    validateName("lastName", "Soyad");
+    validateName("firstName", i18n.t("profile.editForm.firstName"));
+    validateName("lastName", i18n.t("profile.editForm.lastName"));
     const email = form.email.trim();
-    if (email.length < 1) errors.email = "E-posta zorunludur.";
-    else if (email.length > 255) errors.email = "E-posta en fazla 255 karakter olabilir.";
-    else if (!EMAIL_PATTERN.test(email)) errors.email = "Geçerli bir e-posta adresi girin.";
+    if (email.length < 1) errors.email = i18n.t("profile.errors.emailRequired");
+    else if (email.length > 255) errors.email = i18n.t("profile.errors.emailMaxLength");
+    else if (!EMAIL_PATTERN.test(email)) errors.email = i18n.t("profile.errors.validEmail");
     return errors;
 }
 
@@ -53,14 +54,14 @@ export function isPayloadEmpty(payload: UpdateUserRequest) {
 
 export function resolveProfileError(caughtError: unknown): string {
     if (caughtError instanceof ApiError) {
-        if (caughtError.status === 403) return "Bu işleme yetkiniz yok";
+        if (caughtError.status === 403) return i18n.t("profile.errors.noPermission");
         if (caughtError.status === 400) return caughtError.message || "Form bilgilerini kontrol edin.";
-        if (caughtError.status === 401) return "Oturum süreniz doldu. Giriş sayfasına yönlendiriliyorsunuz.";
-        if (caughtError.status >= 500) return "Bir hata oluştu, tekrar deneyin";
+        if (caughtError.status === 401) return i18n.t("profile.errors.sessionExpired");
+        if (caughtError.status >= 500) return i18n.t("profile.errors.genericError");
         return caughtError.message;
     }
     if (caughtError instanceof Error) return caughtError.message;
-    return "Bir hata oluştu, tekrar deneyin";
+    return i18n.t("profile.errors.genericError");
 }
 
 export function getFieldRef(

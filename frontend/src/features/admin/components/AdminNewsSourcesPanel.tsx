@@ -1,4 +1,5 @@
 import { Alert, Box, Button, Chip, Link, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { PANEL_HEAD_SX, PANEL_SX } from "../constants/adminStyles";
 import type { AdminNewsSource } from "../types/admin.types";
 import { formatDateTime } from "../utils/adminFormatters";
@@ -28,6 +29,7 @@ export function AdminNewsSourcesPanel({
     onDelete,
     onFetch,
 }: AdminNewsSourcesPanelProps) {
+    const { t } = useTranslation();
     return (
         <Paper sx={PANEL_SX}>
             <Box sx={PANEL_HEAD_SX}>
@@ -36,15 +38,15 @@ export function AdminNewsSourcesPanel({
                         RSS Source Management
                     </Typography>
                     <Typography variant="h6" sx={{ mt: 0.5, fontSize: 24, letterSpacing: 0, fontWeight: 700 }}>
-                        RSS Kaynakları
+                        {t("admin.sources.title")}
                     </Typography>
                 </Box>
                 <Box sx={{ display: "flex", gap: 1 }}>
                     <Button variant="outlined" size="small" disabled={pendingAction === "fetch-all"} onClick={() => onFetch()}>
-                        Tümünden çek
+                        {t("admin.sources.fetchAll")}
                     </Button>
                     <Button variant="contained" color="secondary" size="small" onClick={onCreate}>
-                        Kaynak ekle
+                        {t("admin.sources.addSource")}
                     </Button>
                 </Box>
             </Box>
@@ -54,25 +56,25 @@ export function AdminNewsSourcesPanel({
                     size="small"
                     value={search}
                     onChange={(event) => onSearchChange(event.target.value)}
-                    placeholder="Kaynak adı veya RSS URL ara"
+                    placeholder={t("admin.sources.searchPlaceholder")}
                 />
-                <Typography sx={{ fontWeight: 700 }}>{sources.length} kaynak</Typography>
+                <Typography sx={{ fontWeight: 700 }}>{t("admin.sources.count", { count: sources.length })}</Typography>
             </Box>
 
-            {loading ? <Typography sx={{ p: "22px", color: "text.secondary" }}>RSS kaynakları yükleniyor...</Typography> : null}
+            {loading ? <Typography sx={{ p: "22px", color: "text.secondary" }}>{t("admin.sources.loading")}</Typography> : null}
             {!loading && error ? <Alert severity="error" sx={{ m: 2 }}>{error}</Alert> : null}
-            {!loading && !error && sources.length === 0 ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Bu filtrede kaynak yok.</Typography> : null}
+            {!loading && !error && sources.length === 0 ? <Typography sx={{ p: "22px", color: "text.secondary" }}>{t("admin.sources.empty")}</Typography> : null}
 
             {!loading && !error && sources.length > 0 ? (
                 <TableContainer sx={{ overflowX: "auto" }}>
                     <Table size="small" sx={{ minWidth: 720 }}>
                         <TableHead>
                             <TableRow>
-                                <TableCell>Kaynak</TableCell>
-                                <TableCell>RSS URL</TableCell>
-                                <TableCell>Durum</TableCell>
-                                <TableCell>Güncelleme</TableCell>
-                                <TableCell>Aksiyon</TableCell>
+                                <TableCell>{t("admin.sources.cols.source")}</TableCell>
+                                <TableCell>{t("admin.sources.cols.rssUrl")}</TableCell>
+                                <TableCell>{t("admin.sources.cols.status")}</TableCell>
+                                <TableCell>{t("admin.sources.cols.updated")}</TableCell>
+                                <TableCell>{t("admin.sources.cols.action")}</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -87,7 +89,7 @@ export function AdminNewsSourcesPanel({
                                     <TableCell>
                                         <Chip
                                             size="small"
-                                            label={source.active ? "Aktif" : "Pasif"}
+                                            label={source.active ? t("admin.sources.statusActive") : t("admin.sources.statusPassive")}
                                             sx={{
                                                 height: 22,
                                                 fontSize: 11,
@@ -106,10 +108,10 @@ export function AdminNewsSourcesPanel({
                                                 disabled={pendingAction === `fetch-${source.id}`}
                                                 onClick={() => onFetch(source)}
                                             >
-                                                Çek
+                                                {t("admin.sources.fetch")}
                                             </Button>
-                                            <Button size="small" variant="outlined" onClick={() => onEdit(source)}>Düzenle</Button>
-                                            <Button size="small" variant="outlined" color="error" onClick={() => onDelete(source)}>Sil</Button>
+                                            <Button size="small" variant="outlined" onClick={() => onEdit(source)}>{t("admin.categories.actions.edit")}</Button>
+                                            <Button size="small" variant="outlined" color="error" onClick={() => onDelete(source)}>{t("admin.categories.actions.delete")}</Button>
                                         </Box>
                                     </TableCell>
                                 </TableRow>

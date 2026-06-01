@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/refs */
 import { Alert, Box, Button, IconButton, Paper, Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import {
     CandlestickChart,
 } from "../../../components/charts/CandlestickChart";
@@ -20,6 +21,7 @@ interface AnalysisChartPanelProps {
 }
 
 export function AnalysisChartPanel({ page }: AnalysisChartPanelProps) {
+    const { t } = useTranslation();
     const {
         selection,
         history,
@@ -44,18 +46,18 @@ export function AnalysisChartPanel({ page }: AnalysisChartPanelProps) {
         >
             <Stack direction="row" sx={{ alignItems: "flex-start", justifyContent: "space-between", gap: 2, mb: 2, flexWrap: "wrap" }}>
                 <Box>
-                    <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>ANA GRAFİK</Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 800 }}>{selection.selectedOption?.name ?? "Tarihsel seri"}</Typography>
+                    <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>{t("analysis.chartPanel.overline")}</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 800 }}>{selection.selectedOption?.name ?? t("analysis.chartPanel.historicalSeries")}</Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Seçili aralıkta fiyat, hacim ve indikatör serileri birlikte gösterilir.
+                        {t("analysis.chartPanel.description")}
                     </Typography>
                 </Box>
                 <Stack direction="row" sx={{ gap: 1, flexShrink: 0 }}>
                     <IconButton
                         size="small"
                         onClick={() => void handlers.toggleChartFullscreen()}
-                        aria-label={fullscreen.isChartFullscreen ? "Tam ekrandan çık" : "Grafiği tam ekran aç"}
-                        title={fullscreen.isChartFullscreen ? "Tam ekrandan çık" : "Tam ekran"}
+                        aria-label={fullscreen.isChartFullscreen ? t("analysis.chartPanel.fullscreenExitAria") : t("analysis.chartPanel.fullscreenEnterAria")}
+                        title={fullscreen.isChartFullscreen ? t("analysis.chartPanel.fullscreenExit") : t("analysis.chartPanel.fullscreenEnter")}
                     >
                         {fullscreen.isChartFullscreen ? <MinimizeIcon /> : <MaximizeIcon />}
                     </IconButton>
@@ -65,7 +67,7 @@ export function AnalysisChartPanel({ page }: AnalysisChartPanelProps) {
                         size="small"
                         onClick={() => handlers.setComparePanelOpen((value) => !value)}
                     >
-                        {comparisonPanel.open ? "Paneli Gizle" : "+ Karşılaştır"}
+                        {comparisonPanel.open ? t("analysis.chartPanel.hidePanel") : t("analysis.chartPanel.addCompare")}
                     </Button>
                 </Stack>
             </Stack>
@@ -78,10 +80,10 @@ export function AnalysisChartPanel({ page }: AnalysisChartPanelProps) {
                             value={chart.chartType}
                             onChange={(_, val: ChartType | null) => { if (val) handlers.setChartType(val); }}
                             size="small"
-                            aria-label="Grafik türü"
+                            aria-label={t("analysis.chartPanel.chartTypeAria")}
                         >
-                            <ToggleButton value="line">Çizgi</ToggleButton>
-                            <ToggleButton value="candle">Mum</ToggleButton>
+                            <ToggleButton value="line">{t("analysis.chartPanel.line")}</ToggleButton>
+                            <ToggleButton value="candle">{t("analysis.chartPanel.candle")}</ToggleButton>
                         </ToggleButtonGroup>
                     ) : null}
                 </Stack>
@@ -89,13 +91,13 @@ export function AnalysisChartPanel({ page }: AnalysisChartPanelProps) {
                 {selection.resolvedType === "stocks" ? (
                     <Box>
                         <Typography variant="caption" color="secondary" sx={{ fontWeight: 800, display: "block", mb: 0.5 }}>
-                            OVERLAY İNDİKATÖRLER
+                            {t("analysis.chartPanel.overlayOverline")}
                         </Typography>
                         <ToggleButtonGroup
                             value={chart.activeOverlayIndicators}
                             onChange={(_, vals: OverlayIndicatorKey[]) => handlers.setActiveOverlayIndicators(vals)}
                             size="small"
-                            aria-label="Overlay indikatörler"
+                            aria-label={t("analysis.chartPanel.overlayAria")}
                             sx={{ flexWrap: "wrap" }}
                         >
                             {OVERLAY_INDICATOR_OPTIONS.map((option) => (
@@ -106,9 +108,9 @@ export function AnalysisChartPanel({ page }: AnalysisChartPanelProps) {
                 ) : null}
 
                 {history.isIndicatorHistoryLoading ? (
-                    <Alert severity="info" sx={{ py: 0.5 }}>İndikatörler yükleniyor — seçili sembol ve aralık için teknik seriler alınıyor.</Alert>
+                    <Alert severity="info" sx={{ py: 0.5 }}>{t("analysis.chartPanel.indicatorsLoading")}</Alert>
                 ) : history.indicatorHistoryError ? (
-                    <Alert severity="warning" sx={{ py: 0.5 }}>İndikatör verisi alınamadı: {history.indicatorHistoryError}</Alert>
+                    <Alert severity="warning" sx={{ py: 0.5 }}>{t("analysis.chartPanel.indicatorError")} {history.indicatorHistoryError}</Alert>
                 ) : null}
 
                 <Stack direction="row" sx={{ gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
@@ -122,11 +124,11 @@ export function AnalysisChartPanel({ page }: AnalysisChartPanelProps) {
             </Stack>
 
             {history.isHistoryLoading ? (
-                <Alert severity="info">Grafik yükleniyor — tarihsel veri alınıyor.</Alert>
+                <Alert severity="info">{t("analysis.chartPanel.dataLoading")}</Alert>
             ) : history.historyError ? (
-                <Alert severity="error"><strong>Veri alınamadı</strong> {history.historyError}</Alert>
+                <Alert severity="error"><strong>{t("analysis.chartPanel.dataError")}</strong> {history.historyError}</Alert>
             ) : history.enrichedHistory.length === 0 ? (
-                <Alert severity="info">Seçili aralıkta veri yok — farklı bir zaman aralığı veya enstrüman deneyin.</Alert>
+                <Alert severity="info">{t("analysis.chartPanel.noData")}</Alert>
             ) : chart.effectiveChartType === "candle" ? (
                 <Box>
                     {chart.supportsCandlestick ? (
@@ -149,7 +151,7 @@ export function AnalysisChartPanel({ page }: AnalysisChartPanelProps) {
                         drawingMode={drawings.drawingTool}
                         drawingDraft={drawings.drawingDraft}
                         onDrawingPoint={handlers.handleDrawingPoint}
-                        emptyLabel="Seçili aralıkta gösterilecek fiyat verisi bulunamadı."
+                        emptyLabel={t("analysis.chartPanel.noCandleData")}
                         valueFormatter={(value) => formatValueByType(selection.resolvedType, value)}
                         volumeFormatter={formatCompactNumber}
                     />
@@ -159,7 +161,7 @@ export function AnalysisChartPanel({ page }: AnalysisChartPanelProps) {
                     <LineChart
                         dates={history.dates}
                         series={history.priceSeries}
-                        emptyLabel="Seçili aralıkta gösterilecek fiyat verisi bulunamadı."
+                        emptyLabel={t("analysis.chartPanel.noCandleData")}
                         yFormatter={(value) => formatValueByType(selection.resolvedType, value)}
                         fixedDomain={undefined}
                         referenceLines={[]}

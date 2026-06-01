@@ -14,8 +14,9 @@ import {
     Typography,
 } from "@mui/material";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { ClosePositionRequest, ManualPositionResponse, PortfolioInstrumentType } from "../api/portfolioApi";
-import { INSTRUMENT_LABELS } from "../types";
+import { getInstrumentLabels } from "../types";
 import { formatMoney, formatPercent, formatQuantity, formatSignedMoney } from "../utils/portfolioFormatters";
 
 type Props = {
@@ -30,25 +31,26 @@ function today(): string {
     return new Date().toISOString().slice(0, 10);
 }
 
-const EXIT_PRICE_LABEL: Record<PortfolioInstrumentType, string> = {
-    STOCK: "Satış Fiyatı (TL)",
-    FUND: "Satış NAV (TL)",
-    CURRENCY: "Satış Kuru",
-    BOND: "Satış Fiyatı (TL)",
-    VIOP: "Kapatma Fiyatı (TL)",
-    DEPOSIT: "Çekim Tutarı (TL)",
-};
-
-const ACTION_LABEL: Record<PortfolioInstrumentType, string> = {
-    STOCK: "Sat",
-    FUND: "Sat",
-    CURRENCY: "Sat",
-    BOND: "Sat",
-    VIOP: "Kapat",
-    DEPOSIT: "Kapat",
-};
-
 export function SellPositionModal({ position, busy, error, onSubmit, onClose }: Props) {
+    const { t } = useTranslation();
+
+    const EXIT_PRICE_LABEL: Record<PortfolioInstrumentType, string> = {
+        STOCK: t("portfolio.sell.sellPrice"),
+        FUND: t("portfolio.sell.sellNav"),
+        CURRENCY: t("portfolio.sell.sellRate"),
+        BOND: t("portfolio.sell.sellPrice"),
+        VIOP: t("portfolio.sell.closePrice"),
+        DEPOSIT: t("portfolio.sell.withdrawAmount"),
+    };
+
+    const ACTION_LABEL: Record<PortfolioInstrumentType, string> = {
+        STOCK: "Sat",
+        FUND: "Sat",
+        CURRENCY: "Sat",
+        BOND: "Sat",
+        VIOP: "Kapat",
+        DEPOSIT: "Kapat",
+    };
     const [quantity, setQuantity] = useState(String(position.quantity));
     const [exitPrice, setExitPrice] = useState("");
     const [exitDate, setExitDate] = useState(today);
@@ -77,7 +79,7 @@ export function SellPositionModal({ position, busy, error, onSubmit, onClose }: 
     };
 
     const actionLabel = ACTION_LABEL[position.instrumentType];
-    const symbol = position.instrumentSymbol ?? position.bankName ?? INSTRUMENT_LABELS[position.instrumentType];
+    const symbol = position.instrumentSymbol ?? position.bankName ?? getInstrumentLabels()[position.instrumentType];
 
     return (
         <Dialog open onClose={onClose} maxWidth="xs" fullWidth aria-modal>
@@ -91,7 +93,7 @@ export function SellPositionModal({ position, busy, error, onSubmit, onClose }: 
                 <Stack sx={{ gap: 2 }}>
                     {/* Position summary */}
                     <Stack direction="row" sx={{ gap: 1, alignItems: "center", flexWrap: "wrap" }}>
-                        <Chip label={INSTRUMENT_LABELS[position.instrumentType]} size="small" variant="outlined" />
+                        <Chip label={getInstrumentLabels()[position.instrumentType]} size="small" variant="outlined" />
                         <Typography variant="body2" sx={{ fontWeight: 700 }}>{symbol}</Typography>
                         {isViop && (
                             <Chip
@@ -128,7 +130,7 @@ export function SellPositionModal({ position, busy, error, onSubmit, onClose }: 
 
                     <Stack direction="row" sx={{ gap: 1, alignItems: "flex-end" }}>
                         <TextField
-                            label="Satılacak Miktar"
+                            label={t("portfolio.sell.quantity")}
                             type="number"
                             value={quantity}
                             onChange={(e) => setQuantity(e.target.value)}
@@ -136,7 +138,7 @@ export function SellPositionModal({ position, busy, error, onSubmit, onClose }: 
                             size="small"
                             fullWidth
                             error={Number.isFinite(qty) && qty > maxQty}
-                            helperText={Number.isFinite(qty) && qty > maxQty ? "Miktarı aşıyor" : undefined}
+                            helperText={Number.isFinite(qty) && qty > maxQty ? t("portfolio.sell.quantityExceeds") : undefined}
                         />
                         <Button
                             size="small"

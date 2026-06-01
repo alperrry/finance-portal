@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { fetchHistoryCompare } from "../api/historyApi";
 import type { InstrumentType } from "../api/historyApi";
@@ -14,6 +15,7 @@ type ComparisonHookInput = {
 };
 
 export function useAnalysisComparison({ comparePanelOpen, comparisonCodes, resolvedType, rangeDates, instrumentOptions }: ComparisonHookInput) {
+    const { t } = useTranslation();
     const [compareDraftCode, setCompareDraftCode] = useState("");
 
     const enabled = comparePanelOpen && comparisonCodes.length > 1;
@@ -42,7 +44,7 @@ export function useAnalysisComparison({ comparePanelOpen, comparisonCodes, resol
 
     return {
         comparisonLoading: compareQuery.isLoading,
-        comparisonError: compareQuery.error ? (compareQuery.error instanceof Error ? compareQuery.error.message : "Karşılaştırma verisi yüklenemedi.") : null,
+        comparisonError: compareQuery.error ? (compareQuery.error instanceof Error ? compareQuery.error.message : t("analysis.errors.comparisonData")) : null,
         comparisonChart,
         availableCompareOptions,
         compareDraftCode,

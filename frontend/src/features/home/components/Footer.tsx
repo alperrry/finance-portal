@@ -1,8 +1,16 @@
 import { Box, Container, Divider, Link, Stack, Typography } from "@mui/material";
-
-const LINKS = ["Hakkında", "Gizlilik", "Kullanım Koşulları", "İletişim"];
+import { useTranslation } from "react-i18next";
 
 export default function Footer() {
+    const { t } = useTranslation();
+
+    const links = [
+        { key: "about", label: t("home.footer.about") },
+        { key: "privacy", label: t("home.footer.privacy") },
+        { key: "terms", label: t("home.footer.terms") },
+        { key: "contact", label: t("home.footer.contact") },
+    ];
+
     return (
         <Box sx={{ bgcolor: "#0d0d0d", borderTop: "1px solid #222", py: 5 }}>
             <Container maxWidth="lg">
@@ -15,14 +23,14 @@ export default function Footer() {
                         Kapital<Box component="span" sx={{ color: "#c1622f" }}>.</Box>
                     </Typography>
                     <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }}>
-                        {LINKS.map((link) => (
+                        {links.map((link) => (
                             <Link
-                                key={link}
+                                key={link.key}
                                 href="#"
                                 underline="hover"
                                 sx={{ color: "#888", fontSize: "0.85rem", "&:hover": { color: "#c1622f" } }}
                             >
-                                {link}
+                                {link.label}
                             </Link>
                         ))}
                     </Stack>
@@ -32,7 +40,7 @@ export default function Footer() {
                     variant="caption"
                     sx={{ color: "#555", display: "block", textAlign: "center" }}
                 >
-                    © {new Date().getFullYear()} Kapital. Tüm hakları saklıdır.
+                    {t("home.footer.copyright", { year: new Date().getFullYear() })}
                 </Typography>
             </Container>
         </Box>

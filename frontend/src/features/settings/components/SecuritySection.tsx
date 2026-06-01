@@ -1,4 +1,5 @@
 import { Alert, Box, Button, Card, CardContent, Chip, CircularProgress, Divider, List, ListItem, ListItemSecondaryAction, ListItemText, Skeleton, Stack, TextField, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { usePasswordForm } from "../hooks/usePasswordForm";
 import { useSecurityStatus } from "../hooks/useSecurityStatus";
 import { useOtpSetup } from "../hooks/useOtpSetup";
@@ -6,6 +7,7 @@ import { formatDate } from "../utils/settingsFormatters";
 import { OtpSetupFlow } from "./OtpSetupFlow";
 
 export function SecuritySection() {
+    const { t } = useTranslation();
     const { securityStatus, setSecurityStatus, securityLoading, securityError, loadSecurityStatus } = useSecurityStatus();
     const {
         passwordForm, passwordTouched, passwordErrors, passwordError,
@@ -25,16 +27,16 @@ export function SecuritySection() {
             <Card sx={{ flex: 1 }}>
                 <CardContent>
                     <Box sx={{ mb: 2 }}>
-                        <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>Şifre</Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>Şifre değiştirme</Typography>
+                        <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>{t("settings.security.passwordOverline")}</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>{t("settings.security.passwordHeading")}</Typography>
                     </Box>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        Yeni şifrenizi bu sayfadan belirleyin. Değişiklik Keycloak hesabınıza doğrudan uygulanır.
+                        {t("settings.security.passwordDesc")}
                     </Typography>
                     <Box component="form" onSubmit={handlePasswordSubmit} noValidate>
                         <Stack sx={{ gap: 2 }}>
                             <TextField
-                                label="Yeni Şifre"
+                                label={t("settings.security.newPassword")}
                                 type="password"
                                 value={passwordForm.newPassword}
                                 onChange={updatePasswordField("newPassword")}
@@ -46,7 +48,7 @@ export function SecuritySection() {
                                 fullWidth
                             />
                             <TextField
-                                label="Şifre Tekrarı"
+                                label={t("settings.security.confirmPassword")}
                                 type="password"
                                 value={passwordForm.confirmPassword}
                                 onChange={updatePasswordField("confirmPassword")}
@@ -66,7 +68,7 @@ export function SecuritySection() {
                                 startIcon={passwordSaving ? <CircularProgress size={14} color="inherit" /> : undefined}
                                 sx={{ alignSelf: "flex-start" }}
                             >
-                                {passwordSaving ? "Güncelleniyor..." : "Şifreyi güncelle"}
+                                {passwordSaving ? t("settings.security.updatingButton") : t("settings.security.updateButton")}
                             </Button>
                         </Stack>
                     </Box>
@@ -77,20 +79,20 @@ export function SecuritySection() {
                 <CardContent>
                     <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mb: 2 }}>
                         <Box>
-                            <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>İki Aşamalı Doğrulama</Typography>
+                            <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>{t("settings.security.otpOverline")}</Typography>
                             <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>2FA / OTP</Typography>
                         </Box>
                         <Chip
-                            label={securityStatus?.otpEnabled ? "Aktif" : "Pasif"}
+                            label={securityStatus?.otpEnabled ? t("common.active") : t("common.passive")}
                             size="small"
                             color={securityStatus?.otpEnabled ? "success" : "default"}
                         />
                     </Stack>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        Hesabınıza ekstra güvenlik katmanı ekleyin. Authenticator uygulaması ile her girişte 6 haneli kod isteyebiliriz.
+                        {t("settings.security.otpDesc")}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
-                        Mevcut OTP cihazlarınızı bu sayfadan görüntüleyebilir ve kaldırabilirsiniz.
+                        {t("settings.security.otpCaption")}
                     </Typography>
 
                     {securityLoading ? (
@@ -101,9 +103,9 @@ export function SecuritySection() {
                     ) : securityError ? (
                         <Alert
                             severity="error"
-                            action={<Button size="small" color="inherit" onClick={() => void loadSecurityStatus()}>Tekrar dene</Button>}
+                            action={<Button size="small" color="inherit" onClick={() => void loadSecurityStatus()}>{t("common.retry")}</Button>}
                         >
-                            Güvenlik bilgileri alınamadı. {securityError}
+                            {t("settings.security.loadError")} {securityError}
                         </Alert>
                     ) : securityStatus?.otpEnabled ? (
                         <List disablePadding>
@@ -112,7 +114,7 @@ export function SecuritySection() {
                                     <ListItem disablePadding sx={{ py: 0.75 }}>
                                         <ListItemText
                                             primary={credential.label || "Authenticator"}
-                                            secondary={credential.createdAt ? formatDate(new Date(credential.createdAt).toISOString()) : "Kayıt tarihi yok"}
+                                            secondary={credential.createdAt ? formatDate(new Date(credential.createdAt).toISOString()) : t("settings.security.noRegDate")}
                                             slotProps={{
                                                 primary: { variant: "body2", sx: { fontWeight: 700 } },
                                                 secondary: { variant: "caption" },
@@ -126,7 +128,7 @@ export function SecuritySection() {
                                                 disabled={otpBusyId === credential.id}
                                                 onClick={() => void handleDeleteOtp(credential.id)}
                                             >
-                                                {otpBusyId === credential.id ? "Kaldırılıyor..." : "Kaldır"}
+                                                {otpBusyId === credential.id ? t("settings.security.removingButton") : t("settings.security.removeButton")}
                                             </Button>
                                         </ListItemSecondaryAction>
                                     </ListItem>
@@ -153,7 +155,7 @@ export function SecuritySection() {
                     ) : (
                         <Stack sx={{ gap: 1 }}>
                             <Alert severity="info" sx={{ alignItems: "center" }}>
-                                2FA henüz aktif değil. Google Authenticator veya benzeri bir uygulama ile hesabınızı koruyun.
+                                {t("settings.security.otpInactiveAlert")}
                             </Alert>
                             {otpError && <Alert severity="error">{otpError}</Alert>}
                             <Button
@@ -164,7 +166,7 @@ export function SecuritySection() {
                                 startIcon={otpStep === "starting" ? <CircularProgress size={14} color="inherit" /> : undefined}
                                 sx={{ alignSelf: "flex-start" }}
                             >
-                                {otpStep === "starting" ? "Hazırlanıyor..." : "Etkinleştir"}
+                                {otpStep === "starting" ? t("settings.security.enablingButton") : t("settings.security.enableButton")}
                             </Button>
                         </Stack>
                     )}

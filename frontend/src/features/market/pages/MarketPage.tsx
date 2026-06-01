@@ -1,8 +1,9 @@
 import { Alert, Box, Button, Chip, Skeleton, Stack, ToggleButton, ToggleButtonGroup } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { KapitalShell } from "../../../components/layout";
 import { PageHeader, SectionPanel } from "../../../components/ui";
 import { formatLocalDateTime } from "../utils/marketFormatters";
-import { MARKET_TABS } from "../types";
+import { MARKET_TABS, TAB_I18N_KEY } from "../types";
 import { MarketSummaryCards } from "../components/MarketSummaryCards";
 import { MarketSearchBar } from "../components/MarketSearchBar";
 import { FxTable } from "../components/FxTable";
@@ -15,12 +16,12 @@ import { ViopTable } from "../components/ViopTable";
 import { useMarketPage } from "../hooks/useMarketPage";
 
 export default function MarketPage() {
+    const { t } = useTranslation();
     const {
         data, loading, error, lastSyncedAt, reload,
         sortState, toggleSort,
         activeTab, handleTabChange,
         query, setQuery,
-        activeMeta,
         isInitialLoading, isRefreshing,
         fxRows, bondRows, fundRows, stockRows, indexRows, commodityRows, cryptoRows, macroRows, viopRows,
         summaryCards, activeDatasetDate,
@@ -30,6 +31,11 @@ export default function MarketPage() {
         stockIndexFilter, setStockIndexFilter,
     } = useMarketPage();
 
+    const activeI18nKey = TAB_I18N_KEY[activeTab];
+    const activeLabel = t(`market.tabs.${activeI18nKey}.label` as any) as string;
+    const activeDescription = t(`market.tabs.${activeI18nKey}.description` as any) as string;
+    const activePlaceholder = t(`market.tabs.${activeI18nKey}.placeholder` as any) as string;
+
     return (
         <KapitalShell activePage="portfolio" showCategories={false}>
             <Box sx={{ minHeight: "100%" }}>
@@ -37,22 +43,23 @@ export default function MarketPage() {
                     <SectionPanel
                         component="section"
                         sx={{
-                            background:
-                                "radial-gradient(circle at top left, rgba(193, 98, 47, 0.12), transparent 34%), linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(247, 245, 241, 0.9))",
+                            background: (theme) => theme.palette.mode === "dark"
+                                ? "radial-gradient(circle at top left, rgba(193, 98, 47, 0.12), transparent 34%), linear-gradient(145deg, rgba(33, 28, 24, 0.92), rgba(24, 21, 18, 0.9))"
+                                : "radial-gradient(circle at top left, rgba(193, 98, 47, 0.12), transparent 34%), linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(247, 245, 241, 0.9))",
                         }}
                     >
                         <PageHeader
-                            kicker="Canlı Piyasa Terminali"
-                            title="Enstrümanlar"
-                            subtitle={activeMeta.description}
+                            kicker={t("market.page.kicker")}
+                            title={t("market.page.title")}
+                            subtitle={activeDescription}
                             actions={
                                 <>
                                     <Chip
                                         variant="outlined"
-                                        label={`Son senkron: ${lastSyncedAt ? formatLocalDateTime(lastSyncedAt) : "Bekleniyor"}`}
+                                        label={`${t("market.page.lastSync")} ${lastSyncedAt ? formatLocalDateTime(lastSyncedAt) : t("market.page.waiting")}`}
                                     />
                                     <Button variant="contained" color="secondary" type="button" disabled={loading} onClick={reload}>
-                                        {isRefreshing || isInitialLoading ? "Yenileniyor..." : "Verileri Yenile"}
+                                        {isRefreshing || isInitialLoading ? t("market.page.refreshing") : t("market.page.refresh")}
                                     </Button>
                                 </>
                             }
@@ -61,20 +68,23 @@ export default function MarketPage() {
                             exclusive
                             value={activeTab}
                             onChange={handleTabChange}
-                            aria-label="Enstrüman kategorileri"
+                            aria-label={t("market.page.tabsAriaLabel")}
                             sx={{ mt: 3, flexWrap: "wrap", gap: 1 }}
                         >
-                            {MARKET_TABS.map((tab) => (
-                                <ToggleButton key={tab.key} value={tab.key} size="small" aria-label={tab.label}>
-                                    {tab.label}
-                                </ToggleButton>
-                            ))}
+                            {MARKET_TABS.map((tab) => {
+                                const label = t(`market.tabs.${TAB_I18N_KEY[tab.key]}.label` as any) as string;
+                                return (
+                                    <ToggleButton key={tab.key} value={tab.key} size="small" aria-label={label}>
+                                        {label}
+                                    </ToggleButton>
+                                );
+                            })}
                         </ToggleButtonGroup>
                     </SectionPanel>
 
                     {error && (
-                        <Alert severity="error" action={<Button color="inherit" size="small" type="button" onClick={reload}>Tekrar dene</Button>}>
-                            <strong>Veri akışı kesildi.</strong> {error}
+                        <Alert severity="error" action={<Button color="inherit" size="small" type="button" onClick={reload}>{t("common.retry")}</Button>}>
+                            <strong>{t("market.page.connectionLost")}</strong> {error}
                         </Alert>
                     )}
 
@@ -82,7 +92,7 @@ export default function MarketPage() {
                         <>
                             <MarketSummaryCards summaryCards={[]} loading={true} />
                             <SectionPanel component="section">
-                                <PageHeader kicker="Yükleniyor" title="Piyasa verileri hazırlanıyor" />
+                                <PageHeader kicker={t("market.page.loading.kicker")} title={t("market.page.loading.title")} />
                                 <Stack sx={{ mt: 2, gap: 1 }}>
                                     {Array.from({ length: 7 }).map((_, i) => (
                                         <Skeleton key={i} height={34} />
@@ -100,11 +110,11 @@ export default function MarketPage() {
                                     direction={{ xs: "column", md: "row" }}
                                     sx={{ justifyContent: "space-between", alignItems: { xs: "stretch", md: "flex-end" }, gap: 2 }}
                                 >
-                                    <PageHeader title={activeMeta.label} subtitle={activeMeta.description} />
+                                    <PageHeader title={activeLabel} subtitle={activeDescription} />
                                     <MarketSearchBar
                                         query={query}
                                         onQueryChange={setQuery}
-                                        placeholder={activeMeta.searchPlaceholder}
+                                        placeholder={activePlaceholder}
                                         visibleCount={visibleCount}
                                         totalCount={totalCount}
                                         datasetDate={activeDatasetDate}
@@ -116,7 +126,7 @@ export default function MarketPage() {
                                         {(["ALL", "BIST30", "BIST100"] as const).map((filter) => (
                                             <Chip
                                                 key={filter}
-                                                label={filter === "ALL" ? "Tümü" : filter}
+                                                label={filter === "ALL" ? t("market.page.all") : filter}
                                                 size="small"
                                                 variant={stockIndexFilter === filter ? "filled" : "outlined"}
                                                 color={stockIndexFilter === filter ? "primary" : "default"}

@@ -1,4 +1,5 @@
 import { apiFetch } from "../../../services/api/client";
+import i18n from "../../../i18n";
 
 export type ApiResponse<T> = {
     success: boolean;
@@ -74,7 +75,7 @@ async function parseApiResponse<T>(response: Response, errorMessage: string): Pr
     const raw = (await response.json()) as ApiResponse<T>;
 
     if (raw?.success !== true) {
-        throw new Error(`${errorMessage} Geçersiz API cevabı alındı.`);
+        throw new Error(`${errorMessage} ${i18n.t("portfolio.errors.invalidApi")}`);
     }
 
     return raw.data;
@@ -99,47 +100,43 @@ function normalizePage<T>(raw: RawPageResponse<T>, fallbackSize: number): PageRe
 }
 
 export async function fetchPortfolios(): Promise<PortfolioResponse[]> {
-    const response = await apiFetch("/api/v1/portfolios", {
-        errorMessage: "Portföyler yüklenemedi.",
-    });
-    return parseApiResponse<PortfolioResponse[]>(response, "Portföyler yüklenemedi.");
+    const msg = i18n.t("portfolio.errors.listFailed");
+    const response = await apiFetch("/api/v1/portfolios", { errorMessage: msg });
+    return parseApiResponse<PortfolioResponse[]>(response, msg);
 }
 
 export async function fetchPortfolio(id: number): Promise<PortfolioResponse> {
-    const response = await apiFetch(`/api/v1/portfolios/${id}`, {
-        errorMessage: "Portföy detayı yüklenemedi.",
-    });
-    return parseApiResponse<PortfolioResponse>(response, "Portföy detayı yüklenemedi.");
+    const msg = i18n.t("portfolio.errors.detailFailed");
+    const response = await apiFetch(`/api/v1/portfolios/${id}`, { errorMessage: msg });
+    return parseApiResponse<PortfolioResponse>(response, msg);
 }
 
 export async function createPortfolio(payload: CreatePortfolioRequest): Promise<PortfolioResponse> {
+    const msg = i18n.t("portfolio.errors.createFailed");
     const response = await apiFetch("/api/v1/portfolios", {
         method: "POST",
-        errorMessage: "Portföy oluşturulamadı.",
-        headers: {
-            "Content-Type": "application/json",
-        },
+        errorMessage: msg,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
     });
-    return parseApiResponse<PortfolioResponse>(response, "Portföy oluşturulamadı.");
+    return parseApiResponse<PortfolioResponse>(response, msg);
 }
 
 export async function updatePortfolio(id: number, payload: UpdatePortfolioRequest): Promise<PortfolioResponse> {
+    const msg = i18n.t("portfolio.errors.updateFailed");
     const response = await apiFetch(`/api/v1/portfolios/${id}`, {
         method: "PATCH",
-        errorMessage: "Portföy güncellenemedi.",
-        headers: {
-            "Content-Type": "application/json",
-        },
+        errorMessage: msg,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
     });
-    return parseApiResponse<PortfolioResponse>(response, "Portföy güncellenemedi.");
+    return parseApiResponse<PortfolioResponse>(response, msg);
 }
 
 export async function deletePortfolio(id: number): Promise<void> {
     await apiFetch(`/api/v1/portfolios/${id}`, {
         method: "DELETE",
-        errorMessage: "Portföy silinemedi.",
+        errorMessage: i18n.t("portfolio.errors.deleteFailed"),
     });
 }
 
@@ -199,15 +196,14 @@ export type ManualPositionResponse = {
 };
 
 export async function createManualPosition(portfolioId: number, payload: ManualPositionRequest): Promise<ManualPositionResponse> {
+    const msg = i18n.t("portfolio.errors.positionSaveFailed");
     const response = await apiFetch(`/api/v1/portfolios/${portfolioId}/positions`, {
         method: "POST",
-        errorMessage: "Pozisyon kaydedilemedi.",
-        headers: {
-            "Content-Type": "application/json",
-        },
+        errorMessage: msg,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
     });
-    return parseApiResponse<ManualPositionResponse>(response, "Pozisyon kaydedilemedi.");
+    return parseApiResponse<ManualPositionResponse>(response, msg);
 }
 
 export async function fetchManualPositions(portfolioId: number, kind?: PositionKind, page = 0, size = 50): Promise<PageResponse<ManualPositionResponse>> {
@@ -216,24 +212,26 @@ export async function fetchManualPositions(portfolioId: number, kind?: PositionK
     params.set("page", String(page));
     params.set("size", String(size));
 
+    const msg = i18n.t("portfolio.errors.positionsFailed");
     const response = await apiFetch(`/api/v1/portfolios/${portfolioId}/positions?${params.toString()}`, {
-        errorMessage: "Pozisyonlar yüklenemedi.",
+        errorMessage: msg,
     });
-    const data = await parseApiResponse<RawPageResponse<ManualPositionResponse>>(response, "Pozisyonlar yüklenemedi.");
+    const data = await parseApiResponse<RawPageResponse<ManualPositionResponse>>(response, msg);
     return normalizePage(data, size);
 }
 
 export async function fetchManualPosition(portfolioId: number, positionId: number): Promise<ManualPositionResponse> {
+    const msg = i18n.t("portfolio.errors.positionDetailFailed");
     const response = await apiFetch(`/api/v1/portfolios/${portfolioId}/positions/${positionId}`, {
-        errorMessage: "Pozisyon detayı yüklenemedi.",
+        errorMessage: msg,
     });
-    return parseApiResponse<ManualPositionResponse>(response, "Pozisyon detayı yüklenemedi.");
+    return parseApiResponse<ManualPositionResponse>(response, msg);
 }
 
 export async function deleteManualPosition(portfolioId: number, positionId: number): Promise<void> {
     await apiFetch(`/api/v1/portfolios/${portfolioId}/positions/${positionId}`, {
         method: "DELETE",
-        errorMessage: "Pozisyon silinemedi.",
+        errorMessage: i18n.t("portfolio.errors.positionDeleteFailed"),
     });
 }
 
@@ -244,13 +242,14 @@ export type ClosePositionRequest = {
 };
 
 export async function closeManualPosition(portfolioId: number, positionId: number, payload: ClosePositionRequest): Promise<ManualPositionResponse[]> {
+    const msg = i18n.t("portfolio.errors.positionCloseFailed");
     const response = await apiFetch(`/api/v1/portfolios/${portfolioId}/positions/${positionId}/close`, {
         method: "POST",
-        errorMessage: "Pozisyon kapatılamadı.",
+        errorMessage: msg,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
     });
-    return parseApiResponse<ManualPositionResponse[]>(response, "Pozisyon kapatılamadı.");
+    return parseApiResponse<ManualPositionResponse[]>(response, msg);
 }
 
 // ── Simülasyon ───────────────────────────────────────────────────────────────
@@ -290,12 +289,13 @@ function buildSimulationQuery(lenses: SimulationLensType[]) {
 }
 
 export async function fetchManualPositionSimulation(positionId: number, lenses: SimulationLensType[] = ["USD", "INFLATION_ADJUSTED"]): Promise<SimulationResponse> {
+    const msg = i18n.t("portfolio.errors.simulationFailed");
     const response = await apiFetch(`/api/v1/portfolio/manual-positions/${positionId}/simulation?${buildSimulationQuery(lenses)}`, {
-        errorMessage: "Simülasyon hesaplanamadı.",
+        errorMessage: msg,
     });
-    return parseApiResponse<SimulationResponse>(response, "Simülasyon hesap lanamadı.");
+    return parseApiResponse<SimulationResponse>(response, msg);
 }
-// Alternatif Senaryo (What-If / Gölge Pozisyon) için yeni API çağrısı
+
 export async function fetchWhatIfSimulation(
     positionId: number,
     targetType: string,
@@ -305,13 +305,12 @@ export async function fetchWhatIfSimulation(
     const params = new URLSearchParams();
     params.append("targetType", targetType);
     params.append("targetSymbol", targetSymbol);
-
     lenses.forEach(lens => params.append("lens", lens));
 
+    const msg = i18n.t("portfolio.errors.whatIfFailed");
     const response = await apiFetch(
         `/api/v1/portfolio/manual-positions/${positionId}/what-if?${params.toString()}`,
-        { errorMessage: "Alternatif senaryo hesaplanamadı." }
+        { errorMessage: msg }
     );
-
-    return parseApiResponse<SimulationResponse>(response, "Alternatif senaryo hesaplanamadı.");
+    return parseApiResponse<SimulationResponse>(response, msg);
 }

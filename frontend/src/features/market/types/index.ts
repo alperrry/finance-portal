@@ -72,67 +72,36 @@ export type MarketSortKey =
 
 export type MarketSortState = Record<MarketTab, { key: MarketSortKey; direction: SortDirection }>;
 
-export const MARKET_TABS: Array<{
-    key: MarketTab;
-    label: string;
-    description: string;
-    searchPlaceholder: string;
-}> = [
-    {
-        key: "fx",
-        label: "Döviz",
-        description: "TCMB kurlarıyla ana pariteleri tek panelde izleyin.",
-        searchPlaceholder: "Kod veya para birimi ara",
-    },
-    {
-        key: "bonds",
-        label: "Tahvil/Bono",
-        description: "Faiz, bileşik ve vade kırılımını tek tabloda görün.",
-        searchPlaceholder: "Tahvil adı veya para birimi ara",
-    },
-    {
-        key: "funds",
-        label: "Fonlar",
-        description: "TEFAS fonlarını fiyat, yatırımcı ve büyüklük bazında tarayın.",
-        searchPlaceholder: "Fon kodu veya adı ara",
-    },
-    {
-        key: "stocks",
-        label: "Hisseler",
-        description: "BIST hisselerini günlük kapanış, performans ve hacim üzerinden okuyun.",
-        searchPlaceholder: "Hisse kodu, ad veya sektör ara",
-    },
-    {
-        key: "indexes",
-        label: "Endeksler",
-        description: "BIST 30 ve BIST 100 endekslerini günlük kapanış verileriyle izleyin.",
-        searchPlaceholder: "Endeks kodu veya adı ara",
-    },
-    {
-        key: "commodities",
-        label: "Emtia",
-        description: "Altın, petrol ve metaller gibi emtiaları hisse listesinden ayrı takip edin.",
-        searchPlaceholder: "Emtia kodu veya adı ara",
-    },
-    {
-        key: "crypto",
-        label: "Kripto",
-        description: "Kripto varlıkları ayrı piyasa grubu olarak izleyin.",
-        searchPlaceholder: "Kripto kodu veya adı ara",
-    },
-    {
-        key: "macro",
-        label: "Makro",
-        description: "TÜFE ve TL mevduat faizlerini EVDS serileriyle takip edin.",
-        searchPlaceholder: "Seri adı, kodu veya veri tipi ara",
-    },
-    {
-        key: "viop",
-        label: "VİOP",
-        description: "Vadeli kontratları segment, fiyat değişimi ve hacme göre tarayın.",
-        searchPlaceholder: "Kontrat, segment veya dayanak ara",
-    },
+export const MARKET_TABS: Array<{ key: MarketTab }> = [
+    { key: "fx" },
+    { key: "bonds" },
+    { key: "funds" },
+    { key: "stocks" },
+    { key: "indexes" },
+    { key: "commodities" },
+    { key: "crypto" },
+    { key: "macro" },
+    { key: "viop" },
 ];
+
+export const TAB_I18N_KEY: Record<MarketTab, string> = {
+    fx: "fx",
+    bonds: "bond",
+    funds: "fund",
+    stocks: "stock",
+    indexes: "index",
+    commodities: "commodity",
+    crypto: "crypto",
+    macro: "macro",
+    viop: "viop",
+};
+
+export const RANGE_I18N_KEY: Record<RangeKey, string> = {
+    "1A": "oneMonth",
+    "3A": "threeMonths",
+    "6A": "sixMonths",
+    "1Y": "oneYear",
+};
 
 export const PRIORITY_CURRENCIES = ["USD", "EUR", "GBP", "CHF", "SAR", "KWD", "JPY"];
 

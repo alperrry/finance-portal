@@ -1,5 +1,6 @@
 import { apiFetch } from "../../../services/api/client";
 import type { ApiResponse } from "../../market/api/marketApi";
+import i18n from "../../../i18n";
 
 export type DrawingType = "TREND_LINE" | "HORIZONTAL_LINE" | "RECTANGLE";
 export type InstrumentType = "STOCK" | "CURRENCY" | "FUND" | "BOND" | "VIOP";
@@ -31,12 +32,12 @@ export interface UpdateDrawingRequest {
     lineWidth?: number;
 }
 
-const DRAWING_ERROR = "Çizim işlemi tamamlanamadı.";
+const getDrawingError = () => i18n.t("analysis.drawings.errors.operation");
 
 async function readDrawing(response: Response, fallbackMessage: string): Promise<DrawingResponse> {
     const raw = (await response.json()) as ApiResponse<DrawingResponse>;
     if (raw?.success !== true || !raw.data) {
-        throw new Error(`${fallbackMessage} Geçersiz API cevabı alındı.`);
+        throw new Error(`${fallbackMessage} ${i18n.t("analysis.drawings.errors.invalidApi")}`);
     }
 
     return raw.data;
@@ -45,7 +46,7 @@ async function readDrawing(response: Response, fallbackMessage: string): Promise
 async function readDrawingList(response: Response, fallbackMessage: string): Promise<DrawingResponse[]> {
     const raw = (await response.json()) as ApiResponse<DrawingResponse[]>;
     if (raw?.success !== true || !Array.isArray(raw.data)) {
-        throw new Error(`${fallbackMessage} Geçersiz API cevabı alındı.`);
+        throw new Error(`${fallbackMessage} ${i18n.t("analysis.drawings.errors.invalidApi")}`);
     }
 
     return raw.data;
@@ -55,28 +56,30 @@ export async function listDrawings(
     instrumentType: InstrumentType,
     instrumentCode: string
 ): Promise<DrawingResponse[]> {
+    const loadMsg = () => i18n.t("analysis.drawings.errors.load");
     const params = new URLSearchParams({
         instrumentType,
         instrumentCode,
     });
     const response = await apiFetch(`/api/v1/drawings?${params.toString()}`, {
-        errorMessage: "Çizimler yüklenemedi.",
+        errorMessage: loadMsg(),
     });
 
-    return readDrawingList(response, "Çizimler yüklenemedi.");
+    return readDrawingList(response, loadMsg());
 }
 
 export async function createDrawing(data: CreateDrawingRequest): Promise<DrawingResponse> {
+    const saveMsg = () => i18n.t("analysis.drawings.errors.save");
     const response = await apiFetch("/api/v1/drawings", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
-        errorMessage: "Çizim kaydedilemedi, tekrar deneyin.",
+        errorMessage: saveMsg(),
     });
 
-    return readDrawing(response, "Çizim kaydedilemedi, tekrar deneyin.");
+    return readDrawing(response, saveMsg());
 }
 
 export async function updateDrawing(id: number, data: UpdateDrawingRequest): Promise<DrawingResponse> {
@@ -86,16 +89,16 @@ export async function updateDrawing(id: number, data: UpdateDrawingRequest): Pro
             "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
-        errorMessage: DRAWING_ERROR,
+        errorMessage: getDrawingError(),
     });
 
-    return readDrawing(response, DRAWING_ERROR);
+    return readDrawing(response, getDrawingError());
 }
 
 export async function deleteDrawing(id: number): Promise<void> {
     await apiFetch(`/api/v1/drawings/${id}`, {
         method: "DELETE",
-        errorMessage: DRAWING_ERROR,
+        errorMessage: getDrawingError(),
     });
 }
 
@@ -109,6 +112,6 @@ export async function clearAllDrawings(
     });
     await apiFetch(`/api/v1/drawings?${params.toString()}`, {
         method: "DELETE",
-        errorMessage: "Çizimler silinemedi, tekrar deneyin.",
+        errorMessage: i18n.t("analysis.drawings.errors.delete"),
     });
 }

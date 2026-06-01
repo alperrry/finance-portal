@@ -1,11 +1,11 @@
 import { useNavigate, useParams } from "react-router-dom";
-// AdminUserDetailPage.tsx
 import {
     Alert,
     Box,
     Button,
     Typography,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import {
     ChangeRoleDialog,
     ChangeStatusDialog,
@@ -15,18 +15,14 @@ import { useAdminUserDetailPage } from "../hooks/useAdminUserDetailPage";
 import { UserDetailHeader } from "../components/UserDetailHeader";
 import { UserDetailMetrics } from "../components/UserDetailMetrics";
 import { AuditTrail } from "../components/AuditTrail";
-// ─── Yardımcılar ─────────────────────────────────────────────────────────────
 
 function parseUserId(raw: string | undefined): number | null {
     const id = Number(raw);
     return Number.isFinite(id) && id > 0 ? id : null;
 }
 
-
-
-// ─── Sayfa ───────────────────────────────────────────────────────────────────
-
 export function AdminUserDetailPage() {
+    const { t } = useTranslation();
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const userId = parseUserId(id);
@@ -35,20 +31,20 @@ export function AdminUserDetailPage() {
         useAdminUserDetailPage(userId);
 
     if (!userId) {
-        return <Alert severity="error" sx={{ m: 2 }}>Geçersiz kullanıcı ID.</Alert>;
+        return <Alert severity="error" sx={{ m: 2 }}>{t("admin.userDetail.invalidId")}</Alert>;
     }
 
     return (
         <Box sx={{ display: "grid", gap: 2.25 }}>
             <Box>
                 <Button variant="outlined" size="small" onClick={() => navigate("/admin/users")}>
-                    ← Kullanıcılara dön
+                    {t("admin.userDetail.backButton")}
                 </Button>
             </Box>
 
             {detail.loading && (
                 <Typography sx={{ p: "22px", color: "text.secondary" }}>
-                    Kullanıcı detayı yükleniyor...
+                    {t("admin.userDetail.loading")}
                 </Typography>
             )}
             {!detail.loading && detail.error && (
@@ -57,7 +53,6 @@ export function AdminUserDetailPage() {
 
             {user && (
                 <>
-                    {/* Başlık: avatar + isim + aksiyon butonları */}
                     <UserDetailHeader
                         user={user}
                         onRoleClick={dialogs.openRole}
@@ -65,10 +60,8 @@ export function AdminUserDetailPage() {
                         onReset2FAClick={dialogs.openReset2FA}
                     />
 
-                    {/* Metrik kartları */}
                     <UserDetailMetrics user={user} />
 
-                    {/* Audit trail */}
                     <AuditTrail
                         loading={auditTrail.loading}
                         error={auditTrail.error}
@@ -77,7 +70,6 @@ export function AdminUserDetailPage() {
                 </>
             )}
 
-            {/* Dialog'lar */}
             <ChangeRoleDialog
                 state={dialogs.state}
                 pending={pending.role}
@@ -99,5 +91,3 @@ export function AdminUserDetailPage() {
         </Box>
     );
 }
-
-

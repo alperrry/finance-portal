@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ApiError } from "../../../services/api/client";
 import {
     createPortfolio,
@@ -14,6 +15,7 @@ import type { PortfolioFormState } from "../types";
 
 export function usePortfolioModals(reload: () => void) {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { showToast } = useToast();
 
     const [formState, setFormState] = useState<PortfolioFormState | null>(null);
@@ -30,16 +32,16 @@ export function usePortfolioModals(reload: () => void) {
         try {
             if (formState.mode === "create") {
                 const created = await createPortfolio(payload);
-                showToast("Portföy oluşturuldu.", "success");
+                showToast(t("portfolio.errors.created"), "success");
                 navigate(`/portfolios/${created.id}`);
             } else if (formState.portfolio) {
                 await updatePortfolio(formState.portfolio.id, { name: payload.name });
-                showToast("Portföy güncellendi.", "success");
+                showToast(t("portfolio.errors.updated"), "success");
             }
             setFormState(null);
             reload();
         } catch (caughtError) {
-            setFormError(resolveApiError(caughtError, "Portföy kaydedilemedi."));
+            setFormError(resolveApiError(caughtError, t("portfolio.errors.saveFailed")));
         } finally {
             setFormBusy(false);
         }
@@ -51,14 +53,14 @@ export function usePortfolioModals(reload: () => void) {
         setDeleteError(null);
         try {
             await deletePortfolio(deleteTarget.id);
-            showToast("Portföy silindi.", "success");
+            showToast(t("portfolio.errors.deleted"), "success");
             setDeleteTarget(null);
             reload();
         } catch (caughtError) {
             const message =
                 caughtError instanceof ApiError && caughtError.status === 409
-                    ? "Bu portföyde pozisyon veya bekleyen emir var. Önce pozisyonları kapatman ve bekleyen emirleri iptal etmen gerekir."
-                    : resolveApiError(caughtError, "Portföy silinemedi.");
+                    ? t("portfolio.errors.hasPositionsOrders")
+                    : resolveApiError(caughtError, t("portfolio.errors.deleteFailed"));
             setDeleteError(message);
         } finally {
             setDeleteBusy(false);

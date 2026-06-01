@@ -1,5 +1,6 @@
 import { Box, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
+import { useTranslation } from "react-i18next";
 import type { GridColDef, GridPaginationModel, GridSortModel, GridValidRowModel } from "@mui/x-data-grid";
 import type { SxProps, Theme } from "@mui/material";
 
@@ -96,7 +97,7 @@ export function AppDataGrid<T extends GridValidRowModel>({
     sortModel,
     onSortModelChange,
     isEmpty = false,
-    emptyMessage = "Veri bulunamadı.",
+    emptyMessage,
     emptySubMessage,
     loading = false,
     height = 600,
@@ -109,10 +110,13 @@ export function AppDataGrid<T extends GridValidRowModel>({
     onPaginationModelChange,
     sx,
 }: AppDataGridProps<T>) {
+    const { t } = useTranslation();
+    const resolvedEmptyMessage = emptyMessage ?? t("common.noData");
+
     if (isEmpty && !loading) {
         return (
             <Box sx={EMPTY_SX}>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>{emptyMessage}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>{resolvedEmptyMessage}</Typography>
                 {emptySubMessage ? (
                     <Typography variant="caption" color="text.secondary">{emptySubMessage}</Typography>
                 ) : null}
@@ -151,7 +155,7 @@ export function AppDataGrid<T extends GridValidRowModel>({
                 noRowsOverlay: () => (
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", p: 2 }}>
                         <Typography variant="body2" color="text.secondary">
-                            {emptyMessage}
+                            {resolvedEmptyMessage}
                         </Typography>
                     </Box>
                 ),

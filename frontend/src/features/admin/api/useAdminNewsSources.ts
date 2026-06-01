@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { AdminNewsSource } from "../types/admin.types";
 import { fetchAdminNewsSources } from "./adminApi";
+import i18n from "../../../i18n";
 
 export function useAdminNewsSources() {
     const { data, isLoading, error, refetch } = useQuery({
@@ -13,7 +14,7 @@ export function useAdminNewsSources() {
     return {
         data: data ?? [] as AdminNewsSource[],
         loading: isLoading,
-        error: error ? (error instanceof Error ? error.message : "RSS kaynakları yüklenemedi.") : null,
+        error: error ? (error instanceof Error ? error.message : i18n.t("admin.sources.loadError")) : null,
         refetch: () => void refetch(),
     };
 }

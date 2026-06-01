@@ -1,5 +1,6 @@
 import { Alert, Box, Button, Card, CardContent, CircularProgress, Stack, TextField, Typography } from "@mui/material";
 import { type ChangeEvent, type FormEvent, type RefObject } from "react";
+import { useTranslation } from "react-i18next";
 import type { UserResponse } from "../api/userApi";
 import type { FieldTouched, FormErrors, ProfileField, ProfileForm } from "../types";
 
@@ -38,15 +39,16 @@ export function ProfileEditForm({
     onReset,
     onSubmit,
 }: Props) {
+    const { t } = useTranslation();
     return (
         <Card sx={{ flex: 1 }}>
             <CardContent>
                 <Box sx={{ mb: 2 }}>
                     <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>
-                        Bilgi Düzenleme
+                        {t("profile.editForm.overline")}
                     </Typography>
                     <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
-                        Profili Düzenle
+                        {t("profile.editForm.heading")}
                     </Typography>
                 </Box>
 
@@ -54,7 +56,7 @@ export function ProfileEditForm({
                     <Stack sx={{ gap: 2 }}>
                         <TextField
                             inputRef={firstNameRef}
-                            label="Ad"
+                            label={t("profile.editForm.firstName")}
                             value={form.firstName}
                             onChange={onUpdateField("firstName")}
                             onBlur={() => onTouchField("firstName")}
@@ -66,7 +68,7 @@ export function ProfileEditForm({
                         />
                         <TextField
                             inputRef={lastNameRef}
-                            label="Soyad"
+                            label={t("profile.editForm.lastName")}
                             value={form.lastName}
                             onChange={onUpdateField("lastName")}
                             onBlur={() => onTouchField("lastName")}
@@ -78,7 +80,7 @@ export function ProfileEditForm({
                         />
                         <TextField
                             inputRef={emailRef}
-                            label="E-posta"
+                            label={t("profile.editForm.email")}
                             type="email"
                             value={form.email}
                             onChange={onUpdateField("email")}
@@ -90,20 +92,20 @@ export function ProfileEditForm({
                             fullWidth
                         />
                         <TextField
-                            label="Kullanıcı adı"
+                            label={t("profile.editForm.username")}
                             value={currentUser.username}
                             disabled
                             size="small"
                             fullWidth
-                            helperText="Bu alan Keycloak'tan yönetilir."
+                            helperText={t("profile.editForm.keycloakNote")}
                         />
                         <TextField
-                            label="Rol"
+                            label={t("profile.editForm.role")}
                             value={currentUser.role}
                             disabled
                             size="small"
                             fullWidth
-                            helperText="Rol sadece admin panelinden değiştirilebilir."
+                            helperText={t("profile.editForm.roleNote")}
                         />
 
                         {serverError ? <Alert severity="error">{serverError}</Alert> : null}
@@ -116,7 +118,7 @@ export function ProfileEditForm({
                                 disabled={!canSubmit}
                                 startIcon={saving ? <CircularProgress size={14} color="inherit" /> : undefined}
                             >
-                                {saving ? "Kaydediliyor..." : "Kaydet"}
+                                {saving ? t("common.saving") : t("common.save")}
                             </Button>
                             <Button
                                 type="button"
@@ -124,7 +126,7 @@ export function ProfileEditForm({
                                 onClick={onReset}
                                 disabled={saving || !hasChanges}
                             >
-                                İptal
+                                {t("profile.editForm.cancel")}
                             </Button>
                         </Stack>
                     </Stack>

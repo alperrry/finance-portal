@@ -1,4 +1,5 @@
 import { Alert, Box, Paper, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { AUDIT_ITEM_SX, PANEL_HEAD_SX, PANEL_SX } from "../constants/adminStyles";
 import type { AuditLogItem } from "../types/admin.types";
 import { auditTime } from "../utils/adminFormatters";
@@ -12,19 +13,21 @@ interface AdminAuditPanelProps {
     getDescription?: (item: AuditLogItem) => string;
 }
 
-function defaultDescription(item: AuditLogItem) {
-    const target = item.targetId ? `${item.targetType} #${item.targetId}` : item.targetType || "sistem";
-    return `${item.actorUsername ?? "Sistem"} -> ${target}${item.reason ? `: ${item.reason}` : ""}`;
-}
-
 export function AdminAuditPanel({
     title,
     loading,
     error,
     items,
     getTitle = (item) => item.action,
-    getDescription = defaultDescription,
+    getDescription,
 }: AdminAuditPanelProps) {
+    const { t } = useTranslation();
+
+    const resolvedGetDescription = getDescription ?? ((item: AuditLogItem) => {
+        const target = item.targetId ? `${item.targetType} #${item.targetId}` : item.targetType || "sistem";
+        return `${item.actorUsername ?? t("admin.audit.system")} -> ${target}${item.reason ? `: ${item.reason}` : ""}`;
+    });
+
     return (
         <Paper sx={PANEL_SX}>
             <Box sx={PANEL_HEAD_SX}>
@@ -36,13 +39,13 @@ export function AdminAuditPanel({
                         {title}
                     </Typography>
                 </Box>
-                <Typography sx={{ fontWeight: 700 }}>{items.length} kayıt</Typography>
+                <Typography sx={{ fontWeight: 700 }}>{t("admin.users.records", { count: items.length })}</Typography>
             </Box>
 
-            {loading ? <Typography sx={{ p: "22px", color: "text.secondary" }}>Audit kayıtları yükleniyor...</Typography> : null}
+            {loading ? <Typography sx={{ p: "22px", color: "text.secondary" }}>{t("admin.audit.loading")}</Typography> : null}
             {!loading && error ? <Alert severity="error" sx={{ m: 2 }}>{error}</Alert> : null}
             {!loading && !error && items.length === 0 ? (
-                <Typography sx={{ p: "22px", color: "text.secondary" }}>Audit kaydı bulunamadı.</Typography>
+                <Typography sx={{ p: "22px", color: "text.secondary" }}>{t("admin.audit.empty")}</Typography>
             ) : null}
             {!loading && !error && items.length > 0 ? (
                 <Box>
@@ -53,7 +56,7 @@ export function AdminAuditPanel({
                                     {getTitle(item)}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.25 }}>
-                                    {getDescription(item)}
+                                    {resolvedGetDescription(item)}
                                 </Typography>
                             </Box>
                             <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>

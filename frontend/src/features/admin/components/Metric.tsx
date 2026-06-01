@@ -14,7 +14,7 @@ export function Metric({ label, value }: MetricProps) {
                 p: 2,
                 border: "1px solid",
                 borderColor: "divider",
-                bgcolor: "rgba(255,255,255,0.7)",
+                bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(33, 28, 24, 0.7)" : "rgba(255, 255, 255, 0.7)",
             }}
         >
             <Typography
