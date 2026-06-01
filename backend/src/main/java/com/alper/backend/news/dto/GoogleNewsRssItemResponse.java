@@ -2,6 +2,9 @@ package com.alper.backend.news.dto;
 
 import java.time.OffsetDateTime;
 
+/**
+ * Google News RSS beslemesinden ayrıştırılan tek bir haber öğesini temsil eder.
+ */
 public class GoogleNewsRssItemResponse {
 
     private String title;

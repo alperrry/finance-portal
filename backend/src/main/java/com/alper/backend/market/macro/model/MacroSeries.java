@@ -5,6 +5,9 @@ import lombok.*;
 
 import java.time.OffsetDateTime;
 
+/**
+ * EVDS makro veri serisini; seri kodu, adı ve frekansıyla tanımlar.
+ */
 @Entity
 @Table(name = "macro_series")
 @Getter

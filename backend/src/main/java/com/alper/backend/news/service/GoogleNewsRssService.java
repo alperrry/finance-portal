@@ -20,6 +20,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Google News RSS arama uç noktasından sorgu bazlı haber listesi çeken servis.
+ *
+ * <p>{@code RssFeedService} ile aynı çıktıyı üretir ama kaynak olarak Google'ın
+ * dinamik RSS aramasını kullanır; sorgular Rome kütüphanesi ile ayrıştırılır.</p>
+ */
 @Slf4j
 @Service
 public class GoogleNewsRssService {

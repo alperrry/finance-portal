@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+/**
+ * Portföy adı veya para birimi güncelleme isteğini taşır.
+ */
 @Schema(description = "Portföy güncelleme isteği")
 public record UpdatePortfolioRequest(
 

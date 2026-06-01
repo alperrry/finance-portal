@@ -18,6 +18,14 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Redis cache yapılandırması: cache adı bazlı TTL haritası ve JSON serializer ayarları.
+ *
+ * <p>Haber listeleri, history serileri, indikatörler, piyasa modülleri ve portföy
+ * değerlemesi için ayrı TTL'ler tanımlanır; null değerler cache'lenmez. {@code spring.cache.type}
+ * varsayılan olarak {@code redis} kabul edilir, başka değer verilirse bu yapılandırma
+ * devreye girmez.</p>
+ */
 @Configuration
 @EnableCaching
 @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis", matchIfMissing = true)

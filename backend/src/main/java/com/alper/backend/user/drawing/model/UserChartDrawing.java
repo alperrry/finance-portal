@@ -13,6 +13,9 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
+/**
+ * Kullanıcının grafik üzerinde oluşturduğu teknik çizim nesnesini (trend çizgisi, işaret vb.) saklar.
+ */
 @Entity
 @Table(name = "user_chart_drawings")
 @Getter

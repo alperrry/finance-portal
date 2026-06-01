@@ -12,6 +12,12 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Yahoo Finance consent flow ve {@code crumb} token'ı çözen yardımcı servis.
+ *
+ * <p>Yahoo, anonim API çağrıları için consent cookie'lerini + crumb token'ı bekler.
+ * Bu servis ilk istekte consent endpoint'ini ziyaret eder ve crumb'ı cache'ler.</p>
+ */
 @Log4j2
 @Service
 public class YahooCrumbService {

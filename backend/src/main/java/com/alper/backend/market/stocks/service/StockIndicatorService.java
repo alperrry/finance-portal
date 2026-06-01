@@ -17,6 +17,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Hisse senedi fiyat geçmişinden teknik gösterge serileri hesaplayan servis.
+ *
+ * <p>ta4j kütüphanesi ile RSI, MACD, SMA/EMA, Bollinger, Stochastic, ATR ve Ichimoku
+ * göstergelerini üretir. SMA200 warm-up gereksinimi için {@code LOOKBACK_DAYS}=400 ile
+ * geçmişe sarkar; çıktıyı {@link IndicatorSnapshot} olarak verir veya
+ * {@code stock_technical_indicator} tablosuna persist eder.</p>
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

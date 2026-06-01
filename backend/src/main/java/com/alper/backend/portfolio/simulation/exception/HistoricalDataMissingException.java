@@ -6,6 +6,13 @@ import lombok.Getter;
 
 import java.time.LocalDate;
 
+/**
+ * Simülasyon/backtest senaryolarında istenen tarih için fiyat veya kur verisi
+ * bulunamadığında fırlatılan istisna.
+ *
+ * <p>Mesaj alan adına ek olarak para birimi, tarih ve {@link RateDirection} bilgisini taşır;
+ * {@link ErrorCode#HISTORICAL_DATA_MISSING} ile etiketlenir.</p>
+ */
 @Getter
 public class HistoricalDataMissingException extends RuntimeException {
 

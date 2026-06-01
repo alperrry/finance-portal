@@ -21,6 +21,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Yapılandırılmış haber kaynakları için klasik RSS/Atom feed okuma servisi.
+ *
+ * <p>Rome kütüphanesi ile feed'leri ayrıştırır, başlık + {@value #PREVIEW_LENGTH}
+ * karakterlik özetler üretir. {@link NewsService} tarafından toplama akışında çağrılır.</p>
+ */
 @Service
 public class RssFeedService {
 

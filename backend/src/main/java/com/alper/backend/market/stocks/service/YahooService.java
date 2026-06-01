@@ -27,6 +27,12 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 
+/**
+ * Yahoo Finance API'sini saran ana servis: chart/quote uç noktalarına HTTP istekleri yapar.
+ *
+ * <p>{@link YahooCrumbService} ile auth cookie/crumb sağlar; ham JSON'u
+ * {@link ObjectMapper} ile domain modellerine map eder.</p>
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

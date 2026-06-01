@@ -7,6 +7,9 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Fund varlığı için CRUD ve fon kodu bazlı arama sorguları.
+ */
 public interface FundRepository extends JpaRepository<Fund, Long> {
 
     Optional<Fund> findByCode(String code);

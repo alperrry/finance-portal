@@ -17,6 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Admin tarafında haber kategorilerini yöneten servis.
+ *
+ * <p>CRUD işlemleri için {@link CategoryRepository} kullanır; tüm yazma işlemleri
+ * {@link AdminAudited} ile audit log'a yazılır ve ilgili cache'leri invalidate eder.</p>
+ */
 @Service
 @RequiredArgsConstructor
 @Log4j2

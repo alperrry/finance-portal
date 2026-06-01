@@ -13,6 +13,9 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * News varlığı için CRUD, filtreleme ve sayfalama sorguları.
+ */
 public interface NewsRepository extends JpaRepository<News, Long> {
 
     // Base pagination query

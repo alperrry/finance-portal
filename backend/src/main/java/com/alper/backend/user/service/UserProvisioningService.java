@@ -17,6 +17,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Keycloak JWT'sinden yola çıkarak yerel {@link User} kaydını oluşturur veya günceller.
+ *
+ * <p>İlk girişte yeni kullanıcı kaydı açar; varsa Keycloak'ta değişen alanları
+ * (username, email, ad, soyad, rol) DB ile senkronize eder. Mevcut bir kullanıcının
+ * Keycloak kimliği değiştiyse aynı username/email'e sahip kaydı sahiplenir ve
+ * {@code keycloakId}'yi günceller. Rol bilgisi JWT {@code realm_access.roles} claim'inden
+ * çıkarılır; {@code ADMIN} bulunmazsa varsayılan {@link UserRole#NORMAL_USER}.</p>
+ */
 @Service
 @Log4j2
 @RequiredArgsConstructor
@@ -25,6 +34,13 @@ public class UserProvisioningService {
     private final UserRepository userRepository;
 
 
+    /**
+     * JWT'den çıkarılan kullanıcı bilgileriyle yerel kaydı bulur, sahiplenir ya da oluşturur.
+     *
+     * @param jwt aktif istek bağlamındaki JWT
+     * @return persist edilmiş kullanıcı
+     * @throws IllegalArgumentException JWT'de {@code sub} claim'i yoksa
+     */
     @Transactional
     public User provisionFromJwt(Jwt jwt) {
         String keycloakId = resolveKeycloakId(jwt)
@@ -43,6 +59,13 @@ public class UserProvisioningService {
                 .orElseGet(() -> createNew(keycloakId, username, email, firstName, lastName, role));
     }
 
+    /**
+     * JWT'den mevcut bir kullanıcıyı (varsa) keycloakId, username veya email üzerinden
+     * salt-okunur olarak bulur; yeni kayıt oluşturmaz.
+     *
+     * @param jwt aktif istek bağlamındaki JWT
+     * @return varsa kullanıcı, yoksa boş
+     */
     @Transactional(readOnly = true)
     public Optional<User> findExistingFromJwt(Jwt jwt) {
         return resolveKeycloakId(jwt)
@@ -101,6 +124,13 @@ public class UserProvisioningService {
                 keycloakId, username, role);
         return saved;
     }
+    /**
+     * Mevcut bir DB kullanıcısını verilen Keycloak temsiliyle eşitler ve persist eder.
+     *
+     * @param existingUser yerel kullanıcı kaydı
+     * @param keycloakUser Keycloak'tan dönen güncel temsili
+     * @return güncellenmiş kullanıcı
+     */
     @Transactional
     public User syncFromKeycloak(User existingUser, KeycloakUser keycloakUser) {
         if (keycloakUser.getUsername() != null) {

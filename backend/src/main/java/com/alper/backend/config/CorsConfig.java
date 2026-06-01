@@ -5,6 +5,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+/**
+ * {@code /api/**} uç noktaları için CORS yapılandırması.
+ *
+ * <p>İzinli origin pattern'leri {@code app.cors.allowed-origin-patterns} ile yapılandırılır
+ * (varsayılan localhost). Tüm standart HTTP method'larına ve credential'lara izin verilir.</p>
+ */
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 

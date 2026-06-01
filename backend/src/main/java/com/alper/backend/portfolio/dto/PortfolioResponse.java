@@ -7,6 +7,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * Portföy özetini; adını, değerini ve performansını döndürür.
+ */
 @Builder
 @Schema(description = "Portföy detay yanıtı (özet listede items boş döner)")
 public record PortfolioResponse(

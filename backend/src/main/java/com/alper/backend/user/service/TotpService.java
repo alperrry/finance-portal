@@ -25,6 +25,16 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Son kullanıcı için TOTP (Time-based One-Time Password) 2FA kurulum akışını yönetir.
+ *
+ * <p>İki aşamalı çalışır: {@link #initiateSetup(String, String)} bir geçici secret üretip
+ * QR kodu döner ve Redis'e (yoksa in-memory map'e) 5 dakikalık TTL ile saklar;
+ * {@link #verifyAndActivate(String, String)} kullanıcının uygulamasından gelen kodu
+ * doğrular ve Keycloak'a OTP credential olarak yazar. Ham secret formatı Keycloak'ın
+ * dahili akışıyla uyumlu lowercase alphanumeric tutulur; kullanıcıya gösterilen ve
+ * QR'a gömülen versiyon base32 ile encode edilir.</p>
+ */
 @Service
 @Log4j2
 public class TotpService {
@@ -50,6 +60,15 @@ public class TotpService {
         this.keycloakAdminService = keycloakAdminService;
     }
 
+    /**
+     * Yeni bir TOTP secret üretir, QR kodu ve base32 secret'i döner; ham secret'i kısa süreli
+     * cache'e yazar. Kullanıcının 2FA'sı zaten aktifse hata fırlatır.
+     *
+     * @param keycloakId aktif kullanıcının Keycloak kimliği
+     * @param email      QR etiketinde kullanılacak e-posta
+     * @return QR data URL'i ve base32 secret
+     * @throws ConflictException kullanıcının OTP'si zaten aktifse
+     */
     public OtpSetupResponse initiateSetup(String keycloakId, String email) {
         if (keycloakAdminService.getSecurityStatus(keycloakId).otpEnabled()) {
             throw new ConflictException("2FA zaten aktif.");
@@ -67,6 +86,14 @@ public class TotpService {
         return new OtpSetupResponse(qrCodeDataUrl, base32Secret);
     }
 
+    /**
+     * Pending secret ile gönderilen kodu doğrular ve Keycloak'a OTP credential olarak yazar.
+     *
+     * @param keycloakId aktif kullanıcının Keycloak kimliği
+     * @param code       authenticator uygulamasından gelen altı haneli kod
+     * @throws GoneException       cache'te pending secret yoksa veya TTL dolduysa
+     * @throws BadRequestException kod doğrulamayı geçemezse
+     */
     public void verifyAndActivate(String keycloakId, String code) {
         String rawSecret = getPendingSetup(keycloakId);
         if (rawSecret == null) {

@@ -7,6 +7,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
+/**
+ * Makro seriye ait tekil bir gözlem noktasını; tarih ve değerle tutar.
+ */
 @Entity
 @Table(name = "macro_observation", indexes = {
         @Index(name = "idx_mo_series_date", columnList = "series_id, observation_date")

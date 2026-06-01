@@ -7,6 +7,9 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Redis'te önbelleğe alınan tek bir haber sayfasını temsil eder.
+ */
 public class NewsPageCacheEntry implements Serializable {
 
     @Serial

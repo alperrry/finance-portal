@@ -9,6 +9,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+/**
+ * Portföyde kayıtlı bir enstrüman pozisyonunu; sembol, tip ve miktar bilgisini içerir.
+ */
 @Entity
 @Table(
         name = "portfolio_items",

@@ -10,6 +10,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Gerçek zamanlı veya gecikmeli fiyat anlık görüntüsünü; bid/ask ve hacim verisiyle birlikte saklar.
+ */
 @Entity
 @Table(name = "stock_price_snapshot")
 @Getter

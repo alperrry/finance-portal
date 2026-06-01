@@ -13,6 +13,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Admin panelinden piyasa veri modüllerini elle backfill etmek ve içeriklerini temizlemek
+ * için uç noktalar (fx, stocks, bonds, funds, macro, viop).
+ *
+ * <p>Backfill çağrıları asenkron tetiklenir ve {@code 202 ACCEPTED} döner.
+ * Tüm uç noktalar {@code ADMIN} rolü gerektirir.</p>
+ */
 @RestController
 @RequestMapping("/api/v1/admin/market")
 @RequiredArgsConstructor

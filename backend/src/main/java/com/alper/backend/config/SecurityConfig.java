@@ -28,6 +28,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Spring Security yapılandırması: JWT tabanlı OAuth2 Resource Server + Keycloak entegrasyonu.
+ *
+ * <p>Keycloak realm issuer doğrulaması yapar, JWT'den realm rollerini Spring authorities'e
+ * dönüştürür ve {@code UserProvisioningFilter}'ı zincire ekleyerek ilk girişte yerel
+ * kullanıcı kaydı oluşturur. {@code @EnableMethodSecurity} ile {@code @PreAuthorize}
+ * desteklenir.</p>
+ */
 @Configuration
 @EnableMethodSecurity
 @RequiredArgsConstructor
@@ -57,6 +65,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/users/**").authenticated()
                         .requestMatchers("/api/v1/drawings/**").authenticated()
                         .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/api/me/preferences").authenticated()
                         .anyRequest().permitAll()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

@@ -10,6 +10,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * Haber kategorilerini listeleyen kamuya açık uç nokta.
+ *
+ * <p>Read-only; veriyi {@link CategoryService} üzerinden döner. Yönetim için
+ * {@code AdminCategoryController} kullanılır.</p>
+ */
 @RestController
 @RequestMapping("/api/categories")
 public class CategoryController {

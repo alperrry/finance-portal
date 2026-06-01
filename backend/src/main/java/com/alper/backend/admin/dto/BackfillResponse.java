@@ -2,6 +2,9 @@ package com.alper.backend.admin.dto;
 
 import java.time.Instant;
 
+/**
+ * Geçmiş veri dolum işleminin sonuç özetini döndürür.
+ */
 public record BackfillResponse(
         String module,
         String status,

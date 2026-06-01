@@ -6,6 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
+/**
+ * MacroSeries varlığı için CRUD ve seri kodu bazlı arama sorguları.
+ */
 public interface MacroSeriesRepository extends JpaRepository<MacroSeries, Long> {
     List<MacroSeries> findByDataTypeAndIsActiveTrue(MacroDataType dataType);
 }

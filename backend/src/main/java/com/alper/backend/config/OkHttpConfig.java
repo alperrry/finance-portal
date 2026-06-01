@@ -7,6 +7,12 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Tüm dış HTTP çağrıları için paylaşılan {@link OkHttpClient} bean'ini sağlar.
+ *
+ * <p>Timeout değerleri ({@code connect/read/write}) {@code http.client.*-timeout-seconds}
+ * konfigürasyonu üzerinden ayarlanır; varsayılan 10 saniyedir.</p>
+ */
 @Configuration
 public class OkHttpConfig {
 

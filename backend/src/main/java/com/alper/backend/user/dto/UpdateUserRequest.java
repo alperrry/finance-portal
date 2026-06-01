@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Kullanıcı profili güncelleme isteğini; ad ve e-posta alanlarını taşır.
+ */
 @Getter
 @Setter
 @NoArgsConstructor

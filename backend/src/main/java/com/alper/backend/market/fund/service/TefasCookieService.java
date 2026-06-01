@@ -12,6 +12,12 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * TEFAS site oturumu için cookie/session jar'ı yöneten servis.
+ *
+ * <p>İlk istekte ana sayfayı ziyaret edip session cookie'lerini alır ve sonraki TEFAS
+ * isteklerinde tekrar gönderir; gerçek tarayıcı User-Agent'ı kullanır.</p>
+ */
 @Log4j2
 @Service
 public class TefasCookieService {

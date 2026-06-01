@@ -8,6 +8,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * FundPrice varlığı için CRUD ve NAV geçmişi sorguları.
+ */
 public interface FundPriceRepository extends JpaRepository<FundPrice, Long> {
     List<FundPrice> findByFund_CodeAndPriceDateBetweenOrderByPriceDateAsc(
             String code, LocalDate from, LocalDate to);

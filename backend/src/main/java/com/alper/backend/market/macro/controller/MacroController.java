@@ -14,6 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Makroekonomik veri uç noktaları (TÜFE, faiz vb.).
+ *
+ * <p>Veriler TCMB EVDS'ten çekilir; okuma {@link MacroQueryService} üzerinden yapılır.</p>
+ */
 @RestController
 @RequestMapping("/api/v1/macro")
 @RequiredArgsConstructor

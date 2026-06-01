@@ -2,6 +2,11 @@ package com.alper.backend.common.exception;
 
 import lombok.Getter;
 
+/**
+ * 409 Conflict senaryolarında (örn. unique constraint, duplicate kayıt) fırlatılan domain istisnası.
+ *
+ * <p>{@link ErrorCode} taşır; varsayılan {@link ErrorCode#CONFLICT}.</p>
+ */
 @Getter
 public class ConflictException extends RuntimeException {
 

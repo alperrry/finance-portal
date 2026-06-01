@@ -9,6 +9,9 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Tahvil verilerini API yanıtı olarak döndürür.
+ */
 @Getter
 @Builder
 public class BondResponse implements Serializable {

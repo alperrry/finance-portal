@@ -10,6 +10,9 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Borsa'da işlem gören bir hisse senedini; sembol, şirket adı ve sektör bilgisini içerir.
+ */
 @Entity
 @Table(name = "stock")
 @Getter

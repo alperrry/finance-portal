@@ -7,6 +7,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Hesaplanan teknik analiz göstergelerini (RSI, MACD, Bollinger vb.) depolar.
+ */
 @Entity
 @Table(name = "stock_technical_indicator")
 @Getter

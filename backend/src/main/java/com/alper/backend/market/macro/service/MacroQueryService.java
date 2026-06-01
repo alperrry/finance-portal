@@ -15,6 +15,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Makro veri okuma servisi: enflasyon ve benzeri seri sorguları.
+ *
+ * <p>Read-only; {@link com.alper.backend.market.macro.repository.MacroObservationRepository}'den
+ * verileri çeker, filtresiz aramaları {@code macro} cache'inde tutar.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class MacroQueryService {

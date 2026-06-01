@@ -9,6 +9,9 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 
+/**
+ * TEFAS geçmiş verilerindeki portföy dağılım anlık görüntüsünü temsil eder.
+ */
 @Getter
 @Setter
 @NoArgsConstructor

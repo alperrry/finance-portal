@@ -12,6 +12,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Yahoo Finance üzerinden hisse senedi tarihsel fiyat verilerini çekip backfill eden servis.
+ *
+ * <p>{@link AbstractBackfillService} iskeletini kullanır; her sembol için son persist'in
+ * sonrasından bugüne kadar olan günleri çeker ve {@link StockPriceHistoryRepository}'e yazar.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class YahooBackfillService extends AbstractBackfillService<Stock> {

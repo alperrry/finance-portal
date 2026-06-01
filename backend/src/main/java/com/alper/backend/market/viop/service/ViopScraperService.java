@@ -29,6 +29,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * VIOP kontrat fiyatlarını Borsa İstanbul sayfasından (HTML) scrape edip persist eden servis.
+ *
+ * <p>Günlük en aktif {@value #DAILY_CONTRACT_LIMIT} kontratla sınırlanır; veri her çağrıda
+ * {@code MarketDataUpdatedEvent} olarak yayılır.</p>
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

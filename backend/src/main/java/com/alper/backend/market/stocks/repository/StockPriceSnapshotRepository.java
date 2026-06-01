@@ -10,6 +10,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * StockPriceSnapshot varlığı için CRUD ve en güncel snapshot sorguları.
+ */
 @Repository
 public interface StockPriceSnapshotRepository extends JpaRepository<StockPriceSnapshot, Long> {
 

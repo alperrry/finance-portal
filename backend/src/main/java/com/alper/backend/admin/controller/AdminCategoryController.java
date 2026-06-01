@@ -20,6 +20,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * Admin panelinden haber kategorilerini yönetmek için CRUD uç noktaları.
+ *
+ * <p>{@code ADMIN} rolü gerektirir. Tüm değişiklikler {@link com.alper.backend.admin.audit.AuditService}
+ * üzerinden audit log'a yazılır.</p>
+ */
 @RestController
 @RequestMapping("/api/v1/admin/categories")
 @RequiredArgsConstructor

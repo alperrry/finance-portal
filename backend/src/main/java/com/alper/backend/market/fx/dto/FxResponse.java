@@ -7,6 +7,9 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Döviz kuru verilerini API yanıtı olarak döndürür.
+ */
 @Getter
 @Builder
 public class FxResponse implements Serializable {

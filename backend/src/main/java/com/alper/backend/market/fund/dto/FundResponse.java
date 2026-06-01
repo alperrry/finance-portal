@@ -9,6 +9,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Getter
+/**
+ * Yatırım fonu bilgilerini ve güncel NAV değerini API yanıtı olarak döndürür.
+ */
 @Builder
 public class FundResponse implements Serializable {
 

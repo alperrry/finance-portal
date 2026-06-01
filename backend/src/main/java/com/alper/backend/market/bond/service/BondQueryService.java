@@ -12,6 +12,12 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Tahvil/bono sorgu servisi: kayıtları listeler ve faiz oranı geçmişini döner.
+ *
+ * <p>Read-only erişim için kullanılır; veriyi {@link BondRepository} ve
+ * {@link BondRateHistoryRepository}'den okur.</p>
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

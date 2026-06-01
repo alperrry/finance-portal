@@ -16,6 +16,12 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Yatırım fonu okuma servisi: fon listesi, detay ve fiyat geçmişi.
+ *
+ * <p>Read-only; veriyi {@link FundRepository} ve {@link FundPriceRepository}'den
+ * okur.</p>
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

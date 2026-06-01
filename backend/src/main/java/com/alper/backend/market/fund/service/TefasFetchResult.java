@@ -1,5 +1,8 @@
 package com.alper.backend.market.fund.service;
 
+/**
+ * TEFAS veri çekme işleminin kaydedilen ve okunan satır sayılarını özetleyen sonuç nesnesi.
+ */
 public record TefasFetchResult(
         int savedInfoCount,
         int savedAllocationCount,

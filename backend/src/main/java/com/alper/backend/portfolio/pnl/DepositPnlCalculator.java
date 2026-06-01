@@ -8,14 +8,17 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
 /**
- * Mevduat (DEPOSIT) P&L hesabı:
- * exitDate = position.exitDate != null ? position.exitDate : LocalDate.now()
- * valuationDate = min(exitDate, maturityDate) when maturityDate exists
- * days = ChronoUnit.DAYS.between(entryDate, valuationDate)
- * rate = interestRate != null ? interestRate : 0
- * P&L = quantity * (rate / 100) * (days / 365.0)
+ * Mevduat (DEPOSIT) P&amp;L hesabı.
  *
- * exitOrCurrentPrice parametresi DEPOSIT için kullanılmaz.
+ * <pre>
+ * exitDate      = position.exitDate != null ? position.exitDate : LocalDate.now()
+ * valuationDate = min(exitDate, maturityDate) maturityDate varsa
+ * days          = ChronoUnit.DAYS.between(entryDate, valuationDate)
+ * rate          = interestRate != null ? interestRate : 0
+ * P&amp;L           = quantity * (rate / 100) * (days / 365.0)
+ * </pre>
+ *
+ * <p>{@code exitOrCurrentPrice} parametresi DEPOSIT için kullanılmaz.</p>
  */
 public class DepositPnlCalculator implements PnlCalculator {
 

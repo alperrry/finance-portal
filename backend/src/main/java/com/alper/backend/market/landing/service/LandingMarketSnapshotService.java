@@ -21,6 +21,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
+/**
+ * Ana sayfa piyasa özetini üreten servis: hero kurlar, popüler hisseler ve endeksler.
+ *
+ * <p>USD/EUR vb. öncelikli kurları ve önceden tanımlı priorite listesini ({@code HERO_PRIORITY_KEYS})
+ * dikkate alarak ilgili repository'lerden veriyi toplar ve UI'a uygun tek bir snapshot DTO'su
+ * döner.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class LandingMarketSnapshotService {

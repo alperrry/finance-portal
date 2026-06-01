@@ -12,6 +12,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
 
+/**
+ * Belirtilen para birimi ve {@link RateDirection} (alış/satış) için tarihsel kuru çözer.
+ *
+ * <p>İstenen tarih ve 7 güne kadar geriye, işlem günü filtreli arama yapar; bulamazsa
+ * {@link HistoricalDataMissingException} fırlatır. Sonuçlar {@code historicalRates}
+ * cache'inde tutulur.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class HistoricalRateResolver {

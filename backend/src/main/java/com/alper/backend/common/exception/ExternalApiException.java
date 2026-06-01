@@ -2,6 +2,13 @@ package com.alper.backend.common.exception;
 
 import lombok.Getter;
 
+/**
+ * Dış servis (Keycloak, TCMB, Yahoo, TEFAS vb.) çağrıları başarısız olduğunda fırlatılan istisna.
+ *
+ * <p>Hata mesajı {@link ServiceType} prefix'i ile zenginleştirilir; varsayılan
+ * {@link ErrorCode#FETCH_ERROR}. Parse hataları için yeni constructor üzerinden
+ * {@link ErrorCode#PARSE_ERROR} verilebilir.</p>
+ */
 @Getter
 public class ExternalApiException extends RuntimeException {
 

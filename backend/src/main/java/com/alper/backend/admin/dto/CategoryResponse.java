@@ -4,6 +4,9 @@ import com.alper.backend.news.model.Category;
 
 import java.time.OffsetDateTime;
 
+/**
+ * Kategori verilerini API yanıtı olarak döndürür.
+ */
 public class CategoryResponse {
 
     private Long id;

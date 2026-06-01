@@ -9,6 +9,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
+/**
+ * Hisse senedi temel ve anlık fiyat verilerini API yanıtı olarak döndürür.
+ */
 @Builder
 public class StockResponse implements Serializable {
 

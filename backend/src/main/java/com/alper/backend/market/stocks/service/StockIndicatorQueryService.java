@@ -15,6 +15,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Daha önce hesaplanıp persist edilmiş teknik göstergeleri okuyan read-only servis.
+ *
+ * <p>{@link StockTechnicalIndicatorRepository}'den son N gün ya da tarih aralığı bazlı
+ * kayıtları çeker ve {@code StockIndicatorMapper} ile DTO'ya çevirir.</p>
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

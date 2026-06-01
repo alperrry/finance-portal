@@ -8,6 +8,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Bond varlığı için CRUD ve ISIN bazlı arama sorguları.
+ */
 @Repository
 public interface BondRepository extends JpaRepository<Bond, Long> {
 

@@ -16,6 +16,13 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Piyasa veri modüllerinin (fx, stocks, bonds, funds, macro, viop) tüm kayıtlarını toplu
+ * silmek için admin servis.
+ *
+ * <p>Her temizleme işlemi {@link AdminAudited} ile audit log'a yazılır ve silinen satır
+ * sayısını döner. Sadece geliştirme/operasyonel reset senaryolarında kullanılmalıdır.</p>
+ */
 @Service
 @RequiredArgsConstructor
 @Log4j2

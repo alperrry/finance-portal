@@ -7,6 +7,9 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
+/**
+ * Grafik çizim verilerini API yanıtı olarak döndürür.
+ */
 @Getter
 @Builder
 public class DrawingResponse {

@@ -21,6 +21,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Enstrüman bazlı tarihsel veri okuma servisi (stock / fund / fx / viop).
+ *
+ * <p>İlgili modülün history repository'sini seçer, talep edilen tarih aralığı için
+ * kapanış/OHLC kayıtlarını DTO'ya dönüştürür.</p>
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

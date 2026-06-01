@@ -8,6 +8,13 @@ import java.text.Normalizer;
 import java.util.*;
 import java.util.regex.Pattern;
 
+/**
+ * Haber başlık/içeriklerini LLM (Groq) yardımıyla kategorilendiren servis.
+ *
+ * <p>Önce regex tabanlı hızlı eşleştirme dener; eşleşme bulunamazsa
+ * {@link GroqApiService} üzerinden modelden kategori adı alır ve mevcut kategori
+ * kümesine en yakın olanı seçer.</p>
+ */
 @Service
 public class AiCategorizerService {
 

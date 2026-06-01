@@ -6,6 +6,12 @@ import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Türkiye'ye özgü tatil/işlem günü kontrolleri için yardımcı sınıf.
+ *
+ * <p>Sabit milli ve dini bayramları (Hicri takvim) hesaba katar, hafta sonlarını işlem
+ * günü saymaz; tarihsel veri çözümleyicilerin işlem günü filtreleme adımında kullanılır.</p>
+ */
 public class TurkishHolidayUtil {
 
     private TurkishHolidayUtil() {}

@@ -6,8 +6,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 /**
- * Standart P&L hesabı (STOCK, FUND, CURRENCY, BOND):
- * P&L = (exitOrCurrentPrice - entryPrice) * quantity
+ * Standart P&amp;L hesabı (STOCK, FUND, CURRENCY, BOND).
+ *
+ * <pre>P&amp;L = (exitOrCurrentPrice - entryPrice) * quantity</pre>
  */
 public class StandardPnlCalculator implements PnlCalculator {
 

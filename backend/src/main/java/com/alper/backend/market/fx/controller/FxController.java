@@ -9,6 +9,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Döviz kuru (FX) uç noktaları: güncel ve tarihsel kur sorguları.
+ *
+ * <p>Read-only; veriler TCMB'den günlük backfill ile {@link FxQueryService} aracılığıyla
+ * sunulur.</p>
+ */
 @RestController
 @RequestMapping("/api/v1/fx")
 @RequiredArgsConstructor

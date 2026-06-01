@@ -22,6 +22,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * TCMB EVDS (Elektronik Veri Dağıtım Sistemi) API'sini saran servis.
+ *
+ * <p>Tahvil/bono ve makro seriler için EVDS sorgularını yapılandırır, JSON yanıtını
+ * {@link com.fasterxml.jackson.databind.ObjectMapper} ile ayrıştırır ve domain
+ * nesnelerine map eder. Tüm HTTP çağrıları {@code EvdsHttpClient} üzerinden geçer.</p>
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

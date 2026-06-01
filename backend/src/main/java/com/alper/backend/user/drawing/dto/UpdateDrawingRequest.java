@@ -9,6 +9,9 @@ import lombok.Setter;
 
 @Getter
 @Setter
+/**
+ * Mevcut grafik çizimini güncelleme isteğini taşır.
+ */
 @NoArgsConstructor
 public class UpdateDrawingRequest {
 

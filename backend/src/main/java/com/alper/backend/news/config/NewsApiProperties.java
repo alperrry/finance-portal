@@ -5,6 +5,9 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * NewsAPI.org entegrasyonu için API anahtarı, temel URL, ülke ve kategori yapılandırmasını tutar.
+ */
 @Getter
 @Setter
 @Configuration

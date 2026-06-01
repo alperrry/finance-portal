@@ -10,6 +10,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Audit log girişlerini admin paneline servis eden okuma katmanı.
+ *
+ * <p>Hedef tip (targetType) filtreleme ve sayfalama destekler; verilen filtre boş veya
+ * null ise tüm kayıtları en yeni öncelikli döner.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class AdminAuditLogService {

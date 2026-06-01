@@ -7,6 +7,9 @@ import jakarta.validation.constraints.NotNull;
 import java.time.OffsetDateTime;
 import java.util.Set;
 
+/**
+ * Haber oluşturma veya güncelleme isteğini taşır.
+ */
 public class NewsRequest {
 
     @NotBlank(message = "Title is required")

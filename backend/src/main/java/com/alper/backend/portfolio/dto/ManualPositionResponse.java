@@ -8,6 +8,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
+/**
+ * Elle girilen pozisyon verilerini API yanıtı olarak döndürür.
+ */
 public record ManualPositionResponse(
         Long id,
         Long portfolioId,

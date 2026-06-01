@@ -2,6 +2,9 @@ package com.alper.backend.admin.dto;
 
 import java.time.Instant;
 
+/**
+ * Veri çekme işleminin özet sonucunu döndürür.
+ */
 public record FetchResponse(
         String source,
         String status,

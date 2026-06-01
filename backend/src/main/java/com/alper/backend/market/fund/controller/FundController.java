@@ -14,6 +14,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * Yatırım fonu listeleme, detay ve fiyat geçmişi uç noktaları.
+ *
+ * <p>Veriler TEFAS'tan periyodik olarak backfill edilir
+ * ({@link com.alper.backend.market.fund.service.TefasBackfillService}); okuma
+ * {@link FundQueryService} üzerinden yapılır.</p>
+ */
 @RestController
 @RequestMapping("/api/v1/funds")
 @RequiredArgsConstructor

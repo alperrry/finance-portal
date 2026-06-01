@@ -8,6 +8,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Devlet veya özel sektör tahvilini; ISIN, vade ve kupon oranıyla tanımlar.
+ */
 @Entity
 @Table(name = "bond")
 @Getter

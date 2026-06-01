@@ -16,6 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * Admin panelinden audit log girişlerini sorgulamak için uç noktalar.
+ *
+ * <p>Sayfalı/filtreli okuma sağlar; tüm uç noktalar {@code ADMIN} rolü gerektirir.</p>
+ */
 @RestController
 @RequestMapping("/api/v1/admin/audit")
 @RequiredArgsConstructor

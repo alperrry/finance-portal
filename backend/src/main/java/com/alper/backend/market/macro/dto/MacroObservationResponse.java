@@ -9,6 +9,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Getter
+/**
+ * EVDS makro veri gözlemini API yanıtı olarak döndürür.
+ */
 @Builder
 public class MacroObservationResponse implements Serializable {
 

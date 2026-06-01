@@ -13,6 +13,9 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+/**
+ * User varlığı için CRUD ve Keycloak ID bazlı arama sorguları.
+ */
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 

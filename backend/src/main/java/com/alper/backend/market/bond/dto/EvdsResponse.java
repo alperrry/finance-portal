@@ -6,6 +6,9 @@ import lombok.Data;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * EVDS API'sinden alınan tam veri yanıtını taşır.
+ */
 @Data
 public class EvdsResponse {
 

@@ -34,6 +34,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * TEFAS (Türkiye Elektronik Fon Alım Satım Platformu) web sayfasını scrape eden servis.
+ *
+ * <p>Fon listesi, fiyat geçmişi ve allocation verilerini HTML üzerinden çeker;
+ * {@link TefasCookieService} ile session yönetimi yapılır.</p>
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

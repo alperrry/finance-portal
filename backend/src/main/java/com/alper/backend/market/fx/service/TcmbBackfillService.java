@@ -14,6 +14,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * TCMB döviz kuru arşivinden tarihsel verileri çekip {@code exchange_rate}'e yazan backfill servisi.
+ *
+ * <p>{@code tcmb.retention-days} kadar geriye sarkar; eksik günleri tespit edip arşiv XML
+ * dosyalarını (klasör formatı {@code yyyyMM}, dosya formatı {@code ddMMyyyy}) indirir ve
+ * ayrıştırır.</p>
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

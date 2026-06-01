@@ -17,6 +17,9 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+/**
+ * Hisse senedi teknik göstergelerini API yanıtı olarak döndürür.
+ */
 public class StockIndicatorResponse implements Serializable {
 
     private String symbol;

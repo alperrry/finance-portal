@@ -11,6 +11,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Yeni grafik çizimi oluşturma isteğini; tip ve koordinat verilerini taşır.
+ */
 @Getter
 @Setter
 @NoArgsConstructor

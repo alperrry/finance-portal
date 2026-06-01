@@ -10,6 +10,9 @@ import java.util.List;
 import java.time.LocalDate;
 import java.util.Optional;
 
+/**
+ * StockPriceHistory varlığı için CRUD ve tarih aralığı sorguları.
+ */
 @Repository
 public interface StockPriceHistoryRepository extends JpaRepository<StockPriceHistory, Long> {
     List<StockPriceHistory> findByStock_SymbolAndTradeDateBetweenOrderByTradeDateAsc(

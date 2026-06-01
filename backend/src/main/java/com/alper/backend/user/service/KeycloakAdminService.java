@@ -21,6 +21,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Keycloak Admin REST API'sini saran ince servis katmanı.
+ *
+ * <p>Kullanıcı CRUD, şifre sıfırlama, OTP credential yönetimi (TOTP), kullanıcı durumu
+ * (enabled/disabled) ve rol senkronizasyonu için Keycloak'a HTTP çağrıları yapar. Service
+ * account ile client_credentials grant akışından admin token alınır; bu token süresi
+ * dolana kadar bellek içinde cache'lenir. Tüm I/O hataları
+ * {@link ExternalApiException} olarak yukarı taşınır.</p>
+ */
 @Service
 @Log4j2
 public class KeycloakAdminService {
@@ -101,6 +110,13 @@ public class KeycloakAdminService {
                     ServiceType.KEYCLOAK);
         }
     }
+    /**
+     * Verilen Keycloak kimliğine sahip kullanıcının temel bilgilerini Keycloak'tan çeker.
+     *
+     * @param keycloakId Keycloak kullanıcı id'si
+     * @return kullanıcı temsil nesnesi
+     * @throws ExternalApiException Keycloak hata döner veya erişilemezse
+     */
     public KeycloakUser getUserById(String keycloakId) {
         String token = getAdminToken();
 
@@ -141,6 +157,13 @@ public class KeycloakAdminService {
         }
     }
 
+    /**
+     * Kullanıcının şifresini kalıcı (temporary=false) olarak sıfırlar.
+     *
+     * @param keycloakId Keycloak kullanıcı id'si
+     * @param newPassword yeni şifre düz metni
+     * @throws ExternalApiException Keycloak hata döner veya erişilemezse
+     */
     public void resetPassword(String keycloakId, String newPassword) {
         String token = getAdminToken();
         String url = String.format("%s/admin/realms/%s/users/%s/reset-password",
@@ -162,11 +185,26 @@ public class KeycloakAdminService {
         log.info("Keycloak kullanıcısının şifresi güncellendi | keycloakId={}", keycloakId);
     }
 
+    /**
+     * Kullanıcının 2FA durumunu ve kayıtlı OTP credential'larını döner.
+     *
+     * @param keycloakId Keycloak kullanıcı id'si
+     * @return güvenlik durumu (OTP aktif mi, credential listesi)
+     * @throws ExternalApiException Keycloak hata döner veya erişilemezse
+     */
     public SecurityStatusResponse getSecurityStatus(String keycloakId) {
         List<SecurityStatusResponse.OtpCredential> otpCredentials = getOtpCredentials(keycloakId);
         return new SecurityStatusResponse(!otpCredentials.isEmpty(), otpCredentials);
     }
 
+    /**
+     * Keycloak 26'da OTP credential'ı PUT /users/{id} gövdesindeki credentials dizisi ile
+     * oluşturulur. SHA-1, 6 hane, 30 saniyelik standart TOTP parametreleriyle yazılır.
+     *
+     * @param keycloakId Keycloak kullanıcı id'si
+     * @param secret     Keycloak HMAC anahtarı olarak kullanılacak ham secret
+     * @throws ExternalApiException Keycloak hata döner veya erişilemezse
+     */
     public void createOtpCredential(String keycloakId, String secret) {
         String token = getAdminToken();
         // Keycloak 26'da POST /credentials endpoint'i yok; PUT /users/{id} body'sindeki
@@ -193,6 +231,15 @@ public class KeycloakAdminService {
         log.info("Keycloak OTP credential olusturuldu | keycloakId={}", keycloakId);
     }
 
+    /**
+     * Verilen kullanıcının belirli bir OTP credential'ını siler. Credential'ın kullanıcıya
+     * ait olduğu önceden doğrulanır.
+     *
+     * @param keycloakId   Keycloak kullanıcı id'si
+     * @param credentialId silinecek credential'ın id'si
+     * @throws ExternalApiException credential kullanıcıya ait değilse veya Keycloak hata
+     *                              dönerse
+     */
     public void deleteOtpCredential(String keycloakId, String credentialId) {
         List<SecurityStatusResponse.OtpCredential> otpCredentials = getOtpCredentials(keycloakId);
         boolean belongsToUser = otpCredentials.stream().anyMatch((credential) -> credential.id().equals(credentialId));
@@ -357,6 +404,13 @@ public class KeycloakAdminService {
     }
 
 
+    /**
+     * Kullanıcının Keycloak {@code enabled} bayrağını günceller (oturum açma izni).
+     *
+     * @param keycloakId Keycloak kullanıcı id'si
+     * @param enabled    true ise aktif, false ise devre dışı
+     * @throws ExternalApiException Keycloak hata döner veya erişilemezse
+     */
     public void setEnabled(String keycloakId, boolean enabled) {
         String token = getAdminToken();
 
@@ -379,6 +433,16 @@ public class KeycloakAdminService {
     }
 
 
+    /**
+     * Kullanıcının realm rolünü {@link UserRole#NORMAL_USER}/{@link UserRole#ADMIN} arasında
+     * senkronize eder. Mevcut yönetilen rolleri kaldırır, hedef rolü ekler. Kullanıcı zaten
+     * yalnızca hedef role sahipse hiçbir Keycloak çağrısı yapılmaz.
+     *
+     * @param keycloakId Keycloak kullanıcı id'si
+     * @param newRole    atanacak rol
+     * @throws ExternalApiException Keycloak hata döner, erişilemez veya hedef rol available
+     *                              listesinde bulunamazsa
+     */
     public void syncRole(String keycloakId, UserRole newRole) {
         String token = getAdminToken();
         String roleMappingsUrl = String.format("%s/admin/realms/%s/users/%s/role-mappings/realm",

@@ -23,6 +23,13 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
+/**
+ * Makroekonomik seri verilerini TCMB EVDS'ten çekip {@link com.alper.backend.market.macro.model.MacroObservation}
+ * olarak kaydeden servis.
+ *
+ * <p>{@code MacroEvdsClient} üzerinden HTTP istekleri yapar; EVDS tarih formatı
+ * {@code dd-MM-yyyy} kullanılır.</p>
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

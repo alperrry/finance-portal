@@ -9,6 +9,9 @@ import java.time.LocalDate;
 
 @Getter
 @Builder
+/**
+ * Fiyat geçmişinde tek bir tarih-değer noktasını temsil eder.
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PricePoint {
     private LocalDate date;

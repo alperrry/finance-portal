@@ -8,6 +8,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Stock varlığı için CRUD ve sembol bazlı arama sorguları.
+ */
 @Repository
 public interface StockRepository extends JpaRepository<Stock, Long> {
 

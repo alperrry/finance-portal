@@ -9,6 +9,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Getter
+/**
+ * Yatırım fonu portföy dağılımını API yanıtı olarak döndürür.
+ */
 @Builder
 public class FundAllocationResponse implements Serializable {
 

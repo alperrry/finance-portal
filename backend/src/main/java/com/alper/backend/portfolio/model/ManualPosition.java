@@ -10,6 +10,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
+/**
+ * Kullanıcının elle girdiği OTC veya borsada işlem görmeyen pozisyonu temsil eder.
+ */
 @Entity
 @Table(name = "manual_positions")
 @Getter

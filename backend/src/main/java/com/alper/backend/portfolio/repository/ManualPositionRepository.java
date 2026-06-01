@@ -9,6 +9,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * ManualPosition varlığı için CRUD ve portföye bağlı pozisyon sorguları.
+ */
 public interface ManualPositionRepository extends JpaRepository<ManualPosition, Long> {
 
     Page<ManualPosition> findAllByPortfolioIdAndPositionKind(Long portfolioId, PositionKind kind, Pageable pageable);

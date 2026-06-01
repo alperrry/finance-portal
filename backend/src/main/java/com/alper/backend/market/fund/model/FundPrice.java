@@ -7,6 +7,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Fon için belirli bir güne ait NAV (net varlık değeri) kaydını tutar.
+ */
 @Entity
 @Table(name = "fund_price", indexes = {
         @Index(name = "idx_fp_fund_date", columnList = "fund_id, price_date")

@@ -9,6 +9,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
+/**
+ * VİOP vadeli sözleşme fiyat verilerini API yanıtı olarak döndürür.
+ */
 @Getter
 @Builder
 public class ViopContractPriceResponse implements Serializable {

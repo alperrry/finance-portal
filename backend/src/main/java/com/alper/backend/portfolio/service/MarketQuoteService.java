@@ -22,6 +22,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * Manuel pozisyon değerleme akışında kullanılan, enstrüman bazlı son fiyat (quote) servisi.
+ *
+ * <p>Stock, fund, bond, fx, viop için ilgili repository'lerden en güncel kapanış/snapshot
+ * verisini getirir. {@link InstrumentPriceResolverService}'in tamamlayıcısıdır; closing
+ * price'a değil işlem akışı için snapshot'a odaklanır.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class MarketQuoteService {

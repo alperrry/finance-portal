@@ -13,6 +13,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Groq Cloud LLM API'sini saran düşük seviyeli istemci.
+ *
+ * <p>{@code groq.api.url} ve API key konfigürasyonu ile chat completion isteği gönderir;
+ * rate-limit hatalarında {@value #DEFAULT_RATE_LIMIT_COOLDOWN_MS} ms cooldown uygular.
+ * {@link AiCategorizerService} tarafından haber kategorilendirme için kullanılır.</p>
+ */
 @Service
 public class GroqApiService {
 

@@ -14,6 +14,14 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
+/**
+ * Bir {@link ManualPosition}'dan simülasyon lens'lerinin (USD, enflasyon, vb.) tüketebileceği
+ * {@link ValuationContext} üretir.
+ *
+ * <p>Enstrüman tipine göre (stock/fund/bond/deposit/viop) cost basis ve güncel/close değer
+ * (TRY cinsinden) hesaplanır; tahvil/mevduat için faiz tahakkuku, VIOP için contract
+ * multiplier ve LONG/SHORT yönü dikkate alınır.</p>
+ */
 @Component
 @RequiredArgsConstructor
 public class ValuationContextBuilder {

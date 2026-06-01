@@ -27,6 +27,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 
+/**
+ * Admin panelinden son kullanıcıları yönetmek için uç noktalar.
+ *
+ * <p>Listeleme/arama, detay, rol değişikliği, durum (aktif/pasif) güncelleme ve 2FA
+ * sıfırlama işlemlerini sağlar. Tüm değişiklikler audit log'a yazılır ve {@code ADMIN}
+ * rolü gerektirir.</p>
+ */
 @RestController
 @RequestMapping("/api/v1/admin/users")
 @RequiredArgsConstructor

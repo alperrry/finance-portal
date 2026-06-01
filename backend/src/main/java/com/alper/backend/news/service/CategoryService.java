@@ -12,6 +12,12 @@ import java.io.Serializable;
 import java.util.List;
 
 
+/**
+ * Haber kategorileri için kamuya açık okuma/yardımcı servis.
+ *
+ * <p>Listeleme ve "ad → entity" çözümleme gibi temel işlemleri sağlar; admin tarafı
+ * CRUD işlemleri için {@code AdminCategoryService} kullanılır.</p>
+ */
 @Service
 @Transactional
 public class CategoryService {

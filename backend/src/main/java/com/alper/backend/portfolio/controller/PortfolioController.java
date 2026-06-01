@@ -21,6 +21,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Kullanıcının portföylerini yönetmek için REST uç noktaları.
+ *
+ * <p>Portföy oluşturma, listeleme, görüntüleme, güncelleme, silme ve toplam değerleme
+ * sorgularını içerir. Tüm uç noktalar oturum açmış kullanıcıyı {@code @CurrentUser}
+ * ile bekler.</p>
+ */
 @RestController
 @RequestMapping("/api/v1/portfolios")
 @RequiredArgsConstructor

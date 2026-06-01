@@ -8,6 +8,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+/**
+ * Üçüncü parti haber API'sinden ({@code newsapi.org} stilinde) içerik çeken servis.
+ *
+ * <p>Yapılandırma {@code NewsApiProperties} üzerinden okunur; sonuçlar
+ * {@link NewsService} tarafından merge edilip persist edilir.</p>
+ */
 @Service
 public class NewsApiService {
 

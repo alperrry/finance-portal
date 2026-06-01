@@ -6,6 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.time.LocalDate;
 import java.util.Optional;
 
+/**
+ * FundAllocation varlığı için CRUD ve fon bazlı dağılım sorguları.
+ */
 public interface FundAllocationRepository extends JpaRepository<FundAllocation, Long> {
 
     boolean existsByFundIdAndAllocationDate(Long fundId, LocalDate allocationDate);

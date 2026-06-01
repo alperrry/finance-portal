@@ -8,6 +8,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * StockTechnicalIndicator varlığı için CRUD ve son gösterge sorguları.
+ */
 @Repository
 public interface StockTechnicalIndicatorRepository extends JpaRepository<StockTechnicalIndicator, Long> {
 

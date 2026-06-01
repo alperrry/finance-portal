@@ -17,6 +17,13 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Verilen enstrüman tipi ve koda göre güncel piyasa fiyatını çözen yardımcı servis.
+ *
+ * <p>{@link InstrumentType} bazında ilgili repository'yi (stock/fund/bond/fx/viop) seçer,
+ * son kapanış veya snapshot fiyatı döner. Tahvil için nominal değer (100) sabit
+ * kullanılır; FX dönüşümleri {@link ExchangeRate} üzerinden hesaplanır.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class InstrumentPriceResolverService {

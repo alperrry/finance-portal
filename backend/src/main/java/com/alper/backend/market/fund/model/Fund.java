@@ -7,6 +7,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * TEFAS'ta işlem gören bir yatırım fonunu; fon kodu ve yönetici adıyla tanımlar.
+ */
 @Entity
 @Table(name = "fund")
 @Getter

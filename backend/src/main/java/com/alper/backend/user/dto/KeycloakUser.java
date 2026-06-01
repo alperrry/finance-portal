@@ -3,6 +3,9 @@ package com.alper.backend.user.dto;
 import lombok.Builder;
 import lombok.Getter;
 
+/**
+ * Keycloak admin API'sinden alınan kullanıcı temsilini taşır.
+ */
 @Getter
 @Builder
 public class KeycloakUser {

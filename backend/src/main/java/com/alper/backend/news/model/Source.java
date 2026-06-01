@@ -5,6 +5,9 @@ import lombok.*;
 
 import java.time.OffsetDateTime;
 
+/**
+ * Haber beslemesinin alındığı kaynağı; adını ve RSS/API URL'sini tutar.
+ */
 @Entity
 @Getter
 @Setter

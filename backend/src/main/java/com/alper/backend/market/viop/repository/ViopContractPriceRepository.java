@@ -8,6 +8,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * ViopContractPrice varlığı için CRUD ve sözleşme/tarih bazlı sorgular.
+ */
 public interface ViopContractPriceRepository extends JpaRepository<ViopContractPrice, Long> {
     boolean existsByMarketSegmentAndContractNameAndTradeDate(String marketSegment, String contractName, LocalDate tradeDate);
 

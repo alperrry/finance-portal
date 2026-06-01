@@ -17,6 +17,13 @@ import org.springframework.stereotype.Service;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Piyasa veri backfill işlerini admin tarafından elle tetiklemek için kullanılan servis.
+ *
+ * <p>Her modül için (fx/stocks/bonds/funds/macro/viop) backfill servislerini asenkron
+ * çağırır; eşzamanlı çoklu tetiklemeyi önlemek için {@link AtomicBoolean} bayrakları
+ * kullanır. Tüm tetiklemeler {@link AdminAudited} ile audit log'a yazılır.</p>
+ */
 @Service
 @RequiredArgsConstructor
 @Log4j2

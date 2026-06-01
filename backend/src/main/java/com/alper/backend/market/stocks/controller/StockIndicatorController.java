@@ -17,6 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Belirli bir hisse senedi için teknik analiz göstergelerini (RSI, MACD, SMA/EMA, Bollinger,
+ * Stochastic, ATR, Ichimoku vb.) döner.
+ *
+ * <p>Hesaplama ve okuma {@link StockIndicatorQueryService} üzerinden yapılır.</p>
+ */
 @RestController
 @RequestMapping("/api/v1/stocks/{symbol}/indicators")
 @RequiredArgsConstructor

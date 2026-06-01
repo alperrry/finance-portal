@@ -17,6 +17,13 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+/**
+ * TEFAS'tan yatırım fonu fiyat ve allocation verilerini periyodik olarak çeken backfill servisi.
+ *
+ * <p>{@link AbstractBackfillService} iskeletini kullanır; oran sınırlamayı korumak için
+ * fonlar arası gecikme {@code fund.inter-fund-backfill-delay-ms} ile yapılandırılır
+ * (varsayılan 60 sn).</p>
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

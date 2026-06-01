@@ -31,6 +31,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * Admin panelinden haber kaynaklarını ve haber içeriklerini yönetmek için uç noktalar.
+ *
+ * <p>Kaynak CRUD, manuel haber çekme tetikleme, haber durumu/kategorisi güncelleme ve
+ * silme işlemlerini sağlar. Tüm uç noktalar {@code ADMIN} rolü gerektirir; tüm değişiklikler
+ * audit log'a yazılır.</p>
+ */
 @RestController
 @RequestMapping("/api/v1/admin/news")
 @RequiredArgsConstructor

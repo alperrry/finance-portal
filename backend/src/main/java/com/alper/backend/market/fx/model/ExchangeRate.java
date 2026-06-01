@@ -10,6 +10,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * TCMB'den alınan döviz kuru kaydını; para birimi çifti ve tarih bilgisiyle tutar.
+ */
 @Entity
 @Table(name = "exchange_rate", indexes = {
         @Index(name = "idx_er_code_date", columnList = "currency_code, rate_date")

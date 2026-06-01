@@ -10,6 +10,16 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Piyasa veri modülleri için ortak backfill iskeleti (template method).
+ *
+ * <p>Uygulama hazır olduğunda ({@code ApplicationReadyEvent}) bilinen tüm öğeleri
+ * dolaşır, eksik gün aralığını tespit eder ve alt sınıfın {@link #fetchAndSave}
+ * uygulamasını çağırır. Varsayılan geriye-sarkma {@value #BACKFILL_DAYS} gündür.
+ * Test/CI ortamı için {@code app.startup-tasks.enabled=false} ile devre dışı bırakılabilir.</p>
+ *
+ * @param <T> backfill edilen öğe (örn. Stock, Fund, Bond)
+ */
 @Log4j2
 public abstract class AbstractBackfillService<T> {
 

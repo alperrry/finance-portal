@@ -5,6 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+/**
+ * Yeni portföy oluşturma isteğini; adını ve para birimini içerir.
+ */
 @Schema(description = "Yeni portföy oluşturma isteği")
 public record CreatePortfolioRequest(
 

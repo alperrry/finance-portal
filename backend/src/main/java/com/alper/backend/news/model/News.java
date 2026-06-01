@@ -7,6 +7,9 @@ import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Harici kaynaklardan çekilen veya manuel eklenen haber makalesini temsil eder.
+ */
 @Entity
 @Getter
 @Setter

@@ -6,6 +6,9 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
+/**
+ * Kullanıcı profil verilerini API yanıtı olarak döndürür.
+ */
 @Getter
 @Builder
 public class UserResponse {

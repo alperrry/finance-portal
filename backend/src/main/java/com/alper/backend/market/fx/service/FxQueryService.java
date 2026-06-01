@@ -10,6 +10,12 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Döviz kurları için read-only sorgu servisi.
+ *
+ * <p>Veriyi {@link ExchangeRateRepository} üzerinden okur; en güncel kur ve tarih aralıklı
+ * geçmiş kur listelerini döner.</p>
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

@@ -19,14 +19,13 @@ import java.util.List;
 /**
  * Portföy değerleme servisi.
  *
- * <p>Görevler:
+ * <p>Görevler:</p>
  * <ul>
  *     <li>Her PortfolioItem için güncel fiyatı InstrumentPriceResolverService üzerinden çekmek</li>
  *     <li>Native currency'deki değerleri portföyün display currency'sine çevirmek</li>
  *     <li>Average Cost yöntemiyle P/L (mutlak ve yüzde) hesaplamak</li>
  *     <li>Sonuçları Redis'te 60 saniye cache'lemek</li>
  * </ul>
- * </p>
  */
 @Service
 @RequiredArgsConstructor

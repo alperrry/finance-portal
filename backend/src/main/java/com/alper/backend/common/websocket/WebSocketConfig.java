@@ -11,6 +11,13 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 
+/**
+ * STOMP üzerinden çalışan WebSocket mesajlaşma altyapısının yapılandırması.
+ *
+ * <p>{@code /ws} endpoint'ini SockJS desteğiyle yayınlar; in-memory broker
+ * ({@code /topic}, {@code /queue}, {@code /user}) kurar ve gelen bağlantıları
+ * {@code WebSocketAuthInterceptor} ile {@code AdminChannelInterceptor} üzerinden geçirir.</p>
+ */
 @Configuration
 @EnableWebSocketMessageBroker
 @RequiredArgsConstructor

@@ -29,6 +29,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * TCMB günlük döviz kuru XML uç noktasıyla konuşan servis.
+ *
+ * <p>Belirli tarih için kur dosyasını çeker, ayrıştırır ve {@link ExchangeRate} listesine
+ * dönüştürür. TCMB tarih formatı {@code MM/dd/yyyy} kullanılır.</p>
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

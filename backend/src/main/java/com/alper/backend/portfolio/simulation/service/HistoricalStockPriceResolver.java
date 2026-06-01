@@ -10,6 +10,13 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Belirtilen sembol için belirli bir tarihteki kapanış fiyatını çözer.
+ *
+ * <p>İstenen tarih ve 7 güne kadar geriye, işlem günü filtreli arama yapar; bulamazsa
+ * {@link HistoricalDataMissingException} fırlatır. Sonuçlar {@code stockHist} cache'inde
+ * tutulur.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class HistoricalStockPriceResolver {

@@ -9,6 +9,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * BondRateHistory varlığı için CRUD ve tarih aralığı sorguları.
+ */
 @Repository
 public interface BondRateHistoryRepository extends JpaRepository<BondRateHistory, Long> {
     List<BondRateHistory> findByBond_EvdsSeriesCodeAndRateDateBetweenOrderByRateDateAsc(

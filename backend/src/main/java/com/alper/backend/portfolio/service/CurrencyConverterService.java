@@ -13,19 +13,18 @@ import java.util.Optional;
 /**
  * Para birimleri arası dönüşüm servisi.
  *
- * <p>TRY referans para birimi olarak kullanılır:
+ * <p>TRY referans para birimi olarak kullanılır:</p>
  * <ul>
  *     <li>X → TRY: forex_buying ile çarp</li>
  *     <li>TRY → X: forex_buying'e böl</li>
  *     <li>X → Y: önce TRY'ye, sonra Y'ye (cross-rate)</li>
  * </ul>
- * </p>
  *
  * <p>Konservatif yaklaşım: forex_buying kullanılır (kullanıcı bozdurursa eline geçecek miktar).</p>
  *
- * <p>NOT: ExchangeRateRepository'de aşağıdaki metodun bulunması gerekir:
- * <pre>Optional<ExchangeRate> findFirstByCurrencyCodeOrderByRateDateDesc(String currencyCode);</pre>
- * </p>
+ * <p>NOT: {@code ExchangeRateRepository}'de
+ * {@code Optional<ExchangeRate> findFirstByCurrencyCodeOrderByRateDateDesc(String currencyCode)}
+ * metodunun bulunması gerekir.</p>
  */
 @Service
 @RequiredArgsConstructor

@@ -21,6 +21,17 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+/**
+ * Tüm REST controller'ları için merkezi istisna yakalayıcısı.
+ *
+ * <p>Domain istisnalarını ({@link BadRequestException}, {@link NotFoundException},
+ * {@link ConflictException}, {@link GoneException}, {@link ExternalApiException},
+ * {@link HistoricalDataMissingException}) ilgili {@code ErrorCode} ve HTTP durum
+ * koduyla {@link ApiErrorResponse} gövdesine dönüştürür. Spring/Jakarta validation
+ * hatalarını {@code INVALID_PARAMETER} koduna eşler; veri bütünlüğü ihlallerini
+ * {@code CONFLICT} olarak raporlar. Yakalanmamış {@link Exception} türleri için
+ * 500 üretir ve ayrıntıyı sunucu loguna yazar.</p>
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -28,30 +39,38 @@ public class GlobalExceptionHandler {
 
     // ===== Domain exception handler'ları (ErrorCode taşır) =====
 
+    /** {@link BadRequestException} → istisnadaki {@code ErrorCode} ile 400 yanıtı üretir. */
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ApiErrorResponse> handleBadRequest(
             BadRequestException ex, HttpServletRequest request) {
         return build(ex.getErrorCode(), ex.getMessage(), request.getRequestURI());
     }
 
+    /** {@link NotFoundException} → istisnadaki {@code ErrorCode} ile 404 yanıtı üretir. */
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleNotFound(
             NotFoundException ex, HttpServletRequest request) {
         return build(ex.getErrorCode(), ex.getMessage(), request.getRequestURI());
     }
 
+    /** {@link ConflictException} → istisnadaki {@code ErrorCode} ile 409 yanıtı üretir. */
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ApiErrorResponse> handleConflict(
             ConflictException ex, HttpServletRequest request) {
         return build(ex.getErrorCode(), ex.getMessage(), request.getRequestURI());
     }
 
+    /** {@link GoneException} → kaldırılmış/erişimi kapatılmış kaynak için 410 yanıtı üretir. */
     @ExceptionHandler(GoneException.class)
     public ResponseEntity<ApiErrorResponse> handleGone(
             GoneException ex, HttpServletRequest request) {
         return build(ex.getErrorCode(), ex.getMessage(), request.getRequestURI());
     }
 
+    /**
+     * Dış servis çağrılarında oluşan {@link ExternalApiException}'i error seviyesinde loglar
+     * ve istisnadaki {@code ErrorCode}'a karşılık gelen HTTP durumuyla yanıt üretir.
+     */
     @ExceptionHandler(ExternalApiException.class)
     public ResponseEntity<ApiErrorResponse> handleExternalApi(
             ExternalApiException ex, HttpServletRequest request) {
@@ -60,6 +79,10 @@ public class GlobalExceptionHandler {
         return build(ex.getErrorCode(), ex.getMessage(), request.getRequestURI());
     }
 
+    /**
+     * Simulation/backtest senaryolarında istenen tarih aralığında geçmiş veri bulunamadığında
+     * uygun HTTP durumu ve {@code ErrorCode} ile yanıt üretir.
+     */
     @ExceptionHandler(HistoricalDataMissingException.class)
     public ResponseEntity<ApiErrorResponse> handleHistoricalDataMissing(
             HistoricalDataMissingException ex, HttpServletRequest request) {
@@ -68,6 +91,10 @@ public class GlobalExceptionHandler {
 
     // ===== Spring/Jakarta validation exception'ları → INVALID_PARAMETER =====
 
+    /**
+     * {@code @Valid} ile işaretli istek gövdesi doğrulamayı geçemediğinde ilk hatalı alanı
+     * yakalayıp {@code INVALID_PARAMETER} yanıtı üretir.
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidation(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
@@ -79,12 +106,14 @@ public class GlobalExceptionHandler {
         return build(ErrorCode.INVALID_PARAMETER, message, request.getRequestURI());
     }
 
+    /** Programatik {@code jakarta.validation} ihlallerini {@code INVALID_PARAMETER} olarak raporlar. */
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiErrorResponse> handleConstraintViolation(
             ConstraintViolationException ex, HttpServletRequest request) {
         return build(ErrorCode.INVALID_PARAMETER, ex.getMessage(), request.getRequestURI());
     }
 
+    /** Path/query parametre tip dönüşümü başarısız olduğunda parametre adıyla 400 yanıtı üretir. */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiErrorResponse> handleTypeMismatch(
             MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
@@ -92,6 +121,7 @@ public class GlobalExceptionHandler {
         return build(ErrorCode.INVALID_PARAMETER, message, request.getRequestURI());
     }
 
+    /** Zorunlu request parametresi eksik olduğunda {@code REQUIRED_FIELD} ile 400 yanıtı üretir. */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ApiErrorResponse> handleMissingParam(
             MissingServletRequestParameterException ex, HttpServletRequest request) {
@@ -101,6 +131,10 @@ public class GlobalExceptionHandler {
 
     // ===== DB constraint violation → CONFLICT (2002) =====
 
+    /**
+     * Veritabanı bütünlük ihlallerini (unique/foreign key vs.) {@code CONFLICT} olarak 409 ile
+     * raporlar; ham hata mesajını istemciye sızdırmaz, sunucu logunda saklar.
+     */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiErrorResponse> handleDataIntegrity(
             DataIntegrityViolationException ex, HttpServletRequest request) {
@@ -113,6 +147,10 @@ public class GlobalExceptionHandler {
 
     // ===== Yakalanmamış istisnalar — ErrorCode yok, generic 500 =====
 
+    /**
+     * Diğer handler'larca yakalanmayan tüm {@link Exception} türleri için 500 üretir,
+     * stack trace'i sunucu logunda tutar ve istemciye generic bir mesaj döner.
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleUnhandled(
             Exception ex, HttpServletRequest request) {

@@ -9,6 +9,9 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * Yahoo Finance API teklif yanıtındaki tek bir hisse sonucunu temsil eder.
+ */
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class YahooQuoteResult {

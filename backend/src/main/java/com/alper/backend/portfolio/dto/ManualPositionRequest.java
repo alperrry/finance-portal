@@ -9,6 +9,9 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Elle girilen pozisyon oluşturma veya güncelleme isteğini taşır.
+ */
 public record ManualPositionRequest(
         @NotNull InstrumentType instrumentType,
         @NotNull PositionKind positionKind,

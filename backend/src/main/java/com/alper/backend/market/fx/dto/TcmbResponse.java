@@ -6,6 +6,9 @@ import lombok.Getter;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * TCMB döviz kuru XML beslemesinin tamamını temsil eder.
+ */
 @Getter
 @Builder
 public class TcmbResponse {

@@ -7,6 +7,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Fonun portföy dağılımını; varlık sınıfı ve yüzde ağırlığıyla tutar.
+ */
 @Entity
 @Table(name = "fund_allocation")
 @Getter

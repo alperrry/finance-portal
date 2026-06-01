@@ -11,6 +11,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Bir hisse senedinin günlük OHLCV fiyat geçmişini tutar.
+ */
 @Entity
 @Table(name = "stock_price_history", indexes = {
         @Index(name = "idx_sph_stock_date", columnList = "stock_id, trade_date")

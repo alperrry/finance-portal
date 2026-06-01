@@ -7,6 +7,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Ana sayfa piyasa özeti için tekil bir enstrüman anlık görüntüsünü temsil eder.
+ */
 @Getter
 @Builder
 public class LandingMarketItem {

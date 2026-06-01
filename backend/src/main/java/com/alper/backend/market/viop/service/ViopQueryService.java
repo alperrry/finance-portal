@@ -10,6 +10,11 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * VIOP kontrat fiyatları için read-only sorgu servisi.
+ *
+ * <p>Son fiyatları {@code viop} cache anahtarı altında bellekte tutar.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class ViopQueryService {

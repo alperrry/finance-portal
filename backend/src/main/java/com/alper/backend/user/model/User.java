@@ -9,6 +9,9 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/**
+ * Keycloak kimlik sağlayıcısından sağlanan kullanıcının yerel yansımasını temsil eder.
+ */
 @Entity
 @Table(name = "users")
 @Getter

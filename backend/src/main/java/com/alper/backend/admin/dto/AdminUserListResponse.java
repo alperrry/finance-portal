@@ -6,6 +6,9 @@ import lombok.Builder;
 import java.time.Instant;
 
 
+/**
+ * Admin panelinde kullanıcı listesini sayfalı olarak döndürür.
+ */
 @Builder
 public record AdminUserListResponse(
         Long id,

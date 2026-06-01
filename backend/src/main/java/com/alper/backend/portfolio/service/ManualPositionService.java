@@ -22,6 +22,12 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Manuel pozisyon CRUD ve kapama (close) iş mantığı.
+ *
+ * <p>Kullanıcının portföyüne pozisyon ekler, listeler/sayfalar, günceller, siler ve
+ * close akışında {@link PnlCalculatorRegistry} ile gerçekleşen P/L'yi hesaplar.</p>
+ */
 @Service
 @RequiredArgsConstructor
 @Log4j2

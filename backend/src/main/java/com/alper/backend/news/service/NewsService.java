@@ -23,6 +23,13 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Haber listeleme, detay ve admin tarafından tetiklenen toplama (fetch) iş mantığını yöneten
+ * ana servis.
+ *
+ * <p>RSS, Google News ve News API'den içerik çeker, AI ile kategorize eder, deduplicate
+ * eder ve {@value #NEWS_LIST_CACHE} cache'i üzerinden sayfalı sonuçlar döner.</p>
+ */
 @Service
 @Transactional
 public class NewsService {

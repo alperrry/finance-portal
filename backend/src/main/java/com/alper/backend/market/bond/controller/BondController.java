@@ -12,6 +12,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * Tahvil/bono enstrümanlarının listeleme, detay ve faiz oranı geçmişi uç noktaları.
+ *
+ * <p>Read-only sorgular {@code BondQueryService} üzerinden döner; veri kaynağı TCMB
+ * EVDS'tir (bkz. {@link com.alper.backend.market.bond.service.EvdsService}).</p>
+ */
 @RestController
 @RequestMapping("/api/v1/bonds")
 @RequiredArgsConstructor

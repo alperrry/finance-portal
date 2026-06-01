@@ -14,6 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * VIOP (Vadeli İşlem ve Opsiyon Piyasası) kontrat fiyat uç noktaları.
+ *
+ * <p>Read-only; en güncel kontrat fiyatlarını {@link ViopQueryService}'ten döner.</p>
+ */
 @RestController
 @RequestMapping("/api/v1/viop")
 @RequiredArgsConstructor

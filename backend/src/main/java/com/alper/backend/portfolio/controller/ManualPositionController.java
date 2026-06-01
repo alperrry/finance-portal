@@ -23,6 +23,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Portföy içindeki manuel pozisyonların (kullanıcı tarafından elle girilen alım/satım)
+ * CRUD uç noktaları.
+ *
+ * <p>What-if simülasyonları için {@link com.alper.backend.portfolio.simulation.service.SimulationService}
+ * çağrılarını da içerir. Tüm uç noktalar oturum açmış kullanıcıyı ve verilen
+ * {@code portfolioId}'nin bu kullanıcıya ait olduğunu doğrular.</p>
+ */
 @RestController
 @RequestMapping("/api/v1/portfolios/{portfolioId}/positions")
 @RequiredArgsConstructor

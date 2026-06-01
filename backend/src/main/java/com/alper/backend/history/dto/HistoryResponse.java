@@ -6,6 +6,9 @@ import lombok.Getter;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Bir varlığın fiyat geçmişi listesini döndürür.
+ */
 @Getter
 @Builder
 public class HistoryResponse {

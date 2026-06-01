@@ -8,6 +8,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.List;
 
+/**
+ * Spring MVC genel yapılandırması. {@link CurrentUserArgumentResolver}'ı kayıt ederek
+ * controller method'larında {@code @CurrentUser User} parametresinin JWT'den çözümlenmesini
+ * sağlar.
+ */
 @Configuration
 @RequiredArgsConstructor
 public class WebMvcConfig implements WebMvcConfigurer {

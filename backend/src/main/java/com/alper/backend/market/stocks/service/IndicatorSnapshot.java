@@ -6,6 +6,13 @@ import lombok.Getter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Belirli bir işlem günü için bir hissenin tüm teknik gösterge değerlerini bir arada tutan
+ * salt-okunur snapshot.
+ *
+ * <p>{@link StockIndicatorService}'in hesaplama sonucu döndürdüğü çıktıdır; doğrudan
+ * veritabanına persist edilmez.</p>
+ */
 @Getter
 @Builder
 public class IndicatorSnapshot {

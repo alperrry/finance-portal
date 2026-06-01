@@ -16,6 +16,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Kullanıcının grafik üzerine çizdiği objelerin (trend çizgisi, fibonacci, vb.) iş katmanı.
+ *
+ * <p>Enstrüman bazlı listeleme, ekleme, güncelleme (kısmi), silme ve toplu temizleme
+ * işlemlerini sağlar; tüm sorgular kullanıcının kendi çizimleriyle sınırlandırılır.</p>
+ */
 @Service
 @Log4j2
 @RequiredArgsConstructor

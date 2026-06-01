@@ -7,6 +7,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Portfolio varlığı için CRUD ve kullanıcıya özel sorgular.
+ */
 @Repository
 public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
 

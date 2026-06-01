@@ -5,6 +5,9 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Haber çekme zamanlayıcısının etkinlik, gecikme ve AI kategorizasyon sınır ayarlarını tutar.
+ */
 @Getter
 @Setter
 @Configuration

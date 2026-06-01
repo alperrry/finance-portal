@@ -31,6 +31,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Manuel pozisyonlar için what-if/lens simülasyonlarını yürüten servis.
+ *
+ * <p>Pozisyonu {@link ValuationContext}'e dönüştürür, kayıtlı tüm {@link LensType}'ları
+ * ({@link ValuationLensRegistry}) çalıştırarak farklı görüş açılarında (örn. USD,
+ * enflasyona göre düzeltilmiş vb.) {@link LensResult} listesi üretir. Sonuçlar
+ * pozisyon başına Redis'te ({@code sim:item:*}, {@code sim:manual:*}) cache'lenir;
+ * piyasa verisi güncellendiğinde {@code PortfolioValuationCacheInvalidator} tarafından
+ * temizlenir.</p>
+ */
 @Service
 @RequiredArgsConstructor
 @Log4j2

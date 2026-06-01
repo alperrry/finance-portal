@@ -7,10 +7,13 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 /**
- * VIOP P&L hesabı:
+ * VIOP P&amp;L hesabı.
+ *
+ * <pre>
  * multiplier = contractMultiplier != null ? contractMultiplier : 1
- * LONG:  (exitOrCurrentPrice - entryPrice) * quantity * multiplier
+ * LONG : (exitOrCurrentPrice - entryPrice) * quantity * multiplier
  * SHORT: (entryPrice - exitOrCurrentPrice) * quantity * multiplier
+ * </pre>
  */
 public class ViopPnlCalculator implements PnlCalculator {
 

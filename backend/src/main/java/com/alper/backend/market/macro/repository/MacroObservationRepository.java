@@ -10,6 +10,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * MacroObservation varlığı için CRUD ve tarih/seri bazlı gözlem sorguları.
+ */
 public interface MacroObservationRepository extends JpaRepository<MacroObservation, Long> {
     boolean existsBySeriesIdAndObservationDate(Long seriesId, LocalDate observationDate);
 

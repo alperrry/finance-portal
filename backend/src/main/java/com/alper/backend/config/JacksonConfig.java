@@ -5,6 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Uygulama genelinde paylaşılan {@link ObjectMapper} bean'ini sağlar.
+ *
+ * <p>Bilinmeyen JSON alanları için hata fırlatmayı kapatır
+ * ({@code FAIL_ON_UNKNOWN_PROPERTIES=false}); böylece dış servislerin yanıtlarındaki
+ * ek alanlar çağrıları kırmaz.</p>
+ */
 @Configuration
 public class JacksonConfig {
 

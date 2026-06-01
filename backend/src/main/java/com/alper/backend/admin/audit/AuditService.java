@@ -19,6 +19,14 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import java.time.Instant;
 
 
+/**
+ * Audit log girişlerini kalıcılaştırıp ilgili event'leri yayan merkezi servis.
+ *
+ * <p>{@code REQUIRES_NEW} yayılımıyla çağrıldığı iş işleminden bağımsız transaction
+ * açar — böylece ana iş rollback olsa bile audit kaydı saklanır. Hedef nesneler JSON
+ * snapshot olarak {@link ObjectMapper} ile serileştirilir; yazımdan sonra
+ * {@link AuditEventPublishedEvent} ile uygulama içi dinleyicilere haber verilir.</p>
+ */
 @Service
 @RequiredArgsConstructor
 @Log4j2

@@ -4,6 +4,13 @@ import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 
+/**
+ * Tüm domain istisnalarında kullanılan kanonik hata kodları ve karşılık gelen HTTP durumları.
+ *
+ * <p>Kodlar dökümana eşlenecek şekilde kategori bazlı numaralandırılmıştır
+ * (1xxx alan/format, 2xxx kaynak, 3xxx yetki, 4xxx dış kaynak, 5xxx iş kuralı).
+ * Yanıtlarda {@code ApiErrorResponse.code} olarak yer alır.</p>
+ */
 @Getter
 public enum ErrorCode {
 

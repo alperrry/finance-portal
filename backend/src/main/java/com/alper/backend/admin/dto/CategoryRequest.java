@@ -2,6 +2,9 @@ package com.alper.backend.admin.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
+/**
+ * Kategori oluşturma veya güncelleme isteğini taşır.
+ */
 public class CategoryRequest {
 
     @NotBlank(message = "Name is required")

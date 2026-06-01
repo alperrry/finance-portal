@@ -12,6 +12,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * Haber verisini API yanıtı olarak döndürür.
+ */
 public class NewsResponse implements Serializable {
 
     @Serial

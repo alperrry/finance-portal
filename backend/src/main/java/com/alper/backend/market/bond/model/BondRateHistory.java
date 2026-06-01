@@ -7,6 +7,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * EVDS üzerinden çekilen tahvil faiz oranı geçmişini tutar.
+ */
 @Entity
 @Table(
         name = "bond_rate_history",

@@ -6,6 +6,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
+/**
+ * Groq Cloud API entegrasyonu için yapılandırma: API key, model ve timeout.
+ *
+ * <p>{@code groq.api.*} property'lerini okur ve önceden authentication header'ı set edilmiş
+ * bir {@link RestClient} bean'ini ({@code groqRestClient}) yayınlar.</p>
+ */
 @Getter
 @Setter
 @Configuration

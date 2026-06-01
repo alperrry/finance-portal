@@ -18,6 +18,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * Mevcut bir manuel pozisyon için what-if simülasyonu döner.
+ *
+ * <p>Pozisyonun farklı senaryolarda (örn. USD lens) değer/PnL projeksiyonunu
+ * {@link com.alper.backend.portfolio.simulation.service.SimulationService}
+ * üzerinden hesaplar.</p>
+ */
 @RestController
 @RequestMapping("/api/v1/portfolio")
 @RequiredArgsConstructor

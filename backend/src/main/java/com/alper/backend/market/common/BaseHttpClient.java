@@ -7,6 +7,13 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
+/**
+ * Dış servis çağrıları için ortak {@link OkHttpClient} sarmalayıcı.
+ *
+ * <p>Yanıtı string olarak çıkarır, başarısız yanıtları veya I/O hatalarını
+ * {@link ExternalApiException}'a sarar; alt sınıf {@link #getServiceType()} ile
+ * çağıran servis türünü ({@link ServiceType}) belirtir.</p>
+ */
 @RequiredArgsConstructor
 public abstract class BaseHttpClient {
 

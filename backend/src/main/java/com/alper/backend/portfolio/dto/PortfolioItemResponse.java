@@ -9,6 +9,9 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Builder
+/**
+ * Portföyde yer alan tekil bir pozisyon kaydını döndürür.
+ */
 @Schema(description = "Portföydeki tek bir enstrüman pozisyonu (güncel değer ve P/L dahil)")
 public record PortfolioItemResponse(
 

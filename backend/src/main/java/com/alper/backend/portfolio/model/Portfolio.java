@@ -7,6 +7,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 
+/**
+ * Bir kullanıcıya ait portföyü; adını, para birimini ve oluşturma tarihini tutar.
+ */
 @Entity
 @Table(name = "portfolios")
 @Getter

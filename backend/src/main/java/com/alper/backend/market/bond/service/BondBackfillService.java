@@ -12,6 +12,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Tahvil/bono tarihsel veri ve faiz oranı geçmişi backfill servisi.
+ *
+ * <p>{@link AbstractBackfillService} iskeletini izler; EVDS API'den seri verileri çekip
+ * {@link BondRepository} ve {@link BondRateHistoryRepository}'e yazar.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class BondBackfillService extends AbstractBackfillService<Bond> {

@@ -36,6 +36,17 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Admin tarafında haber kaynakları (Source) ve haberlerin (News) yaşam döngüsünü yöneten servis.
+ *
+ * <p>Sorumluluklar:</p>
+ * <ul>
+ *   <li>Kaynak CRUD ve manuel haber çekme tetikleme</li>
+ *   <li>Haber durumu/kategorisi güncelleme, silme</li>
+ *   <li>Haber listesi cache'lerini ({@value #NEWS_LIST_CACHE}) invalidate etme</li>
+ *   <li>Yazma işlemleri için audit log üretimi ({@link AdminAudited})</li>
+ * </ul>
+ */
 @Service
 @RequiredArgsConstructor
 @Log4j2

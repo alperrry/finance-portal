@@ -23,6 +23,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Haber listeleme, kategori filtreleme ve detay uç noktaları.
+ *
+ * <p>Read-only; veriyi {@link NewsService} üzerinden döner. İçeriği
+ * {@code RssFeedService}, {@code GoogleNewsRssService} ve {@code NewsApiService}
+ * üzerinden çekilir ve {@code AiCategorizerService} ile kategorize edilir.</p>
+ */
 @RestController
 @RequestMapping("/api/news")
 public class NewsController {

@@ -7,6 +7,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 
+/**
+ * Admin panelinde tek bir kullanıcının ayrıntılı profilini döndürür.
+ */
 @Builder
 public record AdminUserDetailResponse(
         Long id,

@@ -15,6 +15,14 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.Set;
 
+/**
+ * Portföy değerleme cache'lerini ({@code portfolioValuation}, {@code sim:*}) ilgili piyasa
+ * veri güncellemelerinden sonra invalide eden dinleyici.
+ *
+ * <p>FX kurları veya piyasa verisi değiştiğinde transaction commit sonrası tetiklenir;
+ * Spring cache anotasyonları ile değerleme cache'ini, Redis pattern silme ile açık
+ * simülasyon cache'lerini temizler.</p>
+ */
 @Component
 @Log4j2
 public class PortfolioValuationCacheInvalidator {

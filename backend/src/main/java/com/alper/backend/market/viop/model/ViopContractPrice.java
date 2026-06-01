@@ -7,6 +7,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
+/**
+ * Borsa İstanbul VİOP'ta işlem gören vadeli sözleşmenin fiyat kaydını tutar.
+ */
 @Entity
 @Table(name = "viop_contract_price")
 @Getter

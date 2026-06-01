@@ -6,6 +6,9 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Ana sayfa piyasa özetindeki tüm enstrümanların anlık görüntüsünü döndürür.
+ */
 @Getter
 @Builder
 public class LandingMarketSnapshot {

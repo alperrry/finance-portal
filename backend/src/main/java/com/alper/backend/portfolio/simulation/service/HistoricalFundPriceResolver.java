@@ -10,6 +10,13 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Belirtilen fonun belirli bir tarihteki (varsa) son işlem fiyatını çözer.
+ *
+ * <p>Önce istenen tarih, sonra 7 güne kadar geriye sarkar ve sadece işlem günlerinde
+ * ({@link TurkishHolidayUtil}) arar. Bulamazsa {@link HistoricalDataMissingException}
+ * fırlatır. Sonuçlar {@code fundHist} cache'inde tutulur.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class HistoricalFundPriceResolver {

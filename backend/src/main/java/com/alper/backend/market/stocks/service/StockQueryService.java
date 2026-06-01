@@ -12,6 +12,12 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * Hisse senedi okuma servisi: liste, detay, fiyat geçmişi ve snapshot.
+ *
+ * <p>Read-only; {@link StockPriceHistoryRepository} ve ilgili snapshot/stock
+ * repository'lerini kullanır.</p>
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

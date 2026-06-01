@@ -9,6 +9,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * ExchangeRate varlığı için CRUD ve para birimi/tarih bazlı sorgular.
+ */
 @Repository
 public interface ExchangeRateRepository extends JpaRepository<ExchangeRate, Long> {
     List<ExchangeRate> findByCurrencyCodeAndRateDateBetweenOrderByRateDateAsc(

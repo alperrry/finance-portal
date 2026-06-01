@@ -9,6 +9,9 @@ import lombok.Setter;
 
 import java.util.List;
 
+/**
+ * TEFAS API'sinden alınan ham fon verisini taşır.
+ */
 @Getter
 @Setter
 @NoArgsConstructor

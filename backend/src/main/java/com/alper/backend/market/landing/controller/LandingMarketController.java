@@ -9,6 +9,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Ana sayfa için piyasa snapshot uç noktası: öne çıkan kurlar, endeksler ve hisseler.
+ *
+ * <p>Tek seferde sayfanın ihtiyaç duyduğu özet veriyi {@link LandingMarketSnapshotService}
+ * üzerinden toplayıp döner.</p>
+ */
 @RestController
 @RequestMapping("/api/v1/landing/market-snapshot")
 @RequiredArgsConstructor

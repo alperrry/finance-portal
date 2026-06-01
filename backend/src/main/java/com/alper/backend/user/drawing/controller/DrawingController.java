@@ -28,7 +28,7 @@ public class DrawingController {
 
     /**
      * Kullanıcının belirli bir enstrümandaki çizimlerini listeler.
-     * GET /api/v1/drawings?instrumentType=STOCK&instrumentCode=AKBNK.IS
+     * <p>{@code GET /api/v1/drawings?instrumentType=STOCK&amp;instrumentCode=AKBNK.IS}</p>
      */
     @GetMapping
     public ResponseEntity<ApiResponse<List<DrawingResponse>>> list(
@@ -86,7 +86,7 @@ public class DrawingController {
 
     /**
      * Belirli bir enstrümandaki tüm çizimleri siler.
-     * DELETE /api/v1/drawings?instrumentType=STOCK&instrumentCode=AKBNK.IS
+     * <p>{@code DELETE /api/v1/drawings?instrumentType=STOCK&amp;instrumentCode=AKBNK.IS}</p>
      */
     @DeleteMapping
     public ResponseEntity<ApiResponse<Map<String, Object>>> clearAll(

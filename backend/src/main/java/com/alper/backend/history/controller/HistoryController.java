@@ -12,6 +12,12 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Enstrümanların (hisse, fon, kur, viop) zaman serisi/tarihsel veri uç noktaları.
+ *
+ * <p>Grafiklerin ve analiz ekranlarının ihtiyaç duyduğu OHLC ve kapanış serilerini
+ * {@link HistoryQueryService} üzerinden döner.</p>
+ */
 @RestController
 @RequestMapping("/api/v1/history")
 @RequiredArgsConstructor
