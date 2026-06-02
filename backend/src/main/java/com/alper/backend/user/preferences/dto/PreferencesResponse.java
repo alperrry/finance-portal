@@ -5,7 +5,5 @@ package com.alper.backend.user.preferences.dto;
  */
 public record PreferencesResponse(
         String theme,           // "light" | "dark" | "system"
-        String locale,          // "tr" | "en"
-        boolean densityCompact,
-        boolean reduceMotion
+        String locale           // "tr" | "en"
 ) {}

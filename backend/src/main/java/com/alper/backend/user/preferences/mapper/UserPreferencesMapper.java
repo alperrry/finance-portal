@@ -15,9 +15,7 @@ public class UserPreferencesMapper {
     public PreferencesResponse toResponse(UserPreferences prefs) {
         return new PreferencesResponse(
                 prefs.getTheme().name().toLowerCase(),
-                prefs.getLocale().name().toLowerCase(),
-                prefs.getDensityCompact(),
-                prefs.getReduceMotion()
+                prefs.getLocale().name().toLowerCase()
         );
     }
 
@@ -26,9 +24,7 @@ public class UserPreferencesMapper {
     public PreferencesPatch toPatch(UpdatePreferencesRequest request) {
         return new PreferencesPatch(
                 ThemePreference.valueOf(request.theme().toUpperCase()),
-                LocalePreference.valueOf(request.locale().toUpperCase()),
-                request.densityCompact(),
-                request.reduceMotion()
+                LocalePreference.valueOf(request.locale().toUpperCase())
         );
     }
 }

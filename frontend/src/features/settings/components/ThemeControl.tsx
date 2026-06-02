@@ -4,25 +4,15 @@ import type { ThemePreference } from "../../../app/providers/UiPreferencesProvid
 
 type Props = {
     value: ThemePreference;
-    resolvedTheme: "light" | "dark";
     onChange: (next: ThemePreference) => void;
 };
 
-export function ThemeControl({ value, resolvedTheme, onChange }: Props) {
+export function ThemeControl({ value, onChange }: Props) {
     const { t } = useTranslation();
 
     const options: Array<{ id: ThemePreference; label: string; hint: string }> = [
         { id: "light", label: t("preferences.theme.light.label"), hint: t("preferences.theme.light.hint") },
         { id: "dark", label: t("preferences.theme.dark.label"), hint: t("preferences.theme.dark.hint") },
-        {
-            id: "system",
-            label: t("preferences.theme.system.label"),
-            hint: t("preferences.theme.system.hint", {
-                current: resolvedTheme === "dark"
-                    ? t("preferences.theme.dark.label")
-                    : t("preferences.theme.light.label"),
-            }),
-        },
     ];
 
     return (

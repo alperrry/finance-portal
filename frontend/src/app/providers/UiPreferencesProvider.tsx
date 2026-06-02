@@ -21,40 +21,27 @@ import { UiPreferencesContext } from "./UiPreferencesContext";
 export type ThemePreference = ThemeValue;
 export type LocalePreference = LocaleValue;
 
-export type DisplayPreferences = {
-    densityMode: boolean;   // backend'de densityCompact olarak gider
-    reduceMotion: boolean;
-};
-
 export type UiPreferencesContextType = {
     theme: ThemePreference;
     locale: LocalePreference;
-    display: DisplayPreferences;
     resolvedTheme: "light" | "dark";
     setTheme: (theme: ThemePreference) => void;
     setLocale: (locale: LocalePreference) => void;
-    setDisplay: (display: DisplayPreferences) => void;
     resetPreferences: () => void;
     isSyncing: boolean;
 };
 
 const STORAGE_THEME = "fp-theme";
 const STORAGE_LOCALE = "fp-locale";
-const STORAGE_DISPLAY = "fp-display";
 
 export function clearUiPreferencesStorage() {
     if (typeof window === "undefined") return;
     window.localStorage.removeItem(STORAGE_THEME);
     window.localStorage.removeItem(STORAGE_LOCALE);
-    window.localStorage.removeItem(STORAGE_DISPLAY);
 }
 
 const DEFAULT_THEME: ThemePreference = "system";
 const DEFAULT_LOCALE: LocalePreference = "tr";
-const DEFAULT_DISPLAY: DisplayPreferences = {
-    densityMode: false,
-    reduceMotion: false,
-};
 
 const SYNC_DEBOUNCE_MS = 600;
 
@@ -76,53 +63,29 @@ function readStoredLocale(): LocalePreference {
     return DEFAULT_LOCALE;
 }
 
-function readStoredJson<T>(key: string, fallback: T): T {
-    if (!canUseStorage()) return fallback;
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return fallback;
-    try {
-        return { ...fallback, ...(JSON.parse(raw) as Partial<T>) };
-    } catch {
-        return fallback;
-    }
-}
 
 function resolveTheme(theme: ThemePreference, prefersDark: boolean) {
     if (theme === "system") return prefersDark ? "dark" : "light";
     return theme;
 }
 
-// Backend payload <-> frontend state dönüşümleri (alan adı farkı: densityCompact <-> densityMode)
 function payloadToState(payload: PreferencesPayload) {
     return {
         theme: payload.theme,
         locale: payload.locale,
-        display: {
-            densityMode: payload.densityCompact,
-            reduceMotion: payload.reduceMotion,
-        } satisfies DisplayPreferences,
     };
 }
 
 function stateToPayload(
     theme: ThemePreference,
     locale: LocalePreference,
-    display: DisplayPreferences,
 ): PreferencesPayload {
-    return {
-        theme,
-        locale,
-        densityCompact: display.densityMode,
-        reduceMotion: display.reduceMotion,
-    };
+    return { theme, locale };
 }
 
 export function UiPreferencesProvider({ children }: { children: ReactNode }) {
     const [theme, setTheme] = useState<ThemePreference>(() => readStoredTheme());
     const [locale, setLocale] = useState<LocalePreference>(() => readStoredLocale());
-    const [display, setDisplay] = useState<DisplayPreferences>(() =>
-        readStoredJson<DisplayPreferences>(STORAGE_DISPLAY, DEFAULT_DISPLAY),
-    );
     const [prefersDark, setPrefersDark] = useState(() => {
         if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
         return window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -155,21 +118,14 @@ export function UiPreferencesProvider({ children }: { children: ReactNode }) {
         i18n.changeLanguage(locale);
     }, [locale]);
 
-    useEffect(() => {
-        if (!canUseStorage()) return;
-        window.localStorage.setItem(STORAGE_DISPLAY, JSON.stringify(display));
-    }, [display]);
-
     // DOM class / data-attribute güncelleme
     useEffect(() => {
         const root = document.documentElement;
         root.lang = locale;
         root.classList.toggle("fp-theme-dark", resolvedTheme === "dark");
         root.classList.toggle("fp-theme-light", resolvedTheme === "light");
-        root.classList.toggle("fp-density-compact", display.densityMode);
-        root.classList.toggle("fp-reduce-motion", display.reduceMotion);
         root.dataset.fpTheme = resolvedTheme;
-    }, [display.densityMode, display.reduceMotion, locale, resolvedTheme]);
+    }, [locale, resolvedTheme]);
 
     // --- Backend senkronizasyonu ---
 
@@ -193,7 +149,6 @@ export function UiPreferencesProvider({ children }: { children: ReactNode }) {
                     const next = payloadToState(payload);
                     setTheme(next.theme);
                     setLocale(next.locale);
-                    setDisplay(next.display);
                     hydratedRef.current = true;
                 })
                 .catch(() => {
@@ -234,7 +189,7 @@ export function UiPreferencesProvider({ children }: { children: ReactNode }) {
 
         syncTimerRef.current = window.setTimeout(() => {
             setIsSyncing(true);
-            updateMyPreferences(stateToPayload(theme, locale, display))
+            updateMyPreferences(stateToPayload(theme, locale))
                 .catch(() => {
                     // apiFetch toast atar; localStorage zaten güncel, kayıp yok.
                 })
@@ -246,29 +201,24 @@ export function UiPreferencesProvider({ children }: { children: ReactNode }) {
                 window.clearTimeout(syncTimerRef.current);
             }
         };
-    }, [theme, locale, display]);
+    }, [theme, locale]);
 
     const resetPreferences = useCallback(() => {
         setTheme(DEFAULT_THEME);
         setLocale(DEFAULT_LOCALE);
-        setDisplay(DEFAULT_DISPLAY);
-        // Setter useEffect'leri localStorage'ı default'a yazacak.
-        // Hydrated isek debounce'lu PUT da backend'i sıfırlayacak.
     }, []);
 
     const value = useMemo<UiPreferencesContextType>(
         () => ({
             theme,
             locale,
-            display,
             resolvedTheme,
             setTheme,
             setLocale,
-            setDisplay,
             resetPreferences,
             isSyncing,
         }),
-        [theme, locale, display, resolvedTheme, resetPreferences, isSyncing],
+        [theme, locale, resolvedTheme, resetPreferences, isSyncing],
     );
 
     return <UiPreferencesContext.Provider value={value}>{children}</UiPreferencesContext.Provider>;

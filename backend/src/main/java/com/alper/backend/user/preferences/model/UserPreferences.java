@@ -41,14 +41,6 @@ public class UserPreferences {
     @Column(name = "locale", nullable = false, length = 8)
     private LocalePreference locale;
 
-    @Setter
-    @Column(name = "density_compact", nullable = false)
-    private Boolean densityCompact;
-
-    @Setter
-    @Column(name = "reduce_motion", nullable = false)
-    private Boolean reduceMotion;
-
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -73,8 +65,6 @@ public class UserPreferences {
                 .user(user)
                 .theme(ThemePreference.SYSTEM)
                 .locale(LocalePreference.TR)
-                .densityCompact(false)
-                .reduceMotion(false)
                 .build();
     }
 }

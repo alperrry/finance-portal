@@ -8,7 +8,5 @@ import com.alper.backend.user.preferences.model.ThemePreference;
  */
 public record PreferencesPatch(
         ThemePreference theme,
-        LocalePreference locale,
-        boolean densityCompact,
-        boolean reduceMotion
+        LocalePreference locale
 ) {}

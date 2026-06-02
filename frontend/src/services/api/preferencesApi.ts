@@ -16,8 +16,6 @@ export type LocaleValue = "tr" | "en";
 export type PreferencesPayload = {
     theme: ThemeValue;
     locale: LocaleValue;
-    densityCompact: boolean;
-    reduceMotion: boolean;
 };
 
 // ApiResponse<T> zarfı muhtemelen { data: T, ... } şeklinde.

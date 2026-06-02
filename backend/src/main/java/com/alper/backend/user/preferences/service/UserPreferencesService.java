@@ -35,8 +35,6 @@ public class UserPreferencesService {
 
         prefs.setTheme(patch.theme());
         prefs.setLocale(patch.locale());
-        prefs.setDensityCompact(patch.densityCompact());
-        prefs.setReduceMotion(patch.reduceMotion());
 
         return preferencesRepository.save(prefs);
     }

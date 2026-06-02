@@ -14,11 +14,5 @@ public record UpdatePreferencesRequest(
 
         @NotNull(message = "locale zorunludur")
         @Pattern(regexp = "tr|en", message = "locale: tr veya en olmalı")
-        String locale,
-
-        @NotNull(message = "densityCompact zorunludur")
-        Boolean densityCompact,
-
-        @NotNull(message = "reduceMotion zorunludur")
-        Boolean reduceMotion
+        String locale
 ) {}
