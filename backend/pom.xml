@@ -297,6 +297,30 @@
                     </excludes>
                 </configuration>
             </plugin>
+
+            <!--
+                Javadoc derlemesi: doclint kategorilerinden "missing" devre dışı.
+                Eksik @param/@return ve sınıf-üstü açıklama uyarıları derleyici
+                hatasına yol açmaz; HTML ve referans hataları yine yakalanır.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.10.1</version>
+                <configuration>
+                    <doclint>all,-missing</doclint>
+                    <failOnError>true</failOnError>
+                    <failOnWarnings>false</failOnWarnings>
+                    <quiet>true</quiet>
+                    <encoding>UTF-8</encoding>
+                    <docencoding>UTF-8</docencoding>
+                    <charset>UTF-8</charset>
+                    <locale>tr_TR</locale>
+                    <source>21</source>
+                    <doctitle>Finance Portal Backend API</doctitle>
+                    <windowtitle>Finance Portal Backend API</windowtitle>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
