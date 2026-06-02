@@ -17,7 +17,7 @@ import java.util.List;
  * {@code AdminCategoryController} kullanılır.</p>
  */
 @RestController
-@RequestMapping("/api/categories")
+@RequestMapping("/api/v1/categories")
 public class CategoryController {
 
     private final CategoryService categoryService;

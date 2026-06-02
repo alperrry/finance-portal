@@ -149,7 +149,7 @@ export async function fetchNews(query: NewsQuery): Promise<PageResponse<NewsItem
         }
     });
 
-    const response = await apiFetch(`/api/news?${params.toString()}`, {
+    const response = await apiFetch(`/api/v1/news?${params.toString()}`, {
         errorMessage: "Haberler yuklenemedi.",
     });
     const raw = (await response.json()) as RawPageResponse<RawNewsItem>;
@@ -172,7 +172,7 @@ export async function fetchNews(query: NewsQuery): Promise<PageResponse<NewsItem
 }
 
 export async function fetchNewsById(id: number): Promise<NewsItem> {
-    const response = await apiFetch(`/api/news/${id}`, {
+    const response = await apiFetch(`/api/v1/news/${id}`, {
         errorMessage: "Haber detayi yuklenemedi.",
     });
     const raw = (await response.json()) as RawNewsItem;
@@ -183,7 +183,7 @@ export async function fetchCategories(activeOnly = true): Promise<NewsCategory[]
     const params = new URLSearchParams();
     params.set('activeOnly', String(activeOnly));
 
-    const response = await apiFetch(`/api/categories?${params.toString()}`, {
+    const response = await apiFetch(`/api/v1/categories?${params.toString()}`, {
         errorMessage: "Kategoriler yuklenemedi.",
     });
     return response.json() as Promise<NewsCategory[]>;
@@ -218,7 +218,7 @@ export async function fetchGoogleNewsRss(
     params.set("ceid", options?.ceid ?? "TR:tr");
     params.set("limit", String(options?.limit ?? 8));
 
-    const response = await apiFetch(`/api/news/google-rss/search?${params.toString()}`, {
+    const response = await apiFetch(`/api/v1/news/google-rss/search?${params.toString()}`, {
         errorMessage: "Enstrumana ozel haberler yuklenemedi.",
     });
 

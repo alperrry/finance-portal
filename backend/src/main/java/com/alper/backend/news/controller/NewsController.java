@@ -31,7 +31,7 @@ import java.util.Set;
  * üzerinden çekilir ve {@code AiCategorizerService} ile kategorize edilir.</p>
  */
 @RestController
-@RequestMapping("/api/news")
+@RequestMapping("/api/v1/news")
 public class NewsController {
 
     private final NewsService newsService;
