@@ -10,6 +10,12 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Tahvil/bono faiz verilerini EVDS'den periyodik olarak çeken zamanlanmış iş.
+ *
+ * <p>Cron ifadesi {@code evds.cron} özelliğinden okunur. Hatalar loglanır,
+ * iş bir sonraki tetiklemede yeniden dener.</p>
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -19,6 +25,7 @@ public class BondJob {
 
     private final EvdsService evdsService;
 
+    /** Dünden bugüne olan faiz verilerini çekip kaydeder. */
     @Scheduled(cron = "${evds.cron}")
     public void fetchBondRates() {
         log.info("BondJob başladı.");

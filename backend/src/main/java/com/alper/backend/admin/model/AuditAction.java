@@ -1,5 +1,11 @@
 package com.alper.backend.admin.model;
 
+/**
+ * Admin panelinde denetim (audit) kaydına konu olan aksiyon türleri.
+ *
+ * <p>Kullanıcı yönetimi, haber/kategori yönetimi, zamanlanmış işler ve
+ * piyasa verisi işlemleri gibi tüm kritik admin aksiyonlarını kapsar.</p>
+ */
 public enum AuditAction {
     USER_ROLE_CHANGED,
     USER_STATUS_CHANGED,

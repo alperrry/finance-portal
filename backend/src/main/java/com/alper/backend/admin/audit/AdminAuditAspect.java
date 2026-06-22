@@ -17,6 +17,14 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Method;
 
 
+/**
+ * {@link AdminAudited} ile işaretlenmiş admin servis metotlarını sararak denetim (audit)
+ * kaydı üreten AOP aspect'i.
+ *
+ * <p>Metot çalışmadan önce ve sonra hedefin durumunu (snapshot) yakalar, aktörü
+ * SecurityContext'teki JWT üzerinden çözer ve kaydı {@link AuditService}'e iletir.
+ * Audit yazımı sırasında oluşan hatalar asıl iş mantığını engellemez.</p>
+ */
 @Aspect
 @Component
 @RequiredArgsConstructor
@@ -26,6 +34,14 @@ public class AdminAuditAspect {
     private final AuditService auditService;
     private final UserRepository userRepository;
 
+    /**
+     * İşaretli metodu çalıştırır; öncesi/sonrası durumu yakalayıp audit kaydı oluşturur.
+     *
+     * @param joinPoint    sarılan metodun join point'i
+     * @param adminAudited metottaki {@link AdminAudited} anotasyonu (aksiyon ve hedef tipi)
+     * @return asıl metodun dönüş değeri
+     * @throws Throwable asıl metodun fırlattığı hata olduğu gibi iletilir
+     */
     @Around("@annotation(adminAudited)")
     public Object aroundAuditedMethod(
             ProceedingJoinPoint joinPoint,

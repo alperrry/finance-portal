@@ -5,6 +5,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Controller metot parametresine oturum açmış kullanıcıyı enjekte eden anotasyon.
+ *
+ * <p>{@link CurrentUserArgumentResolver} tarafından çözülür; kullanıcı,
+ * {@link UserProvisioningFilter}'ın isteğe eklediği attribute'tan okunur.</p>
+ */
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface CurrentUser {

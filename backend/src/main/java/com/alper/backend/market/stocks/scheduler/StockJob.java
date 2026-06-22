@@ -11,6 +11,12 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/**
+ * Hisse senedi günlük fiyat geçmişini Yahoo Finance'tan çeken zamanlanmış iş.
+ *
+ * <p>Uygulama açılışında da bir kez tetiklenir ({@code app.startup-tasks.enabled}
+ * ile kapatılabilir); her çalışmada {@code stocks} önbelleği temizlenir.</p>
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -21,6 +27,7 @@ public class StockJob {
     @Value("${app.startup-tasks.enabled:true}")
     private boolean startupTasksEnabled = true;
 
+    /** Günlük fiyat geçmişini çekip kaydeder ve hisse önbelleğini boşaltır. */
     @CacheEvict(value = "stocks", allEntries = true)
     @EventListener(ApplicationReadyEvent.class)
     @Scheduled(cron = "${market.daily.stocks.cron}")

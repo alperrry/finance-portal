@@ -11,9 +11,23 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 
+/**
+ * TEFAS API yanıtlarını fon fiyat ({@link FundPrice}) ve portföy dağılımı
+ * ({@link FundAllocation}) entity'lerine dönüştüren mapper.
+ *
+ * <p>TEFAS tarihleri hem epoch millis hem ISO format gelebildiğinden iki biçim de
+ * desteklenir (İstanbul saat dilimi esas alınır).</p>
+ */
 @Component
 public class TefasMapper {
 
+    /**
+     * TEFAS fiyat kaydını entity'ye dönüştürür.
+     *
+     * @param dto  TEFAS geçmiş fiyat kaydı
+     * @param fund fiyatın bağlanacağı fon
+     * @return oluşturulan fiyat entity'si
+     */
     public FundPrice toFundPriceEntity(TefasHistoryInfo dto, Fund fund) {
         return FundPrice.builder()
                 .fund(fund)
@@ -25,6 +39,13 @@ public class TefasMapper {
                 .build();
     }
 
+    /**
+     * TEFAS portföy dağılım kaydını entity'ye dönüştürür.
+     *
+     * @param dto  TEFAS dağılım kaydı (varlık sınıfı yüzdeleri)
+     * @param fund dağılımın bağlanacağı fon
+     * @return oluşturulan dağılım entity'si
+     */
     public FundAllocation toFundAllocationEntity(TefasHistoryAllocation dto, Fund fund) {
         return FundAllocation.builder()
                 .fund(fund)

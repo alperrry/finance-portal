@@ -5,6 +5,14 @@ import com.alper.backend.common.exception.ServiceType;
 import com.alper.backend.market.common.BaseHttpClient;
 import okhttp3.OkHttpClient;
 
+/**
+ * Eski TEFAS HTTP istemcisi — devre dışı.
+ *
+ * <p>Yeni TEFAS veri akışı {@code TefasService} içinde gerçekleştirilir;
+ * bu sınıfın {@link #fetch} metodu çağrılırsa hata fırlatır.</p>
+ *
+ * @deprecated yerine {@code TefasService} kullanın
+ */
 @Deprecated
 public class TefasHttpClient extends BaseHttpClient {
 

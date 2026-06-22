@@ -8,9 +8,20 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
+/**
+ * Yahoo Finance quote yanıtlarını fiyat snapshot ({@link StockPriceSnapshot}) ve
+ * günlük geçmiş ({@link StockPriceHistory}) entity'lerine dönüştüren mapper.
+ */
 @Component
 public class YahooMapper {
 
+    /**
+     * Yahoo quote sonucunu anlık fiyat snapshot'ına dönüştürür.
+     *
+     * @param dto   Yahoo quote sonucu
+     * @param stock fiyatın bağlanacağı hisse
+     * @return oluşturulan snapshot entity'si
+     */
     public StockPriceSnapshot toSnapshotEntity(YahooQuoteResult dto, Stock stock) {
         return StockPriceSnapshot.builder()
                 .stock(stock)
@@ -28,6 +39,12 @@ public class YahooMapper {
                 .build();
     }
 
+    /**
+     * Anlık snapshot'ı günlük OHLCV geçmiş kaydına dönüştürür.
+     *
+     * @param snapshot kaynak fiyat snapshot'ı
+     * @return oluşturulan geçmiş entity'si
+     */
     public StockPriceHistory toHistoryEntity(StockPriceSnapshot snapshot) {
         return StockPriceHistory.builder()
                 .stock(snapshot.getStock())

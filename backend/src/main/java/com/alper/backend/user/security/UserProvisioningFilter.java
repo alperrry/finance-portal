@@ -17,11 +17,21 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Doğrulanmış JWT'deki kullanıcıyı yerel veritabanına senkronlayan (provisioning)
+ * istek filtresi.
+ *
+ * <p>Keycloak'tan gelen her kimlikli istekte kullanıcı kaydı oluşturulur/güncellenir
+ * ve {@link #CURRENT_USER_ATTRIBUTE} adıyla isteğe eklenir; controller'lar bu değere
+ * {@link CurrentUser} anotasyonuyla erişir. Provisioning hatası isteği engellemez —
+ * mevcut kayıt varsa onunla devam edilir.</p>
+ */
 @Component
 @Log4j2
 @RequiredArgsConstructor
 public class UserProvisioningFilter extends OncePerRequestFilter {
 
+    /** Oturum açmış kullanıcının istek üzerinde saklandığı attribute adı. */
     public static final String CURRENT_USER_ATTRIBUTE = "currentUser";
 
     private final UserProvisioningService userProvisioningService;

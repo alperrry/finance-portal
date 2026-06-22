@@ -7,6 +7,12 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/**
+ * Günlük döviz kurlarını TCMB'den çeken zamanlanmış iş.
+ *
+ * <p>Cron ifadesi {@code tcmb.cron} özelliğinden okunur; her çalışmada
+ * {@code fx} önbelleği temizlenir.</p>
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -14,6 +20,7 @@ public class FxJob {
 
     private final TcmbService tcmbService;
 
+    /** Günlük kurları çekip kaydeder ve kur önbelleğini boşaltır. */
     // TCMB her iş günü 15:30'da günceller
     @CacheEvict(value = "fx", allEntries = true)
     @Scheduled(cron = "${tcmb.cron}")

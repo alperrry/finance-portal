@@ -35,6 +35,9 @@ public record PortfolioResponse(
         @Schema(description = "Toplam kâr/zarar yüzdesi", example = "7.84")
         BigDecimal totalProfitLossPct,
 
+        @Schema(description = "Açık manuel pozisyon sayısı (özet listede null)", example = "3")
+        Integer openPositionCount,
+
         @Schema(description = "Portföydeki pozisyonlar (özet listede boş)")
         List<PortfolioItemResponse> items,
 

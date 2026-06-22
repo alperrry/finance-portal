@@ -15,6 +15,12 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Piyasa verisi güncellemelerini WebSocket üzerinden istemcilere yayınlar.
+ *
+ * <p>{@link MarketDataUpdatedEvent} olaylarını transaction commit sonrası dinler;
+ * her modülü kendi event tipine ve konusuna (topic) eşleyerek gönderir.</p>
+ */
 @Component
 @RequiredArgsConstructor
 @Log4j2
@@ -22,6 +28,12 @@ public class MarketDataBroadcaster {
 
     private final SimpMessagingTemplate messagingTemplate;
 
+    /**
+     * Güncelleme olayını ilgili modülün WebSocket konusuna yayınlar;
+     * güncellenen kayıt yoksa yayın atlanır.
+     *
+     * @param event piyasa verisi güncelleme olayı
+     */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onMarketDataUpdated(MarketDataUpdatedEvent event) {
         if (event.updatedCount() <= 0) {

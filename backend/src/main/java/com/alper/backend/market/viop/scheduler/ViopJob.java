@@ -9,6 +9,13 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/**
+ * VİOP kontrat fiyatlarını web scraping ile çeken zamanlanmış iş.
+ *
+ * <p>Uygulama açılışında eksik veriler bir kez tamamlanır
+ * ({@code app.startup-tasks.enabled} ile kapatılabilir); sonrasında
+ * {@code viop.cron} ifadesiyle periyodik çalışır.</p>
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -18,6 +25,7 @@ public class ViopJob {
     @Value("${app.startup-tasks.enabled:true}")
     private boolean startupTasksEnabled;
 
+    /** Uygulama hazır olduğunda VİOP verilerini bir kez çeker. */
     @EventListener(ApplicationReadyEvent.class)
     public void fetchMissingOnStartup() {
         if (!startupTasksEnabled) {
@@ -28,6 +36,7 @@ public class ViopJob {
         fetchDaily();
     }
 
+    /** Günlük VİOP kontrat fiyatlarını çekip kaydeder. */
     @Scheduled(cron = "${viop.cron}")
     public void fetchDaily() {
         log.info("VİOP günlük job başladı.");

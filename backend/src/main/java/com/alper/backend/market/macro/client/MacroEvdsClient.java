@@ -7,6 +7,12 @@ import okhttp3.Request;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+/**
+ * Makro göstergeleri (enflasyon, mevduat faizi) TCMB EVDS API'sinden çeken HTTP istemcisi.
+ *
+ * <p>API anahtarı opsiyoneldir; tanımlıysa isteğe başlık olarak eklenir. Hata yönetimi
+ * {@link BaseHttpClient} üzerinden ortaktır.</p>
+ */
 @Component
 public class MacroEvdsClient extends BaseHttpClient {
     @Value("${evds.base-url}")
@@ -24,6 +30,14 @@ public class MacroEvdsClient extends BaseHttpClient {
         return ServiceType.EVDS;
     }
 
+    /**
+     * Belirtilen EVDS serisini tarih aralığıyla JSON formatında çeker.
+     *
+     * @param seriesCode EVDS seri kodu
+     * @param startDate  başlangıç tarihi ({@code dd-MM-yyyy})
+     * @param endDate    bitiş tarihi ({@code dd-MM-yyyy})
+     * @return API'nin ham JSON yanıtı
+     */
     public String fetchSeries(String seriesCode, String startDate, String endDate) {
         String url = String.format("%s/series=%s&startDate=%s&endDate=%s&type=json",
                 baseUrl, seriesCode, startDate, endDate);

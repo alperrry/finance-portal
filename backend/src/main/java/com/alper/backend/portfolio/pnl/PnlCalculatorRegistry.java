@@ -6,6 +6,12 @@ import org.springframework.stereotype.Component;
 import java.util.EnumMap;
 import java.util.Map;
 
+/**
+ * Enstrüman türünü uygun {@link PnlCalculator} uygulamasına eşleyen kayıt (registry).
+ *
+ * <p>Hisse, fon, döviz ve tahvil standart hesaplayıcıyı kullanır; VİOP ve mevduat
+ * kendi hesaplayıcılarına sahiptir.</p>
+ */
 @Component
 public class PnlCalculatorRegistry {
 
@@ -22,6 +28,13 @@ public class PnlCalculatorRegistry {
         calculators.put(InstrumentType.DEPOSIT, new DepositPnlCalculator());
     }
 
+    /**
+     * Enstrüman türüne uygun hesaplayıcıyı döndürür; eşleşme yoksa standart
+     * hesaplayıcıya düşer.
+     *
+     * @param type enstrüman türü
+     * @return ilgili PnL hesaplayıcısı
+     */
     public PnlCalculator get(InstrumentType type) {
         return calculators.getOrDefault(type, new StandardPnlCalculator());
     }

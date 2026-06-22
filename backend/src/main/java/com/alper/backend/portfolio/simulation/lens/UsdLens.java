@@ -15,6 +15,13 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 
+/**
+ * Pozisyonu USD bazında yeniden değerleyen lens.
+ *
+ * <p>Maliyet, alış tarihindeki satış kuruyla; güncel/kapanış değeri ise ilgili
+ * tarihteki alış kuruyla dolara çevrilir ve kar/zarar USD üzerinden hesaplanır.
+ * Pozisyonun kendisi USD ise miktar doğrudan değer kabul edilir.</p>
+ */
 @Component
 @RequiredArgsConstructor
 public class UsdLens implements ValuationLens {

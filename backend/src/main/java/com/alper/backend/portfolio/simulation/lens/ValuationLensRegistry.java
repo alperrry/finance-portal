@@ -9,6 +9,11 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Lens tipini ilgili {@link ValuationLens} uygulamasına eşleyen kayıt (registry).
+ *
+ * <p>Spring context'indeki tüm lens bileşenleri constructor üzerinden toplanır.</p>
+ */
 @Component
 public class ValuationLensRegistry {
 
@@ -19,6 +24,13 @@ public class ValuationLensRegistry {
         lenses.forEach(l -> registry.put(l.getType(), l));
     }
 
+    /**
+     * Verilen tipe kayıtlı lensi döndürür.
+     *
+     * @param type lens tipi
+     * @return ilgili lens
+     * @throws BadRequestException tip için kayıtlı lens yoksa
+     */
     public ValuationLens get(LensType type) {
         ValuationLens lens = registry.get(type);
         if (lens == null) {

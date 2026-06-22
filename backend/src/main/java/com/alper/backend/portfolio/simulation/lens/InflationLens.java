@@ -13,6 +13,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 
+/**
+ * Pozisyonu enflasyon düzeltmeli (reel) olarak değerleyen lens.
+ *
+ * <p>Alış tarihindeki maliyet, TÜFE endeksi oranıyla bugünün (veya kapanış
+ * tarihinin) parasına çevrilir; kar/zarar bu reel maliyet üzerinden hesaplanır.</p>
+ */
 @Component
 @RequiredArgsConstructor
 public class InflationLens implements ValuationLens {

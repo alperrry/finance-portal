@@ -1,5 +1,10 @@
 package com.alper.backend.admin.websocket;
 
+/**
+ * Admin paneline yapılan WebSocket yayınlarında kullanılan konu (topic) adresleri.
+ *
+ * <p>Sabit tutucu sınıftır; örneklenemez.</p>
+ */
 public final class AdminWebSocketTopics {
 
     public static final String PREFIX = "/topic/admin/";

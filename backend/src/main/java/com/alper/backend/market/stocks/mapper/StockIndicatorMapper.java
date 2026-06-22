@@ -4,9 +4,20 @@ import com.alper.backend.market.stocks.model.StockTechnicalIndicator;
 import com.alper.backend.market.stocks.dto.StockIndicatorResponse;
 import org.springframework.stereotype.Component;
 
+/**
+ * Teknik gösterge entity'lerini ({@link StockTechnicalIndicator}) API yanıt
+ * DTO'suna dönüştüren mapper.
+ */
 @Component
 public class StockIndicatorMapper {
 
+    /**
+     * Gösterge entity'sini yanıt DTO'suna dönüştürür.
+     *
+     * @param entity teknik gösterge kaydı; {@code null} ise {@code null} döner
+     * @return RSI, MACD, SMA/EMA, Bollinger, Stochastic, ATR ve Ichimoku
+     *         değerlerini içeren DTO
+     */
     public StockIndicatorResponse toDto(StockTechnicalIndicator entity) {
         if (entity == null) return null;
         return StockIndicatorResponse.builder()

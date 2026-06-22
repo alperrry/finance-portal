@@ -18,6 +18,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 
+/**
+ * Yeni denetim (audit) kayıtlarını WebSocket üzerinden admin paneline yayınlar.
+ *
+ * <p>{@link AuditEventPublishedEvent} olaylarını transaction commit sonrası asenkron
+ * dinler ve kaydı {@link AdminWebSocketTopics#AUDIT} konusuna gönderir.</p>
+ */
 @Component
 @RequiredArgsConstructor
 @Log4j2
@@ -25,6 +31,11 @@ public class AdminAuditBroadcaster {
 
     private final SimpMessagingTemplate messagingTemplate;
 
+    /**
+     * Audit olayını alır ve WebSocket zarfına sarıp admin konusuna yayınlar.
+     *
+     * @param event yayınlanan denetim kaydı olayı
+     */
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onAuditEvent(AuditEventPublishedEvent event) {

@@ -9,6 +9,13 @@ import com.alper.backend.history.dto.PricePoint;
 import com.alper.backend.market.viop.model.ViopContractPrice;
 import org.springframework.stereotype.Component;
 
+/**
+ * Farklı piyasa modüllerinin geçmiş veri kayıtlarını ortak {@link PricePoint}
+ * gösterimine dönüştüren mapper.
+ *
+ * <p>Hisse kayıtları OHLCV alanlarının tamamını taşırken; döviz, fon, tahvil ve
+ * makro gözlemler yalnızca tarih + kapanış değeriyle eşlenir.</p>
+ */
 @Component
 public class HistoryMapper {
 

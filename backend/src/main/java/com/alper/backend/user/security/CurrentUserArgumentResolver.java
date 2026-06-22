@@ -11,15 +11,28 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
+/**
+ * {@link CurrentUser} ile işaretli controller parametrelerine oturum açmış
+ * kullanıcıyı ({@link User}) enjekte eden argüman çözücü.
+ *
+ * <p>Kullanıcı, {@link UserProvisioningFilter}'ın isteğe eklediği attribute'tan
+ * okunur; bulunamazsa yetkilendirme hatası fırlatılır.</p>
+ */
 @Component
 public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolver {
 
+    /** {@code @CurrentUser} anotasyonlu ve {@link User} tipindeki parametreleri destekler. */
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
         return parameter.hasParameterAnnotation(CurrentUser.class)
                 && parameter.getParameterType().equals(User.class);
     }
 
+    /**
+     * İstek attribute'undaki kullanıcıyı döndürür.
+     *
+     * @throws BadRequestException kullanıcı istekte bulunamazsa
+     */
     @Override
     public Object resolveArgument(MethodParameter parameter,
                                   ModelAndViewContainer mavContainer,

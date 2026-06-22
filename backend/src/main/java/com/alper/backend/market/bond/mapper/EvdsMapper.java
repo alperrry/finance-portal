@@ -12,12 +12,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * EVDS API yanıtındaki ham seri kayıtlarını {@link BondRateHistory} entity'lerine
+ * dönüştüren mapper.
+ *
+ * <p>Dönüşüm sırasında kupon faizinden vade sonu bileşik getiri de hesaplanır;
+ * tarih veya faiz alanı eksik kayıtlar atlanır.</p>
+ */
 @Component
 public class EvdsMapper {
 
     private static final String SOURCE = "TCMB_EVDS";
     private static final DateTimeFormatter EVDS_DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
+    /**
+     * EVDS yanıtındaki kayıt listesini entity listesine dönüştürür.
+     *
+     * @param bond       faiz kayıtlarının bağlanacağı tahvil
+     * @param seriesCode EVDS seri kodu (yanıt alan adına çevrilir)
+     * @param items      API yanıtındaki ham kayıtlar
+     * @return geçerli kayıtlardan üretilen entity listesi
+     */
     public List<BondRateHistory> toEntityList(Bond bond, String seriesCode, List<Map<String, Object>> items) {
         String seriesKey = seriesCode.replace(".", "_");
         List<BondRateHistory> result = new ArrayList<>();

@@ -8,11 +8,23 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * TCMB kur XML yanıtını {@link ExchangeRate} entity'lerine dönüştüren mapper.
+ *
+ * <p>Sayısal alanlar boş gelebildiğinden parse edilemeyen değerler {@code null}
+ * olarak bırakılır.</p>
+ */
 @Component
 public class TcmbMapper {
 
     private static final String SOURCE = "TCMB";
 
+    /**
+     * XML yanıtındaki tüm para birimlerini entity listesine dönüştürür.
+     *
+     * @param response TCMB kur yanıtı
+     * @return oluşturulan kur entity listesi
+     */
     public List<ExchangeRate> toEntityList(TcmbResponse response) {
         return response.getCurrencies()
                 .stream()

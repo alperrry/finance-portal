@@ -1,5 +1,11 @@
 package com.alper.backend.common.websocket;
 
+/**
+ * WebSocket zarflarında ({@link WebSocketEnvelope}) taşınan event tipleri.
+ *
+ * <p>İşlem (trade), piyasa fiyat güncellemeleri, haber yayınları ve admin
+ * paneli bildirimlerini kapsar.</p>
+ */
 public enum WebSocketEventType {
     TRADE_APPROVED,
     TRADE_REJECTED,

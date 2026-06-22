@@ -9,6 +9,13 @@ import okhttp3.Request;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+/**
+ * Yahoo Finance'tan anlık fiyat ve geçmiş veri çeken HTTP istemcisi.
+ *
+ * <p>Quote istekleri Yahoo'nun crumb/cookie doğrulamasını gerektirir; 401 alınırsa
+ * crumb bir kez yenilenip istek tekrarlanır. Hata yönetimi {@link BaseHttpClient}
+ * üzerinden ortaktır.</p>
+ */
 @Log4j2
 @Component
 public class YahooHttpClient extends BaseHttpClient {
@@ -31,10 +38,22 @@ public class YahooHttpClient extends BaseHttpClient {
         return ServiceType.YAHOO;
     }
 
+    /**
+     * Verilen sembollerin anlık fiyat bilgisini çeker.
+     *
+     * @param symbols virgülle ayrılmış sembol listesi (örn. {@code THYAO.IS,GARAN.IS})
+     * @return API'nin ham JSON yanıtı
+     */
     public String fetchQuote(String symbols) {
         return doFetchQuote(symbols, false);
     }
 
+    /**
+     * Tek bir sembolün geçmiş fiyat verisini çeker.
+     *
+     * @param symbol Yahoo sembolü
+     * @return API'nin ham JSON yanıtı
+     */
     public String fetchHistory(String symbol) {
         String url = String.format(historyUrl, symbol);
         Request request = new Request.Builder()
