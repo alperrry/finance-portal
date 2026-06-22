@@ -189,7 +189,7 @@ export default function KapitalShell({
                                 color="secondary"
                                 size="small"
                                 type="button"
-                                onClick={() => navigate("/admin/users")}
+                                onClick={() => navigate("/admin")}
                             >
                                 {t("nav.adminPanel")}
                             </Button>

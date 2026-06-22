@@ -68,7 +68,13 @@ public interface NewsRepository extends JpaRepository<News, Long> {
     // Find by status
     List<News> findByStatus(NewsStatus status);
 
+    @EntityGraph(attributePaths = {"source"})
     Page<News> findByStatus(NewsStatus status, Pageable pageable);
+
+    // Dashboard özet sayımları
+    long countByStatus(NewsStatus status);
+
+    long countByCreatedAtAfter(OffsetDateTime createdAt);
 
     // Find by source
     List<News> findBySourceId(Long sourceId);
@@ -84,6 +90,7 @@ public interface NewsRepository extends JpaRepository<News, Long> {
     Page<News> findByCategoryId(@Param("categoryId") Long categoryId, Pageable pageable);
 
     // Find by category and status
+    @EntityGraph(attributePaths = {"source"})
     @Query("SELECT n FROM News n JOIN n.categories c WHERE c.id = :categoryId AND n.status = :status")
     Page<News> findByCategoryIdAndStatus(@Param("categoryId") Long categoryId, @Param("status") NewsStatus status, Pageable pageable);
 

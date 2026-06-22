@@ -31,5 +31,8 @@ public interface ViopContractPriceRepository extends JpaRepository<ViopContractP
     Optional<ViopContractPrice> findFirstByMarketSegmentAndContractNameOrderByTradeDateDesc(
             String marketSegment, String contractName);
 
+    // Dashboard veri tazeliği — tüm modülde en son işlem günü
+    Optional<ViopContractPrice> findTopByOrderByTradeDateDesc();
+
     List<ViopContractPrice> findTop8ByContractNameOrderByTradeDateDesc(String contractName);
 }

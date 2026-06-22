@@ -18,6 +18,9 @@ public interface MacroObservationRepository extends JpaRepository<MacroObservati
 
     Optional<MacroObservation> findFirstBySeriesIdOrderByObservationDateDesc(Long seriesId);
 
+    // Dashboard veri tazeliği — tüm modülde en son gözlem günü
+    Optional<MacroObservation> findTopByOrderByObservationDateDesc();
+
     @EntityGraph(attributePaths = "series")
     List<MacroObservation> findBySeries_DataTypeAndObservationDateBetweenOrderBySeries_DisplayNameAscObservationDateAsc(
             MacroDataType dataType, LocalDate from, LocalDate to);

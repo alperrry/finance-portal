@@ -5,6 +5,8 @@ import type {
     AdminUserStatus,
     AdminUserDetail,
     AdminUserListItem,
+    AdminDashboardSummary,
+    AdminModuleFreshness,
     AdminBackfillResponse,
     AdminCategory,
     AdminCategoryRequest,
@@ -425,6 +427,39 @@ export async function clearAdminMarketData(module: AdminMarketBackfillModule): P
     });
     const data = await readData<number>(response, "Market verisi temizlenemedi.");
     return typeof data === "number" ? data : 0;
+}
+
+function normalizeDashboard(value: unknown): AdminDashboardSummary {
+    const root = isRecord(value) ? value : {};
+    const c = isRecord(root.counts) ? root.counts : {};
+    const rawFreshness = Array.isArray(root.marketFreshness) ? root.marketFreshness : [];
+    return {
+        counts: {
+            totalUsers: numberValue(c.totalUsers),
+            activeUsers: numberValue(c.activeUsers),
+            adminUsers: numberValue(c.adminUsers),
+            totalNews: numberValue(c.totalNews),
+            news24h: numberValue(c.news24h),
+            publishedNews: numberValue(c.publishedNews),
+            totalSources: numberValue(c.totalSources),
+            activeSources: numberValue(c.activeSources),
+            totalCategories: numberValue(c.totalCategories),
+            audit24h: numberValue(c.audit24h),
+        },
+        marketFreshness: rawFreshness.filter(isRecord).map((m): AdminModuleFreshness => ({
+            module: stringValue(m.module),
+            lastUpdated: nullableString(m.lastUpdated),
+            recordCount: numberValue(m.recordCount),
+            stale: booleanValue(m.stale, false),
+        })),
+    };
+}
+
+export async function fetchAdminDashboard(): Promise<AdminDashboardSummary> {
+    const response = await apiFetch("/api/v1/admin/dashboard", {
+        errorMessage: i18n.t("admin.dashboard.loadError"),
+    });
+    return normalizeDashboard(await readData<unknown>(response, i18n.t("admin.dashboard.loadError")));
 }
 
 export async function fetchAdminAuditLogs(targetTypes: string[]): Promise<AuditLogItem[]> {

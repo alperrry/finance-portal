@@ -1,6 +1,31 @@
 export type AdminUserRole = "NORMAL_USER" | "ADMIN";
 export type AdminUserStatus = "ACTIVE" | "PASSIVE";
 
+export type AdminDashboardCounts = {
+    totalUsers: number;
+    activeUsers: number;
+    adminUsers: number;
+    totalNews: number;
+    news24h: number;
+    publishedNews: number;
+    totalSources: number;
+    activeSources: number;
+    totalCategories: number;
+    audit24h: number;
+};
+
+export type AdminModuleFreshness = {
+    module: string;
+    lastUpdated: string | null;
+    recordCount: number;
+    stale: boolean;
+};
+
+export type AdminDashboardSummary = {
+    counts: AdminDashboardCounts;
+    marketFreshness: AdminModuleFreshness[];
+};
+
 export type AdminUserListItem = {
     id: number;
     username: string;

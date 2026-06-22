@@ -25,6 +25,9 @@ public interface FundPriceRepository extends JpaRepository<FundPrice, Long> {
     Optional<FundPrice> findTopByFundIdOrderByPriceDateDesc(Long fundId);
     Optional<FundPrice> findTopByFundIdOrderByPriceDateAsc(Long fundId);
 
+    // Dashboard veri tazeliği — tüm modülde en son fiyat günü
+    Optional<FundPrice> findTopByOrderByPriceDateDesc();
+
     // Her fon için en son tarihin fiyat kaydını getir — getAll endpoint'i için
     @Query("SELECT fp FROM FundPrice fp JOIN FETCH fp.fund WHERE fp.priceDate = " +
             "(SELECT MAX(fp2.priceDate) FROM FundPrice fp2 WHERE fp2.fund.id = fp.fund.id) " +

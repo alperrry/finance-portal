@@ -23,6 +23,9 @@ public interface BondRateHistoryRepository extends JpaRepository<BondRateHistory
 
     Optional<BondRateHistory> findTopByBondIdOrderByRateDateDesc(Long bondId);
 
+    // Dashboard veri tazeliği — tüm modülde en son faiz günü
+    Optional<BondRateHistory> findTopByOrderByRateDateDesc();
+
     // Her bond için en son tarihin kaydını getir — getAll endpoint'i için
     @Query("SELECT b FROM BondRateHistory b JOIN FETCH b.bond WHERE b.rateDate = " +
             "(SELECT MAX(b2.rateDate) FROM BondRateHistory b2 WHERE b2.bond.id = b.bond.id) " +

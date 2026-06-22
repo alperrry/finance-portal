@@ -33,6 +33,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     long countByRoleAndIsActiveAndIdNot(UserRole userRole, boolean b, Long id);
 
+    // Dashboard özet sayımları
+    long countByIsActiveTrue();
+
+    long countByRole(UserRole role);
+
     @Query("""
             SELECT u
             FROM User u

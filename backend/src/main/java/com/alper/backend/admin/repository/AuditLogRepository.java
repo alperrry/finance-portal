@@ -89,4 +89,7 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
 
 
     List<AuditLog> findTop10ByOrderByCreatedAtDesc();
+
+    // Dashboard — son 24 saatteki audit olayı sayısı
+    long countByCreatedAtAfter(Instant createdAt);
 }
