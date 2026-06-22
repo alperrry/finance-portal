@@ -43,6 +43,7 @@ public class PortfolioMapper {
                 .totalCostBasis(null)
                 .totalProfitLoss(null)
                 .totalProfitLossPct(null)
+                .openPositionCount(null)
                 .items(Collections.emptyList())
                 .createdAt(portfolio.getCreatedAt())
                 .updatedAt(portfolio.getUpdatedAt())
@@ -59,7 +60,8 @@ public class PortfolioMapper {
             BigDecimal totalValue,
             BigDecimal totalCostBasis,
             BigDecimal totalProfitLoss,
-            BigDecimal totalProfitLossPct
+            BigDecimal totalProfitLossPct,
+            Integer openPositionCount
     ) {
         return PortfolioResponse.builder()
                 .id(portfolio.getId())
@@ -69,6 +71,7 @@ public class PortfolioMapper {
                 .totalCostBasis(totalCostBasis)
                 .totalProfitLoss(totalProfitLoss)
                 .totalProfitLossPct(totalProfitLossPct)
+                .openPositionCount(openPositionCount)
                 .items(items)
                 .createdAt(portfolio.getCreatedAt())
                 .updatedAt(portfolio.getUpdatedAt())

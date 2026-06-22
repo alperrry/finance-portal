@@ -12,6 +12,7 @@ import com.alper.backend.portfolio.pnl.PnlCalculatorRegistry;
 import com.alper.backend.portfolio.repository.ManualPositionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -37,8 +38,10 @@ public class ManualPositionService {
     private final PortfolioService portfolioService;
     private final InstrumentPriceResolverService priceResolver;
     private final PnlCalculatorRegistry pnlRegistry;
+    private final ManualPositionValuator valuator;
 
     @Transactional
+    @CacheEvict(value = "portfolioValuation", key = "#portfolioId")
     public ManualPositionResponse create(Long portfolioId, Long userId, ManualPositionRequest request) {
         portfolioService.getOwnedPortfolio(portfolioId, userId);
 
@@ -103,18 +106,8 @@ public class ManualPositionService {
         Page<ManualPosition> page = repository.findAllByPortfolioIdAndPositionKind(portfolioId, kind, pageable);
 
         return page.map(pos -> {
-            BigDecimal currentPrice = null;
-            BigDecimal unrealizedPnl = null;
-
-            if (kind == PositionKind.OPEN && (pos.getInstrumentId() != null || pos.getInstrumentSymbol() != null)) {
-                var info = priceResolver.resolve(pos.getInstrumentType(), pos.getInstrumentId(), pos.getInstrumentSymbol());
-                currentPrice = info.currentPrice();
-                if (currentPrice != null) {
-                    unrealizedPnl = pnlRegistry.get(pos.getInstrumentType()).calculate(pos, currentPrice);
-                }
-            }
-
-            return toResponse(pos, currentPrice, unrealizedPnl);
+            var valuation = valuator.valuateOpen(pos);
+            return toResponse(pos, valuation.currentPrice(), valuation.unrealizedPnl());
         });
     }
 
@@ -124,19 +117,12 @@ public class ManualPositionService {
         ManualPosition pos = repository.findByIdAndPortfolioId(positionId, portfolioId)
                 .orElseThrow(() -> new NotFoundException("position"));
 
-        BigDecimal currentPrice = null;
-        BigDecimal unrealizedPnl = null;
-        if (pos.getPositionKind() == PositionKind.OPEN && (pos.getInstrumentId() != null || pos.getInstrumentSymbol() != null)) {
-            var info = priceResolver.resolve(pos.getInstrumentType(), pos.getInstrumentId(), pos.getInstrumentSymbol());
-            currentPrice = info.currentPrice();
-            if (currentPrice != null) {
-                unrealizedPnl = pnlRegistry.get(pos.getInstrumentType()).calculate(pos, currentPrice);
-            }
-        }
-        return toResponse(pos, currentPrice, unrealizedPnl);
+        var valuation = valuator.valuateOpen(pos);
+        return toResponse(pos, valuation.currentPrice(), valuation.unrealizedPnl());
     }
 
     @Transactional
+    @CacheEvict(value = "portfolioValuation", key = "#portfolioId")
     public List<ManualPositionResponse> closePosition(Long portfolioId, Long userId, Long positionId, ClosePositionRequest req) {
         portfolioService.getOwnedPortfolio(portfolioId, userId);
         ManualPosition pos = repository.findByIdAndPortfolioId(positionId, portfolioId)
@@ -212,6 +198,7 @@ public class ManualPositionService {
     }
 
     @Transactional
+    @CacheEvict(value = "portfolioValuation", key = "#portfolioId")
     public void delete(Long portfolioId, Long userId, Long positionId) {
         portfolioService.getOwnedPortfolio(portfolioId, userId);
         ManualPosition pos = repository.findByIdAndPortfolioId(positionId, portfolioId)

@@ -12,8 +12,8 @@ type ChartTooltipProps = {
     currency: string;
 };
 
-// 1. JİLET GİBİ TOOLTIP (Gölgeli, Noktalı ve Hizalı)
 function ChartTooltip({ active, payload, total, currency }: ChartTooltipProps) {
+    const { t } = useTranslation();
     if (!active || !payload?.length) return null;
     const item = payload[0];
     const value = Number(item.value ?? 0);
@@ -28,11 +28,11 @@ function ChartTooltip({ active, payload, total, currency }: ChartTooltipProps) {
             </Stack>
             <Stack sx={{ gap: 0.75 }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", gap: 3 }}>
-                    <Typography variant="caption" color="text.secondary">Değer</Typography>
+                    <Typography variant="caption" color="text.secondary">{t("portfolio.typeChart.value")}</Typography>
                     <Typography variant="caption" sx={{ fontWeight: 700 }}>{formatMoney(value, currency)}</Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between", gap: 3 }}>
-                    <Typography variant="caption" color="text.secondary">Ağırlık</Typography>
+                    <Typography variant="caption" color="text.secondary">{t("portfolio.typeChart.weight")}</Typography>
                     <Typography variant="caption" sx={{ fontWeight: 700 }}>{formatPercent(pct)}</Typography>
                 </Box>
             </Stack>
@@ -45,6 +45,9 @@ type Props = {
     currency: string;
     onNewTrade: () => void;
 };
+
+// Hizalı dağılım listesi için ortak grid şablonu.
+const ROW_GRID = "1fr 70px 120px 120px";
 
 export function PortfolioTypeChart({ positions, currency, onNewTrade }: Props) {
     const { t } = useTranslation();
@@ -68,10 +71,9 @@ export function PortfolioTypeChart({ positions, currency, onNewTrade }: Props) {
     }
 
     return (
-        // DİKKAT: justifyContent: "center" ile sağdaki uçurumu kapatıyoruz
         <Stack direction={{ xs: "column", md: "row" }} sx={{ gap: 4, alignItems: "center", justifyContent: "center" }}>
 
-            {/* SOL TARAF: GRAFİK VE ÖZET BANDI */}
+            {/* SOL: DONUT GRAFİK + TOPLAM */}
             <Stack sx={{ alignItems: "center", flexShrink: 0, width: { xs: "100%", md: 260 } }}>
                 <ResponsiveContainer width="100%" height={260}>
                     <PieChart>
@@ -79,7 +81,7 @@ export function PortfolioTypeChart({ positions, currency, onNewTrade }: Props) {
                             data={groups}
                             dataKey="value"
                             nameKey="label"
-                            innerRadius={65} // İçi boşaltıldı
+                            innerRadius={65}
                             outerRadius={105}
                             paddingAngle={3}
                             animationBegin={0}
@@ -96,12 +98,10 @@ export function PortfolioTypeChart({ positions, currency, onNewTrade }: Props) {
                                 />
                             ))}
                         </Pie>
-                        {/* Tooltip offset ile grafikten uzaklaştırıldı */}
                         <Tooltip content={<ChartTooltip total={total} currency={currency} />} offset={25} />
                     </PieChart>
                 </ResponsiveContainer>
 
-                {/* Grafiğin ortasındaki yazı ezilmesin diye alta şık bir kutu olarak alındı */}
                 <Box sx={{ textAlign: "center", mt: -2, bgcolor: "background.default", py: 1, px: 3, borderRadius: 2 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
                         {t("portfolio.typeChart.totalValue")}
@@ -112,43 +112,81 @@ export function PortfolioTypeChart({ positions, currency, onNewTrade }: Props) {
                 </Box>
             </Stack>
 
-            {/* SAĞ TARAF: DERLİ TOPLU LİSTE */}
-            {/* DİKKAT: maxWidth: 500 eklenerek listenin sakız gibi sünmesi engellendi */}
-            <Stack sx={{ gap: 1.5, flex: 1, maxWidth: 500, width: "100%" }}>
-                <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700 }}>
-                    {t("portfolio.typeChart.typeDistribution")}
-                </Typography>
+            {/* SAĞ: HİZALI DAĞILIM TABLOSU */}
+            <Box sx={{ flex: 1, maxWidth: 560, width: "100%" }}>
+                {/* Başlık satırı */}
+                <Box
+                    sx={{
+                        display: "grid",
+                        gridTemplateColumns: ROW_GRID,
+                        gap: 1,
+                        px: 1,
+                        py: 0.75,
+                        borderBottom: "1px solid",
+                        borderColor: "divider",
+                    }}
+                >
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                        {t("portfolio.typeChart.type")}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textAlign: "right", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                        {t("portfolio.typeChart.weight")}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textAlign: "right", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                        {t("portfolio.typeChart.value")}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textAlign: "right", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                        {t("portfolio.typeChart.pnl")}
+                    </Typography>
+                </Box>
+
                 {groups.map((g) => {
                     const pct = total > 0 ? (g.value / total) * 100 : 0;
                     return (
-                        <Stack key={g.type} direction="row" sx={{ alignItems: "center", gap: 1.5 }}>
-                            <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: g.fill, flexShrink: 0 }} />
-                            <Typography variant="body2" sx={{ flex: 1, fontWeight: 600 }}>
-                                {g.label}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ minWidth: 42, textAlign: "right" }}>
+                        <Box
+                            key={g.type}
+                            sx={{
+                                display: "grid",
+                                gridTemplateColumns: ROW_GRID,
+                                gap: 1,
+                                alignItems: "center",
+                                px: 1,
+                                py: 1,
+                                borderBottom: "1px solid",
+                                borderColor: "divider",
+                                "&:last-of-type": { borderBottom: "none" },
+                            }}
+                        >
+                            <Stack direction="row" sx={{ alignItems: "center", gap: 1.5, minWidth: 0 }}>
+                                <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: g.fill, flexShrink: 0 }} />
+                                <Typography variant="body2" sx={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    {g.label}
+                                </Typography>
+                            </Stack>
+                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: "right", fontSize: "0.8rem" }}>
                                 {formatPercent(pct)}
                             </Typography>
-                            <Typography variant="body2" sx={{ fontSize: "0.78rem", fontWeight: 700, minWidth: 88, textAlign: "right" }}>
+                            <Typography variant="body2" sx={{ textAlign: "right", fontWeight: 700, fontSize: "0.82rem" }}>
                                 {formatMoney(g.value, currency)}
                             </Typography>
-                            {g.totalPnl !== null && (
-                                <Typography
-                                    variant="caption"
-                                    sx={{
-                                        minWidth: 72,
-                                        textAlign: "right",
-                                        fontWeight: 600,
-                                        color: g.totalPnl > 0 ? "success.main" : g.totalPnl < 0 ? "error.main" : "text.secondary",
-                                    }}
-                                >
-                                    {formatSignedMoney(g.totalPnl, currency)}
-                                </Typography>
-                            )}
-                        </Stack>
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    textAlign: "right",
+                                    fontWeight: 600,
+                                    fontSize: "0.82rem",
+                                    color: g.totalPnl === null ? "text.disabled"
+                                        : g.totalPnl > 0 ? "success.main"
+                                        : g.totalPnl < 0 ? "error.main"
+                                        : "text.secondary",
+                                }}
+                            >
+                                {g.totalPnl === null ? "—" : formatSignedMoney(g.totalPnl, currency)}
+                            </Typography>
+                        </Box>
                     );
                 })}
-            </Stack>
+            </Box>
         </Stack>
     );
 }

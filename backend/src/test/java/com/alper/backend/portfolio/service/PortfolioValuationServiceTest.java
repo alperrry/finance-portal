@@ -2,6 +2,7 @@ package com.alper.backend.portfolio.service;
 
 import com.alper.backend.common.model.InstrumentType;
 import com.alper.backend.portfolio.model.PortfolioItem;
+import com.alper.backend.portfolio.repository.ManualPositionRepository;
 import com.alper.backend.portfolio.repository.PortfolioItemRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,6 +29,8 @@ import static org.mockito.Mockito.when;
 class PortfolioValuationServiceTest {
 
     @Mock private PortfolioItemRepository portfolioItemRepository;
+    @Mock private ManualPositionRepository manualPositionRepository;
+    @Mock private ManualPositionValuator manualPositionValuator;
     @Mock private CurrencyConverterService currencyConverterService;
     @Mock private MarketQuoteService marketQuoteService;
     @Mock private InstrumentPriceResolverService instrumentPriceResolverService;
@@ -38,10 +41,18 @@ class PortfolioValuationServiceTest {
     void setUp() {
         service = new PortfolioValuationService(
                 portfolioItemRepository,
+                manualPositionRepository,
+                manualPositionValuator,
                 currencyConverterService,
                 marketQuoteService,
                 instrumentPriceResolverService
         );
+        // Bu test sınıfı yalnızca portfolio_items değerlemesine odaklanır;
+        // manuel pozisyon katkısı sıfır olacak şekilde stub'lanır.
+        when(manualPositionRepository.findAllByPortfolioId(any())).thenReturn(List.of());
+        when(manualPositionValuator.aggregateOpen(any())).thenReturn(
+                new ManualPositionValuator.OpenAggregate(
+                        BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, 0));
     }
 
     private PortfolioItem buildStockItem(Long id, Long portfolioId, Long instrId, BigDecimal qty, BigDecimal avgCost) {
@@ -70,6 +81,24 @@ class PortfolioValuationServiceTest {
             assertThat(result.totalValue()).isEqualByComparingTo("0.00");
             assertThat(result.totalCostBasis()).isEqualByComparingTo("0.00");
             assertThat(result.totalProfitLoss()).isEqualByComparingTo("0.00");
+        }
+
+        @Test
+        @DisplayName("Manuel açık pozisyonlar portföy toplamına ve sayısına yansır")
+        void valuate_withManualPositions_includesManualAggregate() {
+            when(portfolioItemRepository.findAllByPortfolioId(3L)).thenReturn(List.of());
+            // items boş; tüm değer manuel açık pozisyonlardan gelir.
+            when(manualPositionValuator.aggregateOpen(any())).thenReturn(
+                    new ManualPositionValuator.OpenAggregate(
+                            new BigDecimal("1200.00"), new BigDecimal("1000.00"),
+                            new BigDecimal("200.00"), new BigDecimal("20.00"), 2));
+
+            PortfolioValuationService.ValuationResult result = service.valuate(3L, "TRY");
+
+            assertThat(result.totalValue()).isEqualByComparingTo("1200.00");
+            assertThat(result.totalCostBasis()).isEqualByComparingTo("1000.00");
+            assertThat(result.totalProfitLoss()).isEqualByComparingTo("200.00");
+            assertThat(result.openPositionCount()).isEqualTo(2);
         }
 
         @Test

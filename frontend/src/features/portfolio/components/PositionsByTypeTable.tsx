@@ -25,6 +25,7 @@ import {
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useRef, useMemo } from "react";
+import type { TFunction } from "i18next";
 import type { ManualPositionResponse, PortfolioInstrumentType, PositionKind } from "../api/portfolioApi";
 import { getInstrumentLabels } from "../types";
 import { calcMaturityValue, formatMoney, formatPercent, formatQuantity, formatSignedMoney } from "../utils/portfolioFormatters";
@@ -32,6 +33,9 @@ import { useTranslation } from "react-i18next";
 
 const VIRTUAL_THRESHOLD = 20;
 const ROW_HEIGHT = 48;
+
+// Manuel pozisyonlar TRY cinsinden saklanır; tablo değerleri bu yüzden TRY ile formatlanır.
+const POS_CCY = "TRY";
 
 type Props = {
     portfolioId: number;
@@ -74,7 +78,7 @@ function PnlBadge({ value, currency, isPercent }: { value: number | null | undef
                 }}
             >
                 {positive ? "▲ " : negative ? "▼ " : ""}
-                {isPercent ? formatPercent(value) : formatSignedMoney(value, currency ?? "TRY")}
+                {isPercent ? formatPercent(value) : formatSignedMoney(value, currency ?? POS_CCY)}
             </Typography>
         </Box>
     );
@@ -95,12 +99,12 @@ function supportsSimulation(position: ManualPositionResponse) {
     );
 }
 
-function simulationButton(position: ManualPositionResponse, onSimulate: (pos: ManualPositionResponse) => void) {
+function simulationButton(position: ManualPositionResponse, t: TFunction, onSimulate: (pos: ManualPositionResponse) => void) {
     if (!supportsSimulation(position)) {
         return null;
     }
     return (
-        <Tooltip title="USD simülasyonu">
+        <Tooltip title={t("portfolio.positions.simulateTooltip")}>
             <IconButton size="small" color="secondary" onClick={() => onSimulate(position)}>
                 <QueryStatsOutlinedIcon fontSize="small" />
             </IconButton>
@@ -108,15 +112,15 @@ function simulationButton(position: ManualPositionResponse, onSimulate: (pos: Ma
     );
 }
 
-function deleteColumn(onDelete: (id: number) => void, onSimulate: (pos: ManualPositionResponse) => void): ColumnDef<ManualPositionResponse, unknown> {
+function deleteColumn(t: TFunction, onDelete: (id: number) => void, onSimulate: (pos: ManualPositionResponse) => void): ColumnDef<ManualPositionResponse, unknown> {
     return col.display({
         id: "actions",
         header: "",
         size: 84,
         cell: ({ row }) => (
             <Stack direction="row" sx={{ alignItems: "center", justifyContent: "flex-end", gap: 0.25 }}>
-                {simulationButton(row.original, onSimulate)}
-                <Tooltip title="Pozisyonu sil">
+                {simulationButton(row.original, t, onSimulate)}
+                <Tooltip title={t("portfolio.positions.deleteTooltip")}>
                     <IconButton size="small" color="error" onClick={() => onDelete(row.original.id)}>
                         <DeleteOutlinedIcon fontSize="small" />
                     </IconButton>
@@ -128,17 +132,18 @@ function deleteColumn(onDelete: (id: number) => void, onSimulate: (pos: ManualPo
 
 function sellColumn(
     type: PortfolioInstrumentType,
+    t: TFunction,
     onSell: (pos: ManualPositionResponse) => void,
     onSimulate: (pos: ManualPositionResponse) => void,
 ): ColumnDef<ManualPositionResponse, unknown> {
-    const label = type === "VIOP" || type === "DEPOSIT" ? "Kapat" : "Sat";
+    const label = type === "VIOP" || type === "DEPOSIT" ? t("portfolio.positions.close") : t("portfolio.positions.sell");
     return col.display({
         id: "sell",
         header: "",
         size: 104,
         cell: ({ row }) => (
             <Stack direction="row" sx={{ alignItems: "center", justifyContent: "flex-end", gap: 0.5 }}>
-                {simulationButton(row.original, onSimulate)}
+                {simulationButton(row.original, t, onSimulate)}
                 <Button size="small" variant="outlined" color="secondary" onClick={() => onSell(row.original)} sx={{ fontSize: "0.72rem", px: 1 }}>
                     {label}
                 </Button>
@@ -150,6 +155,7 @@ function sellColumn(
 function getColumns(
     type: PortfolioInstrumentType,
     kind: PositionKind,
+    t: TFunction,
     onDelete: (id: number) => void,
     onSell: (pos: ManualPositionResponse) => void,
     onSimulate: (pos: ManualPositionResponse) => void,
@@ -158,7 +164,7 @@ function getColumns(
 
     const instrumentCell = col.display({
         id: "instrument",
-        header: "Enstrüman",
+        header: t("portfolio.positions.cols.instrument"),
         size: 150,
         cell: ({ row: { original: r } }) => (
             <Box sx={{ py: 0.5 }}>
@@ -175,24 +181,26 @@ function getColumns(
     });
 
     const qtyColumn = col.accessor("quantity", {
-        header: "Miktar",
+        header: t("portfolio.positions.cols.quantity"),
         size: 80,
         cell: ({ getValue }) => <Typography variant="body2">{formatQuantity(getValue())}</Typography>,
     });
 
     const entryPriceColumn = col.accessor("entryPrice", {
-        header: type === "CURRENCY" ? "Alış Kuru" : "Alış Fiy.",
+        header: type === "CURRENCY" ? t("portfolio.positions.cols.buyRate") : t("portfolio.positions.cols.buyPriceShort"),
         size: 100,
-        cell: ({ getValue }) => <Typography variant="body2">{formatMoney(getValue(), "TRY", 4)}</Typography>,
+        cell: ({ getValue }) => <Typography variant="body2">{formatMoney(getValue(), POS_CCY, 4)}</Typography>,
     });
 
     const currentPriceColumn = col.accessor("currentPrice", {
-        header: type === "CURRENCY" ? "Güncel Kur" : type === "FUND" ? "Güncel NAV" : "Güncel Fiy.",
+        header: type === "CURRENCY"
+            ? t("portfolio.positions.cols.currentRate")
+            : type === "FUND" ? t("portfolio.positions.cols.currentNav") : t("portfolio.positions.cols.currentPriceShort"),
         size: 100,
         cell: ({ getValue }) => {
             const v = getValue();
             return v != null ? (
-                <Typography variant="body2">{formatMoney(v, "TRY", 4)}</Typography>
+                <Typography variant="body2">{formatMoney(v, POS_CCY, 4)}</Typography>
             ) : (
                 <Typography variant="caption" color="text.disabled">—</Typography>
             );
@@ -200,12 +208,12 @@ function getColumns(
     });
 
     const currentValueColumn = col.accessor("currentValue", {
-        header: "Güncel Değer",
+        header: t("portfolio.positions.cols.currentValue"),
         size: 120,
         cell: ({ getValue }) => {
             const v = getValue();
             return v != null ? (
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatMoney(v, "TRY")}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatMoney(v, POS_CCY)}</Typography>
             ) : (
                 <Typography variant="caption" color="text.disabled">—</Typography>
             );
@@ -213,32 +221,32 @@ function getColumns(
     });
 
     const unrealizedPnlColumn = col.accessor("unrealizedPnl", {
-        header: "Gerç.Dışı K/Z",
+        header: t("portfolio.positions.cols.unrealizedPnlShort"),
         size: 130,
-        cell: ({ getValue }) => <PnlBadge value={getValue()} currency="TRY" />,
+        cell: ({ getValue }) => <PnlBadge value={getValue()} currency={POS_CCY} />,
     });
 
     const realizedPnlColumn = col.accessor("realizedPnl", {
-        header: "Gerç. K/Z",
+        header: t("portfolio.positions.cols.realizedPnlShort"),
         size: 130,
-        cell: ({ getValue }) => <PnlBadge value={getValue()} currency="TRY" />,
+        cell: ({ getValue }) => <PnlBadge value={getValue()} currency={POS_CCY} />,
     });
 
     const pnlPctColumn = col.accessor("pnlPercent", {
-        header: "K/Z %",
+        header: t("portfolio.positions.cols.pnlPercent"),
         size: 88,
         cell: ({ getValue }) => <PnlBadge value={getValue()} isPercent />,
     });
 
     const entryDateColumn = col.accessor("entryDate", {
-        header: "Tarih",
+        header: t("portfolio.positions.cols.date"),
         size: 100,
         cell: ({ getValue }) => <Typography variant="body2">{getValue() ?? "—"}</Typography>,
     });
 
     const exitDateColumn = col.display({
         id: "dates",
-        header: "Alım — Satım",
+        header: t("portfolio.positions.cols.buySellDate"),
         size: 150,
         cell: ({ row: { original: r } }) => (
             <Typography variant="body2">{r.entryDate ?? "—"} — {r.exitDate ?? "—"}</Typography>
@@ -247,18 +255,18 @@ function getColumns(
 
     const exitPriceColumn = col.display({
         id: "exitPrice",
-        header: "Alış / Satış",
+        header: t("portfolio.positions.cols.buySell"),
         size: 130,
         cell: ({ row: { original: r } }) => (
             <Typography variant="body2">
-                {formatMoney(r.entryPrice, "TRY", 4)} / {formatMoney(r.exitPrice, "TRY", 4)}
+                {formatMoney(r.entryPrice, POS_CCY, 4)} / {formatMoney(r.exitPrice, POS_CCY, 4)}
             </Typography>
         ),
     });
 
     if (type === "VIOP") {
         const directionCol = col.accessor("direction", {
-            header: "Yön",
+            header: t("portfolio.positions.cols.direction"),
             size: 80,
             cell: ({ getValue }) => (
                 <Chip
@@ -271,7 +279,7 @@ function getColumns(
         });
         const underlyingCol = col.display({
             id: "underlying",
-            header: "Dayanak",
+            header: t("portfolio.positions.cols.underlying"),
             size: 110,
             cell: ({ row: { original: r } }) => (
                 <Typography variant="body2" sx={{ fontWeight: 700 }}>
@@ -280,37 +288,37 @@ function getColumns(
             ),
         });
         const marginCol = col.accessor("marginAmount", {
-            header: "Teminat",
+            header: t("portfolio.positions.cols.margin"),
             size: 100,
             cell: ({ getValue }) => {
                 const v = getValue();
                 return v != null ? (
-                    <Typography variant="body2">{formatMoney(v, "TRY")}</Typography>
+                    <Typography variant="body2">{formatMoney(v, POS_CCY)}</Typography>
                 ) : (
                     <Typography variant="caption" color="text.disabled">—</Typography>
                 );
             },
         });
         return asPositionColumns(isOpen
-            ? [underlyingCol, directionCol, qtyColumn, entryPriceColumn, currentPriceColumn, marginCol, unrealizedPnlColumn, pnlPctColumn, entryDateColumn, sellColumn(type, onSell, onSimulate)]
-            : [underlyingCol, directionCol, qtyColumn, exitPriceColumn, marginCol, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(onDelete, onSimulate)]);
+            ? [underlyingCol, directionCol, qtyColumn, entryPriceColumn, currentPriceColumn, currentValueColumn, marginCol, unrealizedPnlColumn, pnlPctColumn, sellColumn(type, t, onSell, onSimulate)]
+            : [underlyingCol, directionCol, qtyColumn, exitPriceColumn, marginCol, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(t, onDelete, onSimulate)]);
     }
 
     if (type === "BOND") {
         const maturityCol = col.accessor("maturityDate", {
-            header: "Vade",
+            header: t("portfolio.positions.cols.maturity"),
             size: 100,
             cell: ({ getValue }) => <Typography variant="body2">{getValue() ?? "—"}</Typography>,
         });
         const maturityValueCol = col.display({
             id: "maturityValue",
-            header: "Vade Sonu Değer",
+            header: t("portfolio.positions.cols.maturityValue"),
             size: 140,
             cell: ({ row: { original: r } }) => {
                 const v = calcMaturityValue(r);
                 return v != null ? (
                     <Typography variant="body2" sx={{ fontWeight: 700, color: "info.main" }}>
-                        {formatMoney(v, "TRY")}
+                        {formatMoney(v, POS_CCY)}
                     </Typography>
                 ) : (
                     <Typography variant="caption" color="text.disabled">—</Typography>
@@ -318,21 +326,21 @@ function getColumns(
             },
         });
         return asPositionColumns(isOpen
-            ? [instrumentCell, qtyColumn, entryPriceColumn, currentPriceColumn, maturityCol, maturityValueCol, unrealizedPnlColumn, pnlPctColumn, sellColumn(type, onSell, onSimulate)]
-            : [instrumentCell, qtyColumn, exitPriceColumn, maturityCol, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(onDelete, onSimulate)]);
+            ? [instrumentCell, qtyColumn, entryPriceColumn, currentPriceColumn, currentValueColumn, maturityCol, maturityValueCol, unrealizedPnlColumn, pnlPctColumn, sellColumn(type, t, onSell, onSimulate)]
+            : [instrumentCell, qtyColumn, exitPriceColumn, maturityCol, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(t, onDelete, onSimulate)]);
     }
 
     if (type === "DEPOSIT") {
         const bankCol = col.display({
             id: "bank",
-            header: "Banka",
+            header: t("portfolio.positions.cols.bank"),
             size: 130,
             cell: ({ row: { original: r } }) => (
                 <Typography variant="body2" sx={{ fontWeight: 700 }}>{r.bankName ?? "—"}</Typography>
             ),
         });
         const interestCol = col.accessor("interestRate", {
-            header: "Faiz %",
+            header: t("portfolio.positions.cols.interest"),
             size: 80,
             cell: ({ getValue }) => {
                 const v = getValue();
@@ -344,20 +352,20 @@ function getColumns(
             },
         });
         const maturityDateCol = col.accessor("maturityDate", {
-            header: "Vade Tarihi",
+            header: t("portfolio.positions.cols.maturityDate"),
             size: 105,
             cell: ({ getValue }) => <Typography variant="body2">{getValue() ?? "—"}</Typography>,
         });
         const maturityValueCol = col.display({
             id: "maturityValue",
-            header: "Vade Sonu Değer",
+            header: t("portfolio.positions.cols.maturityValue"),
             size: 140,
             cell: ({ row: { original: r } }) => {
                 const v = calcMaturityValue(r);
                 return v != null ? (
                     <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, px: 0.75, py: 0.15, borderRadius: 0.75, bgcolor: "rgba(2, 136, 209, 0.08)" }}>
                         <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.78rem", color: "info.main" }}>
-                            ✓ {formatMoney(v, "TRY")}
+                            ✓ {formatMoney(v, POS_CCY)}
                         </Typography>
                     </Box>
                 ) : (
@@ -366,20 +374,20 @@ function getColumns(
             },
         });
         return asPositionColumns(isOpen
-            ? [bankCol, entryPriceColumn, qtyColumn, interestCol, maturityDateCol, maturityValueCol, unrealizedPnlColumn, pnlPctColumn, sellColumn(type, onSell, onSimulate)]
-            : [bankCol, entryPriceColumn, qtyColumn, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(onDelete, onSimulate)]);
+            ? [bankCol, entryPriceColumn, qtyColumn, interestCol, maturityDateCol, maturityValueCol, unrealizedPnlColumn, pnlPctColumn, sellColumn(type, t, onSell, onSimulate)]
+            : [bankCol, entryPriceColumn, qtyColumn, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(t, onDelete, onSimulate)]);
     }
 
     // STOCK, FUND, CURRENCY — generic
     if (type === "CURRENCY") {
         return asPositionColumns(isOpen
-            ? [instrumentCell, qtyColumn, entryPriceColumn, currentPriceColumn, currentValueColumn, unrealizedPnlColumn, pnlPctColumn, entryDateColumn, sellColumn(type, onSell, onSimulate)]
-            : [instrumentCell, qtyColumn, exitPriceColumn, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(onDelete, onSimulate)]);
+            ? [instrumentCell, qtyColumn, entryPriceColumn, currentPriceColumn, currentValueColumn, unrealizedPnlColumn, pnlPctColumn, entryDateColumn, sellColumn(type, t, onSell, onSimulate)]
+            : [instrumentCell, qtyColumn, exitPriceColumn, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(t, onDelete, onSimulate)]);
     }
 
     return asPositionColumns(isOpen
-        ? [instrumentCell, qtyColumn, entryPriceColumn, currentPriceColumn, unrealizedPnlColumn, pnlPctColumn, entryDateColumn, sellColumn(type, onSell, onSimulate)]
-        : [instrumentCell, qtyColumn, exitPriceColumn, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(onDelete, onSimulate)]);
+        ? [instrumentCell, qtyColumn, entryPriceColumn, currentPriceColumn, currentValueColumn, unrealizedPnlColumn, pnlPctColumn, entryDateColumn, sellColumn(type, t, onSell, onSimulate)]
+        : [instrumentCell, qtyColumn, exitPriceColumn, realizedPnlColumn, pnlPctColumn, exitDateColumn, deleteColumn(t, onDelete, onSimulate)]);
 }
 
 type GroupTableProps = {
@@ -392,7 +400,8 @@ type GroupTableProps = {
 };
 
 function GroupTable({ rows, type, kind, onDelete, onSell, onSimulate }: GroupTableProps) {
-    const columns = useMemo(() => getColumns(type, kind, onDelete, onSell, onSimulate), [type, kind, onDelete, onSell, onSimulate]);
+    const { t } = useTranslation();
+    const columns = useMemo(() => getColumns(type, kind, t, onDelete, onSell, onSimulate), [type, kind, t, onDelete, onSell, onSimulate]);
     const table = useReactTable({ data: rows, columns, getCoreRowModel: getCoreRowModel() });
     const tableRows = table.getRowModel().rows;
     const useVirtual = tableRows.length >= VIRTUAL_THRESHOLD;
@@ -518,7 +527,7 @@ export function PositionsByTypeTable({ positions, loading, kind, onKindChange, o
             existing.push(pos);
             map.set(pos.instrumentType, existing);
         }
-        return TYPE_ORDER.filter((t) => map.has(t)).map((t) => ({ type: t, rows: map.get(t)! }));
+        return TYPE_ORDER.filter((type) => map.has(type)).map((type) => ({ type, rows: map.get(type)! }));
     }, [positions]);
 
     return (

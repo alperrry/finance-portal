@@ -2,7 +2,6 @@ import { Alert, Button, CircularProgress, Divider, Stack, Typography } from "@mu
 import { useTranslation } from "react-i18next";
 import { SectionPanel } from "../../../components/ui/SectionPanel";
 import type { PortfolioDetailPageState } from "../hooks/usePortfolioDetailPage";
-import { PortfolioAllocationChart } from "./PortfolioAllocationChart";
 import { PortfolioMetrics } from "./PortfolioMetrics";
 import { PortfolioTypeChart } from "./PortfolioTypeChart";
 import { PositionsByTypeTable } from "./PositionsByTypeTable";
@@ -16,7 +15,6 @@ export function PortfolioDetailContent({ page }: PortfolioDetailContentProps) {
     const { portfolio, detailState, openPositions, closedPositions, positionsLoading, positionsError, positionKindTab, handlers } = page;
 
     const activePositions = positionKindTab === "OPEN" ? openPositions : closedPositions;
-    const hasTrackedItems = (portfolio?.items?.length ?? 0) > 0;
 
     return (
         <>
@@ -39,17 +37,11 @@ export function PortfolioDetailContent({ page }: PortfolioDetailContentProps) {
 
             {portfolio ? (
                 <Stack sx={{ gap: 3 }}>
-                    <PortfolioMetrics portfolio={portfolio} />
-
-                    {hasTrackedItems && (
-                        <SectionPanel>
-                            <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>{t("portfolio.detail.trackedPositions")}</Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 800, mb: 2 }}>{t("portfolio.detail.distribution")}</Typography>
-                            <PortfolioAllocationChart items={portfolio.items} displayCurrency={portfolio.displayCurrency} />
-                        </SectionPanel>
-                    )}
+                    <PortfolioMetrics portfolio={portfolio} closedPositions={closedPositions} />
 
                     <SectionPanel>
+                        <Typography variant="overline" color="secondary" sx={{ fontWeight: 800 }}>{t("portfolio.detail.trackedPositions")}</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 800, mb: 2 }}>{t("portfolio.detail.distribution")}</Typography>
                         <PortfolioTypeChart positions={openPositions} currency={portfolio.displayCurrency} onNewTrade={handlers.openTradeModal} />
                     </SectionPanel>
 

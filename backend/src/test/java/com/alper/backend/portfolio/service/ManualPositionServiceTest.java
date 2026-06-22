@@ -55,11 +55,14 @@ class ManualPositionServiceTest {
 
     @BeforeEach
     void setUp() {
+        PnlCalculatorRegistry registry = new PnlCalculatorRegistry();
+        ManualPositionValuator valuator = new ManualPositionValuator(priceResolver, registry);
         service = new ManualPositionService(
                 repository,
                 portfolioService,
                 priceResolver,
-                new PnlCalculatorRegistry()
+                registry,
+                valuator
         );
     }
 

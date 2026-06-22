@@ -62,7 +62,8 @@ public class PortfolioService {
                 valuation.totalValue(),
                 valuation.totalCostBasis(),
                 valuation.totalProfitLoss(),
-                valuation.totalProfitLossPct()
+                valuation.totalProfitLossPct(),
+                valuation.openPositionCount()
         );
     }
 

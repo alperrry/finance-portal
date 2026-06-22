@@ -38,6 +38,7 @@ export type PortfolioResponse = {
     totalCostBasis: number | null;
     totalProfitLoss: number | null;
     totalProfitLossPct: number | null;
+    openPositionCount: number | null;
     items: PortfolioItemResponse[];
     createdAt: string | null;
     updatedAt: string | null;

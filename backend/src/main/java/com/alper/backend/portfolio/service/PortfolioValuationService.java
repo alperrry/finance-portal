@@ -2,7 +2,10 @@ package com.alper.backend.portfolio.service;
 
 import com.alper.backend.common.model.InstrumentType;
 import com.alper.backend.portfolio.dto.PortfolioItemResponse;
+import com.alper.backend.portfolio.model.ManualPosition;
 import com.alper.backend.portfolio.model.PortfolioItem;
+import com.alper.backend.portfolio.model.PositionKind;
+import com.alper.backend.portfolio.repository.ManualPositionRepository;
 import com.alper.backend.portfolio.repository.PortfolioItemRepository;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +38,8 @@ public class PortfolioValuationService {
     private static final int RESULT_SCALE = 2;
 
     private final PortfolioItemRepository portfolioItemRepository;
+    private final ManualPositionRepository manualPositionRepository;
+    private final ManualPositionValuator manualPositionValuator;
     private final CurrencyConverterService currencyConverterService;
     private final MarketQuoteService marketQuoteService;
     private final InstrumentPriceResolverService instrumentPriceResolverService;
@@ -64,6 +69,14 @@ public class PortfolioValuationService {
             }
         }
 
+        // Manuel açık pozisyonları portföy toplamına dahil et (asıl pozisyon kaynağı).
+        List<ManualPosition> openPositions = manualPositionRepository.findAllByPortfolioId(portfolioId).stream()
+                .filter(position -> position.getPositionKind() == PositionKind.OPEN)
+                .toList();
+        ManualPositionValuator.OpenAggregate manualAggregate = manualPositionValuator.aggregateOpen(openPositions);
+        totalValue = totalValue.add(manualAggregate.totalValue());
+        totalCostBasis = totalCostBasis.add(manualAggregate.totalCostBasis());
+
         BigDecimal totalProfitLoss = totalValue.subtract(totalCostBasis).setScale(RESULT_SCALE, RoundingMode.HALF_UP);
         BigDecimal totalProfitLossPct = computePct(totalProfitLoss, totalCostBasis);
 
@@ -73,6 +86,7 @@ public class PortfolioValuationService {
                 .totalCostBasis(totalCostBasis.setScale(RESULT_SCALE, RoundingMode.HALF_UP))
                 .totalProfitLoss(totalProfitLoss)
                 .totalProfitLossPct(totalProfitLossPct)
+                .openPositionCount(manualAggregate.openPositionCount())
                 .build();
     }
 
@@ -153,9 +167,10 @@ public class PortfolioValuationService {
             BigDecimal totalValue,
             BigDecimal totalCostBasis,
             BigDecimal totalProfitLoss,
-            BigDecimal totalProfitLossPct
+            BigDecimal totalProfitLossPct,
+            int openPositionCount
     ) implements Serializable {
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 2L;
     }
 
     private record ItemValuation(

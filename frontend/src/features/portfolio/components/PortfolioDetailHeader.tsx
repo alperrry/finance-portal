@@ -56,7 +56,7 @@ export function PortfolioDetailHeader({ page }: PortfolioDetailHeaderProps) {
                             {t("portfolio.detail.pdfDownload")}
                         </Button>
                         <Button variant="contained" color="secondary" onClick={handlers.openTradeModal} disabled={!portfolio}>
-                            + Pozisyon Ekle
+                            {t("portfolio.detail.addPosition")}
                         </Button>
                     </Stack>
                 </Stack>

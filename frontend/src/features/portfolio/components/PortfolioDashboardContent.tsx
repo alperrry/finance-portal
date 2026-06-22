@@ -1,4 +1,6 @@
 import { Alert, Box, Button, Card, CardContent, Skeleton, Stack, Typography } from "@mui/material";
+import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
+import { useTranslation } from "react-i18next";
 import type { PortfolioResponse } from "../api/portfolioApi";
 import { PortfolioCard } from "./PortfolioCard";
 
@@ -25,10 +27,11 @@ export function PortfolioDashboardContent({
     onEdit,
     onDelete,
 }: PortfolioDashboardContentProps) {
+    const { t } = useTranslation();
     return (
         <>
             {error ? (
-                <Alert severity="error" sx={{ mb: 2 }} action={<Button size="small" color="inherit" onClick={onReload}>Tekrar dene</Button>}>
+                <Alert severity="error" sx={{ mb: 2 }} action={<Button size="small" color="inherit" onClick={onReload}>{t("common.retry")}</Button>}>
                     {error}
                 </Alert>
             ) : null}
@@ -49,13 +52,13 @@ export function PortfolioDashboardContent({
 
             {isEmpty ? (
                 <Stack sx={{ alignItems: "center", py: 8, gap: 1.5 }}>
-                    <Typography variant="h3" aria-hidden="true">◌</Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 800 }}>Henüz portföyün yok.</Typography>
+                    <AccountBalanceWalletOutlinedIcon sx={{ fontSize: 56, color: "text.disabled" }} aria-hidden="true" />
+                    <Typography variant="h5" sx={{ fontWeight: 800 }}>{t("portfolio.dashboard.empty.title")}</Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 480, textAlign: "center" }}>
-                        İlk portföyünü oluştur, sanal bakiyeni takip et ve fiyat eşleşmesiyle otomatik trade akışını başlat.
+                        {t("portfolio.dashboard.empty.desc")}
                     </Typography>
                     <Button variant="contained" color="secondary" sx={{ mt: 1 }} onClick={onCreate}>
-                        İlk Portföyü Oluştur
+                        {t("portfolio.dashboard.empty.cta")}
                     </Button>
                 </Stack>
             ) : null}
