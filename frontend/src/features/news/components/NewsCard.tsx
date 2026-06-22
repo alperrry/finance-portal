@@ -1,29 +1,33 @@
 import { Box, Button, Card, CardActions, CardContent, CardMedia, Chip, Stack, Typography } from "@mui/material";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link as RouterLink } from "react-router-dom";
 import type { NewsItem } from "../api/newsApi";
 import { buildDynamicTags, createExcerpt, formatDate } from "../utils/newsFormatters";
+import { buildNewsPlaceholder } from "../utils/newsPlaceholder";
 
 type Props = { news: NewsItem };
 
 export function NewsCard({ news }: Props) {
     const { t } = useTranslation();
     const tags = buildDynamicTags(news);
+    const placeholder = useMemo(() => buildNewsPlaceholder(news), [news]);
 
     return (
         <Card sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-            {news.imageUrl ? (
-                <CardMedia
-                    component="img"
-                    height={160}
-                    image={news.imageUrl}
-                    alt=""
-                    loading="lazy"
-                    referrerPolicy="no-referrer"
-                    onError={(event) => { (event.currentTarget as HTMLImageElement).hidden = true; }}
-                    sx={{ objectFit: "cover" }}
-                />
-            ) : null}
+            <CardMedia
+                component="img"
+                height={160}
+                image={news.imageUrl || placeholder}
+                alt=""
+                loading="lazy"
+                referrerPolicy="no-referrer"
+                onError={(event) => {
+                    const img = event.currentTarget as HTMLImageElement;
+                    if (!img.src.startsWith("data:")) img.src = placeholder;
+                }}
+                sx={{ objectFit: "cover" }}
+            />
             <CardContent sx={{ flexGrow: 1 }}>
                 <Stack direction="row" sx={{ justifyContent: "space-between", mb: 1 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
