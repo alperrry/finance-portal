@@ -4,6 +4,7 @@ export type OtpStep = "idle" | "starting" | "qr" | "verify";
 export type ProfileForm = {
     firstName: string;
     lastName: string;
+    email: string;
 };
 
 export type PasswordForm = {

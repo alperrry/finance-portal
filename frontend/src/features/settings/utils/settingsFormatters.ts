@@ -7,12 +7,15 @@ export const KEYCLOAK_BASE_URL = import.meta.env.VITE_KEYCLOAK_URL ?? "http://lo
 export const KEYCLOAK_REALM = import.meta.env.VITE_KEYCLOAK_REALM ?? "finance-portal";
 export const KEYCLOAK_ACCOUNT_URL = `${KEYCLOAK_BASE_URL}/realms/${KEYCLOAK_REALM}/account`;
 
-export const EMPTY_FORM: ProfileForm = { firstName: "", lastName: "" };
+export const EMPTY_FORM: ProfileForm = { firstName: "", lastName: "", email: "" };
 export const EMPTY_PASSWORD_FORM: PasswordForm = { newPassword: "", confirmPassword: "" };
+
+// Basit RFC-uyumlu e-posta deseni (backend @Email ile uyumlu, son doğrulama Keycloak'ta).
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function buildForm(user: UserResponse | null): ProfileForm {
     if (!user) return EMPTY_FORM;
-    return { firstName: user.firstName ?? "", lastName: user.lastName ?? "" };
+    return { firstName: user.firstName ?? "", lastName: user.lastName ?? "", email: user.email ?? "" };
 }
 
 export function validateProfileForm(form: ProfileForm): FormErrors {
@@ -24,6 +27,12 @@ export function validateProfileForm(form: ProfileForm): FormErrors {
     };
     validate("firstName", i18n.t("settings.validation.firstName"));
     validate("lastName", i18n.t("settings.validation.lastName"));
+
+    const email = form.email.trim();
+    if (email.length < 1) errors.email = i18n.t("settings.validation.emailRequired");
+    else if (email.length > 255) errors.email = i18n.t("settings.validation.emailMaxLength");
+    else if (!EMAIL_PATTERN.test(email)) errors.email = i18n.t("settings.validation.emailInvalid");
+
     return errors;
 }
 
@@ -31,13 +40,15 @@ export function buildUpdatePayload(form: ProfileForm, user: UserResponse): Updat
     const payload: UpdateUserRequest = {};
     const firstName = form.firstName.trim();
     const lastName = form.lastName.trim();
+    const email = form.email.trim();
     if (firstName !== (user.firstName ?? "").trim()) payload.firstName = firstName;
     if (lastName !== (user.lastName ?? "").trim()) payload.lastName = lastName;
+    if (email !== (user.email ?? "").trim()) payload.email = email;
     return payload;
 }
 
 export function isPayloadEmpty(payload: UpdateUserRequest) {
-    return !payload.firstName && !payload.lastName;
+    return !payload.firstName && !payload.lastName && !payload.email;
 }
 
 export function formatDate(value: string | null | undefined) {

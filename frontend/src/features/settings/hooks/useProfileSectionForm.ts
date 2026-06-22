@@ -17,7 +17,7 @@ export function useProfileSectionForm() {
     const { showToast } = useToast();
     const { t } = useTranslation();
 
-    const [form, setForm] = useState<ProfileForm>({ firstName: "", lastName: "" });
+    const [form, setForm] = useState<ProfileForm>({ firstName: "", lastName: "", email: "" });
     const [touched, setTouched] = useState<FieldTouched>({});
     const [serverError, setServerError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
@@ -53,7 +53,7 @@ export function useProfileSectionForm() {
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        setTouched({ firstName: true, lastName: true });
+        setTouched({ firstName: true, lastName: true, email: true });
         if (!currentUser || !canSubmit) return;
         setSaving(true);
         setServerError(null);

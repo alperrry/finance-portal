@@ -2,11 +2,9 @@ import { Alert, Avatar, Box, Button, Card, CardContent, Chip, CircularProgress, 
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../app/auth/AuthContext";
 import {
-    KEYCLOAK_ACCOUNT_URL,
     formatDate,
     getInitials,
     getRoleLabel,
-    openExternal,
 } from "../utils/settingsFormatters";
 import { useProfileSectionForm } from "../hooks/useProfileSectionForm.ts";
 
@@ -132,24 +130,14 @@ export function ProfileSection() {
                             <TextField
                                 label={t("settings.profile.email")}
                                 type="email"
-                                value={currentUser.email}
-                                disabled
+                                value={form.email}
+                                onChange={updateField("email")}
+                                error={Boolean(touched.email && errors.email)}
+                                helperText={touched.email && errors.email ? errors.email : t("settings.profile.emailHelp")}
+                                slotProps={{ htmlInput: { maxLength: 255 } }}
                                 size="small"
                                 fullWidth
-                                helperText={t("settings.profile.emailHelp")}
                             />
-
-                            <Alert
-                                severity="info"
-                                action={
-                                    <Button size="small" color="inherit" onClick={() => openExternal(KEYCLOAK_ACCOUNT_URL)}>
-                                        Account Console
-                                    </Button>
-                                }
-                                sx={{ fontSize: "0.75rem" }}
-                            >
-                                {t("settings.profile.emailAlert")}
-                            </Alert>
 
                             {serverError ? <Alert severity="error">{serverError}</Alert> : null}
 
