@@ -34,7 +34,7 @@ export function useAnalysisPage() {
     const [chartType, setChartType] = useState<ChartType>("candle");
     const [drawingTool, setDrawingTool] = useState<DrawingTool>("select");
     const [drawingDraft, setDrawingDraft] = useState<ChartDrawingPoint | null>(null);
-    const [activeOverlayIndicators, setActiveOverlayIndicators] = useState<OverlayIndicatorKey[]>(["sma20", "sma50"]);
+    const [activeOverlayIndicators, setActiveOverlayIndicators] = useState<OverlayIndicatorKey[]>([]);
     const [isChartFullscreen, setIsChartFullscreen] = useState(false);
     const [comparePanelOpen, setComparePanelOpen] = useState(false);
 
