@@ -203,7 +203,7 @@ Başlıca alanlar:
 | Açılış (Landing) | `/api/v1/landing/market-snapshot` | Ana sayfa piyasa özeti |
 | Haberler | `/api/v1/news` · `/api/v1/news/google-rss/search` · `/api/v1/categories` | Haber listeleme, kategori filtreleme ve durum geçişleri (yayınla/arşivle) |
 | Çizimler | `/api/v1/drawings` | Grafik üzeri çizim kaydetme (CRUD) |
-| Kullanıcı | `/api/v1/users/me` · `/api/me/preferences` | Profil, şifre, tercihler |
+| Kullanıcı | `/api/v1/users/me` · `/api/v1/me/preferences` | Profil, şifre, tercihler |
 | Güvenlik / 2FA | `/api/v1/users/me/security/otp/...` | TOTP kurulum/doğrulama/silme |
 | Admin | `/api/v1/admin/...` | Kullanıcı yönetimi, haber/kategori yönetimi, denetim kaydı (audit), piyasa verisi backfill/temizleme |
 
