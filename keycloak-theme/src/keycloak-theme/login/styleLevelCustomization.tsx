@@ -130,6 +130,17 @@ const authGlobalStyles = {
         fontSize: "13px",
         fontWeight: 700
     },
+    // Label ile zorunlu alan yıldızını (" *") aynı satırda tut; aksi halde yıldız
+    // alt satıra kayıyordu. Boşluk wrapper üzerinden veriliyor, label margin'i sıfırlanır.
+    ".fp-auth-label-wrapper": {
+        display: "flex",
+        alignItems: "baseline",
+        gap: "3px",
+        marginBottom: "8px"
+    },
+    ".fp-auth-label-wrapper .fp-auth-label": {
+        marginBottom: 0
+    },
     ".fp-auth-input, .fp-auth-card input[type='text'], .fp-auth-card input[type='password'], .fp-auth-card input[type='email'], .fp-auth-card input[type='number'], .fp-auth-card select, .fp-auth-card textarea": {
         width: "100%",
         minHeight: "42px",
