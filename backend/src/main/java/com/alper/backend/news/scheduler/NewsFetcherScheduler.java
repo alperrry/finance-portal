@@ -26,7 +26,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.text.Normalizer;
 import java.time.LocalDateTime;
@@ -46,6 +47,17 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Haberleri NewsAPI ve RSS kaynaklarından periyodik olarak çekip kaydeden zamanlayıcı.
+ *
+ * <p>Çekilen içerikler anahtar kelime filtresinden geçirilir, gerekirse yapay zeka
+ * destekli kategorizasyona ({@link AiCategorizerService}) gönderilir; AI çağrıları
+ * koşu başına bütçeyle sınırlandırılır. Yeni kayıt oluştuğunda haber önbelleği
+ * temizlenir ve {@link com.alper.backend.news.event.NewsPublishedEvent} yayınlanır.
+ * Admin panelinden manuel tetikleme de desteklenir.</p>
+ *
+ * <p>{@code news.fetcher.enabled=false} ile bileşen tamamen devre dışı bırakılabilir.</p>
+ */
 @Component
 @ConditionalOnProperty(name = "news.fetcher.enabled", havingValue = "true", matchIfMissing = true)
 public class NewsFetcherScheduler {
@@ -86,6 +98,7 @@ public class NewsFetcherScheduler {
     private final NewsFetcherProperties fetcherProperties;
     private final CacheManager cacheManager;
     private final ApplicationEventPublisher eventPublisher;
+    private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
 
     public NewsFetcherScheduler(SourceRepository sourceRepository,
@@ -96,7 +109,8 @@ public class NewsFetcherScheduler {
                                 CategoryService categoryService,
                                 NewsFetcherProperties fetcherProperties,
                                 CacheManager cacheManager,
-                                ApplicationEventPublisher eventPublisher) {
+                                ApplicationEventPublisher eventPublisher,
+                                PlatformTransactionManager transactionManager) {
         this.sourceRepository = sourceRepository;
         this.newsRepository = newsRepository;
         this.newsApiService = newsApiService;
@@ -106,6 +120,7 @@ public class NewsFetcherScheduler {
         this.fetcherProperties = fetcherProperties;
         this.cacheManager = cacheManager;
         this.eventPublisher = eventPublisher;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.objectMapper = new ObjectMapper();
     }
 
@@ -113,11 +128,14 @@ public class NewsFetcherScheduler {
     // Scheduled
     // =========================================================================
 
+    /**
+     * Tüm aktif kaynaklardan (API + RSS) haberleri çeker, kaydeder ve yayın
+     * olayını fırlatır. Tek bir kaynaktaki hata diğer kaynakları engellemez.
+     */
     @Scheduled(
             initialDelayString = "${news.fetcher.initial-delay}",
             fixedDelayString = "${news.fetcher.fixed-delay}"
     )
-    @Transactional
     public void fetchNews() {
         if (!fetcherProperties.isEnabled()) {
             log.debug("News fetcher is disabled");
@@ -125,33 +143,15 @@ public class NewsFetcherScheduler {
         }
 
         log.info("Starting news fetch job");
-        int savedNewsCount = 0;
-        List<News> savedNewsList = new ArrayList<>();
-        AiCallBudget aiCallBudget = new AiCallBudget(Math.max(0, fetcherProperties.getAiMaxCallsPerRun()));
 
-        try {
-            savedNewsCount += fetchFromApi(aiCallBudget, savedNewsList);
-        } catch (Exception e) {
-            log.error("Error fetching news from API", e);
-        }
+        // 1) Yavaş uzak kaynak çağrıları (API + RSS) transaction DIŞINDA yapılır;
+        //    böylece HTTP I/O boyunca bir DB bağlantısı havuzdan tutulmaz.
+        String apiResponse = fetchApiResponseSafely();
+        List<SourceFeed> sourceFeeds = fetchActiveSourceFeeds();
 
-        List<Source> activeSources = sourceRepository.findByIsActiveTrue();
-        if (!activeSources.isEmpty()) {
-            log.info("Found {} active sources", activeSources.size());
-            for (Source source : activeSources) {
-                try {
-                    savedNewsCount += fetchNewsFromSource(source, aiCallBudget, savedNewsList);
-                } catch (Exception e) {
-                    log.error("Error fetching news from source: {}", source.getName(), e);
-                }
-            }
-        }
-
-        if (savedNewsCount > 0) {
-            evictNewsListCache();
-            publishNewsPublishedEvent(savedNewsList);
-            log.info("News cache evicted after {} new/updated records", savedNewsCount);
-        }
+        // 2) Çekilen içerik kısa ömürlü tek bir transaction içinde kalıcılaştırılır.
+        transactionTemplate.executeWithoutResult(status ->
+                persistFetchedNews(apiResponse, sourceFeeds));
 
         log.info("News fetch job completed");
     }
@@ -160,45 +160,120 @@ public class NewsFetcherScheduler {
     // Manuel tetikleme (Admin tarafından çağrılır)
     // =========================================================================
 
-    @Transactional
+    /** Admin tarafından manuel tetikleme: tüm kaynaklardan haber çeker. */
     public void fetchAllSources() {
         log.info("Manuel haber çekimi tetiklendi: tüm kaynaklar");
         fetchNews();
     }
 
-    @Transactional
+    /**
+     * Admin tarafından manuel tetikleme: tek bir kaynaktan haber çeker.
+     *
+     * @param sourceId haber kaynağının kimliği
+     * @throws com.alper.backend.common.exception.NotFoundException kaynak bulunamazsa
+     */
     public void fetchForSource(Long sourceId) {
         Source source = sourceRepository.findById(sourceId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_FOUND, "Kaynak bulunamadı: " + sourceId));
 
         log.info("Manuel haber çekimi tetiklendi | sourceId={}, name={}", sourceId, source.getName());
 
-        AiCallBudget aiCallBudget = new AiCallBudget(Math.max(0, fetcherProperties.getAiMaxCallsPerRun()));
-        List<News> savedNewsList = new ArrayList<>();
+        // RSS/HTTP çekimi transaction dışında yapılır.
+        List<SyndEntry> entries = fetchSourceEntries(source);
 
-        int savedCount = fetchNewsFromSource(source, aiCallBudget, savedNewsList);
+        transactionTemplate.executeWithoutResult(status -> {
+            AiCallBudget aiCallBudget = new AiCallBudget(Math.max(0, fetcherProperties.getAiMaxCallsPerRun()));
+            List<News> savedNewsList = new ArrayList<>();
 
-        if (savedCount > 0) {
-            evictNewsListCache();
-            publishNewsPublishedEvent(savedNewsList);
-            log.info("Manuel haber çekimi tamamlandı | sourceId={}, kayıt={}", sourceId, savedCount);
-        } else {
-            log.info("Manuel haber çekimi tamamlandı, yeni kayıt yok | sourceId={}", sourceId);
-        }
+            int savedCount = persistRssEntries(source, entries, aiCallBudget, savedNewsList);
+
+            if (savedCount > 0) {
+                evictNewsListCache();
+                publishNewsPublishedEvent(savedNewsList);
+                log.info("Manuel haber çekimi tamamlandı | sourceId={}, kayıt={}", sourceId, savedCount);
+            } else {
+                log.info("Manuel haber çekimi tamamlandı, yeni kayıt yok | sourceId={}", sourceId);
+            }
+        });
     }
 
     // =========================================================================
     // Private metodlar
     // =========================================================================
 
-    private int fetchFromApi(AiCallBudget aiCallBudget, List<News> savedNewsList) {
-        log.info("Fetching news directly from API provider");
+    /** API sağlayıcısından ham yanıtı çeker; hata olursa null döner (transaction dışı). */
+    private String fetchApiResponseSafely() {
         try {
-            String response = newsApiService.fetchAllNews();
-            if (response == null) {
-                log.warn("No response from API provider");
-                return 0;
+            log.info("Fetching news directly from API provider");
+            return newsApiService.fetchAllNews();
+        } catch (Exception e) {
+            log.error("Error fetching from API provider", e);
+            return null;
+        }
+    }
+
+    /** Aktif kaynakların RSS içeriklerini transaction dışında çeker. */
+    private List<SourceFeed> fetchActiveSourceFeeds() {
+        List<Source> activeSources = sourceRepository.findByIsActiveTrue();
+        if (activeSources.isEmpty()) {
+            return List.of();
+        }
+        log.info("Found {} active sources", activeSources.size());
+        List<SourceFeed> feeds = new ArrayList<>();
+        for (Source source : activeSources) {
+            try {
+                feeds.add(new SourceFeed(source, fetchSourceEntries(source)));
+            } catch (Exception e) {
+                log.error("Error fetching news from source: {}", source.getName(), e);
             }
+        }
+        return feeds;
+    }
+
+    /** Tek bir kaynağın RSS girdilerini döner; kalıcılaştırma yapmaz (transaction dışı). */
+    private List<SyndEntry> fetchSourceEntries(Source source) {
+        String sourceUrl = source.getSourceUrl();
+        if (sourceUrl.startsWith("http://") || sourceUrl.startsWith("https://")) {
+            log.info("Fetching RSS from: {}", source.getName());
+            return rssFeedService.fetchRssFeed(source.getSourceUrl());
+        }
+        log.warn("Unknown source type: {}, skipping", sourceUrl);
+        return List.of();
+    }
+
+    /** Önceden çekilmiş API + RSS içeriğini tek bir transaction içinde kalıcılaştırır. */
+    private void persistFetchedNews(String apiResponse, List<SourceFeed> sourceFeeds) {
+        int savedNewsCount = 0;
+        List<News> savedNewsList = new ArrayList<>();
+        AiCallBudget aiCallBudget = new AiCallBudget(Math.max(0, fetcherProperties.getAiMaxCallsPerRun()));
+
+        try {
+            savedNewsCount += persistApiArticles(apiResponse, aiCallBudget, savedNewsList);
+        } catch (Exception e) {
+            log.error("Error processing API provider response", e);
+        }
+
+        for (SourceFeed feed : sourceFeeds) {
+            try {
+                savedNewsCount += persistRssEntries(feed.source(), feed.entries(), aiCallBudget, savedNewsList);
+            } catch (Exception e) {
+                log.error("Error processing news from source: {}", feed.source().getName(), e);
+            }
+        }
+
+        if (savedNewsCount > 0) {
+            evictNewsListCache();
+            publishNewsPublishedEvent(savedNewsList);
+            log.info("News cache evicted after {} new/updated records", savedNewsCount);
+        }
+    }
+
+    private int persistApiArticles(String response, AiCallBudget aiCallBudget, List<News> savedNewsList) {
+        if (response == null) {
+            log.warn("No response from API provider");
+            return 0;
+        }
+        try {
             JsonNode root = objectMapper.readTree(response);
             JsonNode articles = extractApiArticles(root);
             if (articles == null || !articles.isArray()) {
@@ -239,24 +314,12 @@ public class NewsFetcherScheduler {
             log.info("Saved {} news from API provider", savedCount);
             return savedCount;
         } catch (Exception e) {
-            log.error("Error fetching from API provider", e);
+            log.error("Error processing API provider response", e);
             return 0;
         }
     }
 
-    private int fetchNewsFromSource(Source source, AiCallBudget aiCallBudget, List<News> savedNewsList) {
-        String sourceUrl = source.getSourceUrl();
-        if (sourceUrl.startsWith("http://") || sourceUrl.startsWith("https://")) {
-            return fetchFromRss(source, aiCallBudget, savedNewsList);
-        } else {
-            log.warn("Unknown source type: {}, skipping", sourceUrl);
-            return 0;
-        }
-    }
-
-    private int fetchFromRss(Source source, AiCallBudget aiCallBudget, List<News> savedNewsList) {
-        log.info("Fetching RSS from: {}", source.getName());
-        List<SyndEntry> entries = rssFeedService.fetchRssFeed(source.getSourceUrl());
+    private int persistRssEntries(Source source, List<SyndEntry> entries, AiCallBudget aiCallBudget, List<News> savedNewsList) {
         if (entries.isEmpty()) {
             log.warn("No parsable news entries from source: {} ({})", source.getName(), source.getSourceUrl());
             return 0;
@@ -283,7 +346,8 @@ public class NewsFetcherScheduler {
                     }
                     continue;
                 }
-                if (isDuplicate(source.getId(), link, normalizeExternalId(uri))) continue;
+                // URL'in mevcut olmadığı yukarıda doğrulandı; sadece external-id ile tekillik kontrolü yeterli.
+                if (isDuplicateByExternalId(source.getId(), normalizeExternalId(uri))) continue;
                 News news = new News();
                 news.setTitle(title);
                 news.setContext(context);
@@ -324,6 +388,10 @@ public class NewsFetcherScheduler {
 
     private boolean isDuplicate(Long sourceId, String canonicalUrl, String externalId) {
         if (newsRepository.existsByCanonicalUrl(canonicalUrl)) return true;
+        return isDuplicateByExternalId(sourceId, externalId);
+    }
+
+    private boolean isDuplicateByExternalId(Long sourceId, String externalId) {
         return sourceId != null && externalId != null
                 && newsRepository.findBySourceIdAndExternalId(sourceId, externalId).isPresent();
     }
@@ -645,6 +713,9 @@ public class NewsFetcherScheduler {
         Cache cache = cacheManager.getCache(cacheName);
         if (cache != null) cache.clear();
     }
+
+    /** Bir kaynak ile o kaynaktan transaction dışında çekilmiş RSS girdilerini taşır. */
+    private record SourceFeed(Source source, List<SyndEntry> entries) {}
 
     private static final class AiCallBudget {
         private final int initialBudget;

@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -59,6 +60,9 @@ class NewsFetcherSchedulerTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private PlatformTransactionManager transactionManager;
+
     private NewsFetcherScheduler scheduler;
     private Source source;
 
@@ -78,7 +82,8 @@ class NewsFetcherSchedulerTest {
                 categoryService,
                 properties,
                 cacheManager,
-                eventPublisher
+                eventPublisher,
+                transactionManager
         );
 
         source = new Source();
@@ -99,7 +104,6 @@ class NewsFetcherSchedulerTest {
         when(sourceRepository.findById(1L)).thenReturn(Optional.of(source));
         when(rssFeedService.fetchRssFeed(source.getSourceUrl())).thenReturn(List.of(entry));
         when(newsRepository.findByCanonicalUrl(entry.getLink())).thenReturn(Optional.empty());
-        when(newsRepository.existsByCanonicalUrl(entry.getLink())).thenReturn(false);
         when(categoryService.getActiveCategoriesCached()).thenReturn(List.of());
         when(aiCategorizerService.getFallbackCategoryFromCache()).thenReturn(null);
         when(newsRepository.save(any(News.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -167,7 +171,6 @@ class NewsFetcherSchedulerTest {
         when(sourceRepository.findById(1L)).thenReturn(Optional.of(source));
         when(rssFeedService.fetchRssFeed(source.getSourceUrl())).thenReturn(List.of(entry));
         when(newsRepository.findByCanonicalUrl(entry.getLink())).thenReturn(Optional.empty());
-        when(newsRepository.existsByCanonicalUrl(entry.getLink())).thenReturn(false);
         when(categoryService.getActiveCategoriesCached()).thenReturn(List.of());
         when(aiCategorizerService.getFallbackCategoryFromCache()).thenReturn(null);
         when(newsRepository.save(any(News.class))).thenAnswer(invocation -> invocation.getArgument(0));
