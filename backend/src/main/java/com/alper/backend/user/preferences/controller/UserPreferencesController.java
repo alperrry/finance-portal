@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.*;
  * <p>İşlemler {@link UserPreferencesService} üzerinden gerçekleştirilir.</p>
  */
 @RestController
-@RequestMapping("/api/me/preferences")
+@RequestMapping("/api/v1/me/preferences")
 @RequiredArgsConstructor
 public class UserPreferencesController {
 

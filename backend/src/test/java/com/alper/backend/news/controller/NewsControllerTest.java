@@ -66,7 +66,7 @@ class NewsControllerTest {
     }
 
     @Nested
-    @DisplayName("GET /api/news")
+    @DisplayName("GET /api/v1/news")
     class GetAllNews {
 
         @Test
@@ -77,7 +77,7 @@ class NewsControllerTest {
 
             when(newsService.getNewsResponses(any(), any())).thenReturn(cacheEntry);
 
-            mockMvc.perform(get("/api/news"))
+            mockMvc.perform(get("/api/v1/news"))
                     .andExpect(status().isOk());
         }
 
@@ -87,27 +87,27 @@ class NewsControllerTest {
             when(newsService.getNewsResponses(any(), any()))
                     .thenReturn(new NewsPageCacheEntry(List.of(), 0L));
 
-            mockMvc.perform(get("/api/news"))
+            mockMvc.perform(get("/api/v1/news"))
                     .andExpect(status().isOk());
         }
 
         @Test
         @DisplayName("400 — negatif sayfa numarası 400 döner")
         void getAllNews_negativePage_returns400() throws Exception {
-            mockMvc.perform(get("/api/news").param("page", "-1"))
+            mockMvc.perform(get("/api/v1/news").param("page", "-1"))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         @DisplayName("400 — sıfır boyutlu sayfa 400 döner")
         void getAllNews_zeroSize_returns400() throws Exception {
-            mockMvc.perform(get("/api/news").param("size", "0"))
+            mockMvc.perform(get("/api/v1/news").param("size", "0"))
                     .andExpect(status().isBadRequest());
         }
     }
 
     @Nested
-    @DisplayName("GET /api/news/{id}")
+    @DisplayName("GET /api/v1/news/{id}")
     class GetNewsById {
 
         @Test
@@ -116,7 +116,7 @@ class NewsControllerTest {
             News news = buildNews(1L, NewsStatus.published);
             when(newsService.getNewsById(1L)).thenReturn(news);
 
-            mockMvc.perform(get("/api/news/1"))
+            mockMvc.perform(get("/api/v1/news/1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(1))
                     .andExpect(jsonPath("$.title").value("Test Haber 1"));
@@ -128,13 +128,13 @@ class NewsControllerTest {
             when(newsService.getNewsById(99L))
                     .thenThrow(new NotFoundException("News not found with id: 99"));
 
-            mockMvc.perform(get("/api/news/99"))
+            mockMvc.perform(get("/api/v1/news/99"))
                     .andExpect(status().isNotFound());
         }
     }
 
     @Nested
-    @DisplayName("PATCH /api/news/{id}/status")
+    @DisplayName("PATCH /api/v1/news/{id}/status")
     class UpdateStatus {
 
         @Test
@@ -143,7 +143,7 @@ class NewsControllerTest {
             News news = buildNews(1L, NewsStatus.archived);
             when(newsService.updateStatus(eq(1L), eq(NewsStatus.archived))).thenReturn(news);
 
-            mockMvc.perform(patch("/api/news/1/status")
+            mockMvc.perform(patch("/api/v1/news/1/status")
                             .param("status", "archived"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.status").value("archived"));

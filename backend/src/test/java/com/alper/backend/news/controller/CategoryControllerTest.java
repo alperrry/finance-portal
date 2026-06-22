@@ -43,7 +43,7 @@ class CategoryControllerTest {
     }
 
     @Nested
-    @DisplayName("GET /api/categories")
+    @DisplayName("GET /api/v1/categories")
     class ListCategories {
 
         @Test
@@ -55,7 +55,7 @@ class CategoryControllerTest {
                             buildCategory(2L, "Borsa")
                     ));
 
-            mockMvc.perform(get("/api/categories"))
+            mockMvc.perform(get("/api/v1/categories"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(2))
                     .andExpect(jsonPath("$[0].name").value("Ekonomi"));
@@ -66,7 +66,7 @@ class CategoryControllerTest {
         void listCategories_empty_returns200() throws Exception {
             when(categoryService.getAllCategories(true)).thenReturn(List.of());
 
-            mockMvc.perform(get("/api/categories"))
+            mockMvc.perform(get("/api/v1/categories"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(0));
         }
@@ -80,7 +80,7 @@ class CategoryControllerTest {
                             buildCategory(3L, "Pasif Kategori")
                     ));
 
-            mockMvc.perform(get("/api/categories").param("activeOnly", "false"))
+            mockMvc.perform(get("/api/v1/categories").param("activeOnly", "false"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(2));
         }
@@ -91,7 +91,7 @@ class CategoryControllerTest {
             when(categoryService.getAllCategories(true))
                     .thenReturn(List.of(buildCategory(5L, "Kripto Para")));
 
-            mockMvc.perform(get("/api/categories"))
+            mockMvc.perform(get("/api/v1/categories"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(5))
                     .andExpect(jsonPath("$[0].name").value("Kripto Para"));

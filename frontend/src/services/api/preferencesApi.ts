@@ -30,20 +30,20 @@ async function unwrap<T>(response: Response): Promise<T> {
     return body as T;
 }
 
-// GET /api/me/preferences -> kullanıcının mevcut tercihleri (yoksa backend default oluşturur)
+// GET /api/v1/me/preferences -> kullanıcının mevcut tercihleri (yoksa backend default oluşturur)
 export async function fetchMyPreferences(): Promise<PreferencesPayload> {
-    const response = await apiFetch("/api/me/preferences", {
+    const response = await apiFetch("/api/v1/me/preferences", {
         method: "GET",
         errorMessage: i18n.t("common.preferencesFailed"),
     });
     return unwrap<PreferencesPayload>(response);
 }
 
-// PUT /api/me/preferences -> tam güncelleme; backend kaydedilmiş halini döner
+// PUT /api/v1/me/preferences -> tam güncelleme; backend kaydedilmiş halini döner
 export async function updateMyPreferences(
     payload: PreferencesPayload,
 ): Promise<PreferencesPayload> {
-    const response = await apiFetch("/api/me/preferences", {
+    const response = await apiFetch("/api/v1/me/preferences", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
